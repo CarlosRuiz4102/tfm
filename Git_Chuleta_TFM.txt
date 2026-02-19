@@ -1,0 +1,163 @@
+===============================
+
+GIT CHULETA - TFM
+
+===============================
+
+Esta chuleta contiene los comandos esenciales de Git.
+
+—————————————————-
+
+INICIAR PROYECTO
+
+—————————————————-
+
+Inicializar repositorio en carpeta actual
+
+"git init"
+
+Conectar con repositorio GitHub
+
+"git remote add origin URL_DEL_REPO"
+
+Ver repositorios remotos
+
+"git remote -v"
+
+—————————————————-
+
+ESTADO DEL PROYECTO (USAR SIEMPRE)
+
+—————————————————-
+
+Ver qué cambió
+
+"git status"
+
+Ver diferencias exactas
+
+"git diff"
+
+—————————————————-
+
+AÑADIR CAMBIOS
+
+—————————————————-
+
+Añadir TODOS los archivos modificados
+
+"git add ."
+
+Añadir solo un archivo
+
+"git add archivo.py"
+
+Quitar archivo del staging
+
+"git restore –staged archivo.py"
+
+—————————————————-
+
+GUARDAR UNA VERSIÓN (COMMIT)
+
+—————————————————-
+
+Crear snapshot del proyecto
+
+"git commit -m “mensaje claro del cambio”"
+
+Ver historial compacto
+
+"git log –oneline"
+
+—————————————————-
+
+SUBIR CAMBIOS A GITHUB
+
+—————————————————-
+
+Primera vez
+
+"git branch -M main git push -u origin main"
+
+Uso normal
+
+"git push"
+
+—————————————————-
+
+BAJAR CAMBIOS
+
+—————————————————-
+
+Descargar cambios remotos
+
+"git pull"
+
+—————————————————-
+
+DESHACER CAMBIOS
+
+—————————————————-
+
+Restaurar archivo sin guardar
+
+"git restore archivo.py"
+
+—————————————————-
+
+RAMAS (BÁSICO)
+
+—————————————————-
+
+Crear rama
+
+"git branch nueva-rama"
+
+Cambiar de rama
+
+"git checkout nueva-rama"
+
+Ver ramas
+
+"git branch"
+
+—————————————————-
+
+RUTINA DIARIA IDEAL
+
+—————————————————-
+
+Antes de empezar
+
+"git pull"
+
+Durante el trabajo
+
+"git status"
+
+Guardar progreso
+
+"git add . git commit -m “avance del día”"
+
+Backup en GitHub
+
+"git push"
+
+—————————————————-
+
+REGLA DE ORO
+
+—————————————————-
+
+Si te daría miedo perder este progreso → haz commit.
+
+Git no guarda archivos.
+
+Git guarda VERSIONES del proyecto.
+
+Piensa siempre:
+
+trabajo → add → commit → push
+
+—————————————————-
