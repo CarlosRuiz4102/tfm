@@ -83,48 +83,6 @@ Posibles tecnologías:
 - conexión segura desde el agente
 - Kaggle (ventas, mercados, facturación)
 
-### Análisis estadístico automático
-
-El sistema no devolverá solo tablas.
-
-Aplicará análisis como:
-
-- detección de outliers
-- tendencias temporales
-- comparaciones entre periodos
-- reglas estadísticas básicas
-- agregaciones automáticas
-
-Herramientas posibles:
-- 
-
-### Generador de Insights
-
-Transforma resultados numéricos en interpretación.
-
-El agente podrá:
-
-- detectar patrones
-- generar hipótesis
-- explicar resultados en lenguaje natural
-- contextualizar métricas financieras
-
-Ejemplo:
-
-> "Se observa un incremento del 23% en ventas impulsado principalmente por la región norte."
-
-### Visualización automática
-
-El sistema generará automáticamente:
-
-- gráficos de líneas
-- gráficos de barras
-- tendencias temporales
-- heatmaps
-
-Tecnologías:
-- 
-
 
 ##  Roadmap inicial de desarrollo
 
@@ -153,20 +111,8 @@ Tecnologías:
 
 ### ¿Chatbot o modelo generativo específico?
 
-El sistema será:
+El sistema será un chatbot ya que si no tardariamos mucho en entrenarlo. Vamos a realizar una busqueda de que LLMs podemos utilizar de hugging face que sean en un ambito de financias.
 
-✅ **Un agente conversacional basado en LLM**
-
-NO se entrenará un modelo desde cero.
-
-El valor científico estará en:
-
-- la arquitectura del agente
-- la orquestación de herramientas
-- el razonamiento sobre datos
-- la generación de insights
-
-El LLM será un componente dentro del sistema, no el sistema completo.
 
 
 consensus buscar papers
