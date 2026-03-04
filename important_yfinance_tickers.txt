@@ -1,0 +1,188 @@
+^GSPC - Index - S&P 500
+^DJI - Index - Dow Jones Industrial Average
+^IXIC - Index - Nasdaq Composite
+^RUT - Index - Russell 2000
+^VIX - Index - CBOE Volatility Index
+SPY - ETF - S&P 500
+VOO - ETF - S&P 500 (Vanguard)
+IVV - ETF - S&P 500 (iShares)
+QQQ - ETF - Nasdaq 100
+VTI - ETF - Total US Market
+DIA - ETF - Dow Jones
+IWM - ETF - Russell 2000
+XLK - ETF - Technology
+XLF - ETF - Financials
+XLE - ETF - Energy
+XLV - ETF - Healthcare
+XLY - ETF - Consumer Discretionary
+XLP - ETF - Consumer Staples
+XLI - ETF - Industrials
+XLB - ETF - Materials
+XLU - ETF - Utilities
+VNQ - ETF - Real Estate
+ARKK - ETF - Innovation
+TQQQ - ETF - Nasdaq 3x Leveraged
+SQQQ - ETF - Nasdaq 3x Inverse
+BTC-USD - Crypto - Bitcoin
+ETH-USD - Crypto - Ethereum
+SOL-USD - Crypto - Solana
+BNB-USD - Crypto - Binance Coin
+XRP-USD - Crypto - Ripple
+GC=F - Commodity - Gold Futures
+SI=F - Commodity - Silver Futures
+CL=F - Commodity - Crude Oil Futures
+NG=F - Commodity - Natural Gas Futures
+HG=F - Commodity - Copper Futures
+EURUSD=X - Forex - EUR/USD
+GBPUSD=X - Forex - GBP/USD
+JPY=X - Forex - USD/JPY
+AUDUSD=X - Forex - AUD/USD
+AAPL - Stock - Apple (Technology)
+MSFT - Stock - Microsoft (Technology)
+GOOGL - Stock - Alphabet (Technology)
+AMZN - Stock - Amazon (Consumer/Cloud)
+META - Stock - Meta Platforms (Technology)
+NVDA - Stock - Nvidia (Semiconductors)
+TSLA - Stock - Tesla (Automotive/EV)
+ORCL - Stock - Oracle (Technology)
+IBM - Stock - IBM (Technology)
+ADBE - Stock - Adobe (Software)
+CRM - Stock - Salesforce (Software)
+INTC - Stock - Intel (Semiconductors)
+AMD - Stock - AMD (Semiconductors)
+AVGO - Stock - Broadcom (Semiconductors)
+QCOM - Stock - Qualcomm (Semiconductors)
+CSCO - Stock - Cisco (Networking)
+TXN - Stock - Texas Instruments (Semiconductors)
+MU - Stock - Micron (Semiconductors)
+PYPL - Stock - PayPal (Fintech)
+SQ - Stock - Block (Fintech)
+JPM - Stock - JPMorgan Chase (Banking)
+BAC - Stock - Bank of America (Banking)
+WFC - Stock - Wells Fargo (Banking)
+C - Stock - Citigroup (Banking)
+GS - Stock - Goldman Sachs (Investment Bank)
+MS - Stock - Morgan Stanley (Investment Bank)
+KO - Stock - Coca-Cola (Beverages)
+PEP - Stock - PepsiCo (Beverages)
+MCD - Stock - McDonald's (Restaurants)
+SBUX - Stock - Starbucks (Restaurants)
+WMT - Stock - Walmart (Retail)
+TGT - Stock - Target (Retail)
+COST - Stock - Costco (Retail)
+HD - Stock - Home Depot (Retail)
+LOW - Stock - Lowe's (Retail)
+NKE - Stock - Nike (Apparel)
+JNJ - Stock - Johnson & Johnson (Healthcare)
+PFE - Stock - Pfizer (Pharma)
+MRK - Stock - Merck (Pharma)
+ABBV - Stock - AbbVie (Pharma)
+TMO - Stock - Thermo Fisher (Healthcare)
+UNH - Stock - UnitedHealth (Healthcare)
+XOM - Stock - Exxon Mobil (Energy)
+CVX - Stock - Chevron (Energy)
+COP - Stock - ConocoPhillips (Energy)
+SLB - Stock - Schlumberger (Energy)
+BA - Stock - Boeing (Aerospace)
+CAT - Stock - Caterpillar (Industrials)
+GE - Stock - General Electric (Industrials)
+HON - Stock - Honeywell (Industrials)
+UPS - Stock - UPS (Logistics)
+FDX - Stock - FedEx (Logistics)
+ABT - Stock - Large Cap (S&P 500)
+ACN - Stock - Large Cap (S&P 500)
+ADP - Stock - Large Cap (S&P 500)
+AIG - Stock - Large Cap (S&P 500)
+ALL - Stock - Large Cap (S&P 500)
+AMAT - Stock - Large Cap (S&P 500)
+AMGN - Stock - Large Cap (S&P 500)
+APD - Stock - Large Cap (S&P 500)
+APH - Stock - Large Cap (S&P 500)
+AXP - Stock - Large Cap (S&P 500)
+BDX - Stock - Large Cap (S&P 500)
+BK - Stock - Large Cap (S&P 500)
+BKNG - Stock - Large Cap (S&P 500)
+BLK - Stock - Large Cap (S&P 500)
+BMY - Stock - Large Cap (S&P 500)
+BRK-B - Stock - Large Cap (S&P 500)
+BSX - Stock - Large Cap (S&P 500)
+CB - Stock - Large Cap (S&P 500)
+CCI - Stock - Large Cap (S&P 500)
+CL - Stock - Large Cap (S&P 500)
+CMCSA - Stock - Large Cap (S&P 500)
+CME - Stock - Large Cap (S&P 500)
+COF - Stock - Large Cap (S&P 500)
+CSX - Stock - Large Cap (S&P 500)
+CTAS - Stock - Large Cap (S&P 500)
+CVS - Stock - Large Cap (S&P 500)
+DD - Stock - Large Cap (S&P 500)
+DE - Stock - Large Cap (S&P 500)
+DHR - Stock - Large Cap (S&P 500)
+DOW - Stock - Large Cap (S&P 500)
+DUK - Stock - Large Cap (S&P 500)
+EL - Stock - Large Cap (S&P 500)
+EMR - Stock - Large Cap (S&P 500)
+EOG - Stock - Large Cap (S&P 500)
+EQIX - Stock - Large Cap (S&P 500)
+ETN - Stock - Large Cap (S&P 500)
+F - Stock - Large Cap (S&P 500)
+FIS - Stock - Large Cap (S&P 500)
+FISV - Stock - Large Cap (S&P 500)
+GD - Stock - Large Cap (S&P 500)
+GILD - Stock - Large Cap (S&P 500)
+GM - Stock - Large Cap (S&P 500)
+GPN - Stock - Large Cap (S&P 500)
+HAL - Stock - Large Cap (S&P 500)
+HCA - Stock - Large Cap (S&P 500)
+HES - Stock - Large Cap (S&P 500)
+HIG - Stock - Large Cap (S&P 500)
+HUM - Stock - Large Cap (S&P 500)
+ICE - Stock - Large Cap (S&P 500)
+ITW - Stock - Large Cap (S&P 500)
+KMB - Stock - Large Cap (S&P 500)
+KMI - Stock - Large Cap (S&P 500)
+LHX - Stock - Large Cap (S&P 500)
+LIN - Stock - Large Cap (S&P 500)
+LLY - Stock - Large Cap (S&P 500)
+LMT - Stock - Large Cap (S&P 500)
+MA - Stock - Large Cap (S&P 500)
+MCO - Stock - Large Cap (S&P 500)
+MDLZ - Stock - Large Cap (S&P 500)
+MDT - Stock - Large Cap (S&P 500)
+MET - Stock - Large Cap (S&P 500)
+MMM - Stock - Large Cap (S&P 500)
+MO - Stock - Large Cap (S&P 500)
+MSCI - Stock - Large Cap (S&P 500)
+NEE - Stock - Large Cap (S&P 500)
+NOW - Stock - Large Cap (S&P 500)
+NSC - Stock - Large Cap (S&P 500)
+OXY - Stock - Large Cap (S&P 500)
+PAYX - Stock - Large Cap (S&P 500)
+PCAR - Stock - Large Cap (S&P 500)
+PGR - Stock - Large Cap (S&P 500)
+PH - Stock - Large Cap (S&P 500)
+PLD - Stock - Large Cap (S&P 500)
+PM - Stock - Large Cap (S&P 500)
+PNC - Stock - Large Cap (S&P 500)
+PSA - Stock - Large Cap (S&P 500)
+PSX - Stock - Large Cap (S&P 500)
+REGN - Stock - Large Cap (S&P 500)
+RTX - Stock - Large Cap (S&P 500)
+SCHW - Stock - Large Cap (S&P 500)
+SO - Stock - Large Cap (S&P 500)
+SPGI - Stock - Large Cap (S&P 500)
+SYK - Stock - Large Cap (S&P 500)
+T - Stock - Large Cap (S&P 500)
+TFC - Stock - Large Cap (S&P 500)
+TJX - Stock - Large Cap (S&P 500)
+TMUS - Stock - Large Cap (S&P 500)
+TRV - Stock - Large Cap (S&P 500)
+UNP - Stock - Large Cap (S&P 500)
+USB - Stock - Large Cap (S&P 500)
+V - Stock - Large Cap (S&P 500)
+VLO - Stock - Large Cap (S&P 500)
+VRTX - Stock - Large Cap (S&P 500)
+VZ - Stock - Large Cap (S&P 500)
+WBA - Stock - Large Cap (S&P 500)
+WM - Stock - Large Cap (S&P 500)
+ZTS - Stock - Large Cap (S&P 500)
