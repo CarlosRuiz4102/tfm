@@ -107,11 +107,6 @@ Posibles tecnologías:
 - [ ] Experimentos
 
 
-## Duda conceptual clave
-
-### ¿Chatbot o modelo generativo específico?
-
-El sistema será un chatbot ya que si no tardariamos mucho en entrenarlo. Vamos a realizar una busqueda de que LLMs podemos utilizar de hugging face que sean en un ambito de financias.
 
 consensus buscar papers
 poetry lo intentamos meter
