@@ -1,0 +1,32 @@
+- Plantear un anteproyecto (13 Marzo) [Resumen del proyecto (~300 palabras)]
+
+- Empezar a realizar cosas de la memoria (Preguntale a Adrian)
+
+Modelos de financias de HGFce:
+- Qwen-Open-Finance-R-8B
+- FinBERT
+
+LLMs generales:
+- llama 3 + SQLCoder
+
+------------------------------------------------------------------------------
+Donde hacemos mejor con lo del requirements, en colab o en vs? COLAB y reordenar un poco estructura del tfm
+
+Tenemos aun que definir bien el flujo --> Draw.io
+
+Necesitamos algo como un LLM financiero mas algo que nos pase de NL->SQL para generar los insight sobre lo que nos ha preguntado el usuario??
+-> esperar que estos dos te digan algo
+
+VIERNES--> haz un EDA con los datos de yfinance
+
+
+
+PRINCIPAL: Lo que realmente queremos con este tfm es que le realice el usuario preguntas y este sea capaz de obtener los datos (con yfinance), realizar con sql su estructura, de ahi analizar los resultados y que le muestre los insights como este quiera.
+
+Cosas secundarias: 
+- Detectar sentimiento en noticias financieras positivas/neutras/negativas con FinBERT
+- Intentemos realizar una prediccion a futuro? muy dificil??
+
+
+Que es mejor montar una BBDD gigante o que segun lo que el usuario quiera monte la consulta SQL y de ahi generemos los datos
+-> Montra una BBDD limitada de bolsa segun el LLM que encontremos  
