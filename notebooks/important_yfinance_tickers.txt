@@ -1,188 +1,188 @@
 ^GSPC - Index - S&P 500
-^DJI - Index - Dow Jones Industrial Average
+^DJI - Index - Dow Jones
 ^IXIC - Index - Nasdaq Composite
 ^RUT - Index - Russell 2000
 ^VIX - Index - CBOE Volatility Index
-SPY - ETF - S&P 500
-VOO - ETF - S&P 500 (Vanguard)
-IVV - ETF - S&P 500 (iShares)
-QQQ - ETF - Nasdaq 100
-VTI - ETF - Total US Market
-DIA - ETF - Dow Jones
-IWM - ETF - Russell 2000
-XLK - ETF - Technology
-XLF - ETF - Financials
-XLE - ETF - Energy
-XLV - ETF - Healthcare
-XLY - ETF - Consumer Discretionary
-XLP - ETF - Consumer Staples
-XLI - ETF - Industrials
-XLB - ETF - Materials
-XLU - ETF - Utilities
-VNQ - ETF - Real Estate
-ARKK - ETF - Innovation
-TQQQ - ETF - Nasdaq 3x Leveraged
-SQQQ - ETF - Nasdaq 3x Inverse
+SPY - ETF - SPDR S&P 500 ETF
+VOO - ETF - Vanguard S&P 500 ETF
+IVV - ETF - iShares Core S&P 500 ETF
+QQQ - ETF - Invesco QQQ Trust Nasdaq 100 ETF
+VTI - ETF - Vanguard Total Stock Market ETF
+DIA - ETF - SPDR Dow Jones Industrial Average ETF
+IWM - ETF - iShares Russell 2000 ETF
+XLK - ETF - Technology Select Sector SPDR Fund
+XLF - ETF - Financial Select Sector SPDR Fund
+XLE - ETF - Energy Select Sector SPDR Fund
+XLV - ETF - Health Care Select Sector SPDR Fund
+XLY - ETF - Consumer Discretionary Select Sector SPDR Fund
+XLP - ETF - Consumer Staples Select Sector SPDR Fund
+XLI - ETF - Industrial Select Sector SPDR Fund
+XLB - ETF - Materials Select Sector SPDR Fund
+XLU - ETF - Utilities Select Sector SPDR Fund
+VNQ - ETF - Vanguard Real Estate ETF
+ARKK - ETF - ARK Innovation ETF
+TQQQ - ETF - ProShares UltraPro QQQ
+SQQQ - ETF - ProShares UltraPro Short QQQ
 BTC-USD - Crypto - Bitcoin
 ETH-USD - Crypto - Ethereum
 SOL-USD - Crypto - Solana
 BNB-USD - Crypto - Binance Coin
-XRP-USD - Crypto - Ripple
-GC=F - Commodity - Gold Futures
-SI=F - Commodity - Silver Futures
-CL=F - Commodity - Crude Oil Futures
-NG=F - Commodity - Natural Gas Futures
-HG=F - Commodity - Copper Futures
+XRP-USD - Crypto - XRP Ripple
+GC=F - Commodity - Gold
+SI=F - Commodity - Silver
+CL=F - Commodity - Crude Oil
+NG=F - Commodity - Natural Gas
+HG=F - Commodity - Copper
 EURUSD=X - Forex - EUR/USD
 GBPUSD=X - Forex - GBP/USD
 JPY=X - Forex - USD/JPY
 AUDUSD=X - Forex - AUD/USD
-AAPL - Stock - Apple (Technology)
-MSFT - Stock - Microsoft (Technology)
-GOOGL - Stock - Alphabet (Technology)
-AMZN - Stock - Amazon (Consumer/Cloud)
-META - Stock - Meta Platforms (Technology)
-NVDA - Stock - Nvidia (Semiconductors)
-TSLA - Stock - Tesla (Automotive/EV)
-ORCL - Stock - Oracle (Technology)
-IBM - Stock - IBM (Technology)
-ADBE - Stock - Adobe (Software)
-CRM - Stock - Salesforce (Software)
-INTC - Stock - Intel (Semiconductors)
-AMD - Stock - AMD (Semiconductors)
-AVGO - Stock - Broadcom (Semiconductors)
-QCOM - Stock - Qualcomm (Semiconductors)
-CSCO - Stock - Cisco (Networking)
-TXN - Stock - Texas Instruments (Semiconductors)
-MU - Stock - Micron (Semiconductors)
-PYPL - Stock - PayPal (Fintech)
-SQ - Stock - Block (Fintech)
-JPM - Stock - JPMorgan Chase (Banking)
-BAC - Stock - Bank of America (Banking)
-WFC - Stock - Wells Fargo (Banking)
-C - Stock - Citigroup (Banking)
-GS - Stock - Goldman Sachs (Investment Bank)
-MS - Stock - Morgan Stanley (Investment Bank)
-KO - Stock - Coca-Cola (Beverages)
-PEP - Stock - PepsiCo (Beverages)
-MCD - Stock - McDonald's (Restaurants)
-SBUX - Stock - Starbucks (Restaurants)
-WMT - Stock - Walmart (Retail)
-TGT - Stock - Target (Retail)
-COST - Stock - Costco (Retail)
-HD - Stock - Home Depot (Retail)
-LOW - Stock - Lowe's (Retail)
-NKE - Stock - Nike (Apparel)
-JNJ - Stock - Johnson & Johnson (Healthcare)
-PFE - Stock - Pfizer (Pharma)
-MRK - Stock - Merck (Pharma)
-ABBV - Stock - AbbVie (Pharma)
-TMO - Stock - Thermo Fisher (Healthcare)
-UNH - Stock - UnitedHealth (Healthcare)
-XOM - Stock - Exxon Mobil (Energy)
-CVX - Stock - Chevron (Energy)
-COP - Stock - ConocoPhillips (Energy)
-SLB - Stock - Schlumberger (Energy)
-BA - Stock - Boeing (Aerospace)
-CAT - Stock - Caterpillar (Industrials)
-GE - Stock - General Electric (Industrials)
-HON - Stock - Honeywell (Industrials)
-UPS - Stock - UPS (Logistics)
-FDX - Stock - FedEx (Logistics)
-ABT - Stock - Large Cap (S&P 500)
-ACN - Stock - Large Cap (S&P 500)
-ADP - Stock - Large Cap (S&P 500)
-AIG - Stock - Large Cap (S&P 500)
-ALL - Stock - Large Cap (S&P 500)
-AMAT - Stock - Large Cap (S&P 500)
-AMGN - Stock - Large Cap (S&P 500)
-APD - Stock - Large Cap (S&P 500)
-APH - Stock - Large Cap (S&P 500)
-AXP - Stock - Large Cap (S&P 500)
-BDX - Stock - Large Cap (S&P 500)
-BK - Stock - Large Cap (S&P 500)
-BKNG - Stock - Large Cap (S&P 500)
-BLK - Stock - Large Cap (S&P 500)
-BMY - Stock - Large Cap (S&P 500)
-BRK-B - Stock - Large Cap (S&P 500)
-BSX - Stock - Large Cap (S&P 500)
-CB - Stock - Large Cap (S&P 500)
-CCI - Stock - Large Cap (S&P 500)
-CL - Stock - Large Cap (S&P 500)
-CMCSA - Stock - Large Cap (S&P 500)
-CME - Stock - Large Cap (S&P 500)
-COF - Stock - Large Cap (S&P 500)
-CSX - Stock - Large Cap (S&P 500)
-CTAS - Stock - Large Cap (S&P 500)
-CVS - Stock - Large Cap (S&P 500)
-DD - Stock - Large Cap (S&P 500)
-DE - Stock - Large Cap (S&P 500)
-DHR - Stock - Large Cap (S&P 500)
-DOW - Stock - Large Cap (S&P 500)
-DUK - Stock - Large Cap (S&P 500)
-EL - Stock - Large Cap (S&P 500)
-EMR - Stock - Large Cap (S&P 500)
-EOG - Stock - Large Cap (S&P 500)
-EQIX - Stock - Large Cap (S&P 500)
-ETN - Stock - Large Cap (S&P 500)
-F - Stock - Large Cap (S&P 500)
-FIS - Stock - Large Cap (S&P 500)
-FISV - Stock - Large Cap (S&P 500)
-GD - Stock - Large Cap (S&P 500)
-GILD - Stock - Large Cap (S&P 500)
-GM - Stock - Large Cap (S&P 500)
-GPN - Stock - Large Cap (S&P 500)
-HAL - Stock - Large Cap (S&P 500)
-HCA - Stock - Large Cap (S&P 500)
-HES - Stock - Large Cap (S&P 500)
-HIG - Stock - Large Cap (S&P 500)
-HUM - Stock - Large Cap (S&P 500)
-ICE - Stock - Large Cap (S&P 500)
-ITW - Stock - Large Cap (S&P 500)
-KMB - Stock - Large Cap (S&P 500)
-KMI - Stock - Large Cap (S&P 500)
-LHX - Stock - Large Cap (S&P 500)
-LIN - Stock - Large Cap (S&P 500)
-LLY - Stock - Large Cap (S&P 500)
-LMT - Stock - Large Cap (S&P 500)
-MA - Stock - Large Cap (S&P 500)
-MCO - Stock - Large Cap (S&P 500)
-MDLZ - Stock - Large Cap (S&P 500)
-MDT - Stock - Large Cap (S&P 500)
-MET - Stock - Large Cap (S&P 500)
-MMM - Stock - Large Cap (S&P 500)
-MO - Stock - Large Cap (S&P 500)
-MSCI - Stock - Large Cap (S&P 500)
-NEE - Stock - Large Cap (S&P 500)
-NOW - Stock - Large Cap (S&P 500)
-NSC - Stock - Large Cap (S&P 500)
-OXY - Stock - Large Cap (S&P 500)
-PAYX - Stock - Large Cap (S&P 500)
-PCAR - Stock - Large Cap (S&P 500)
-PGR - Stock - Large Cap (S&P 500)
-PH - Stock - Large Cap (S&P 500)
-PLD - Stock - Large Cap (S&P 500)
-PM - Stock - Large Cap (S&P 500)
-PNC - Stock - Large Cap (S&P 500)
-PSA - Stock - Large Cap (S&P 500)
-PSX - Stock - Large Cap (S&P 500)
-REGN - Stock - Large Cap (S&P 500)
-RTX - Stock - Large Cap (S&P 500)
-SCHW - Stock - Large Cap (S&P 500)
-SO - Stock - Large Cap (S&P 500)
-SPGI - Stock - Large Cap (S&P 500)
-SYK - Stock - Large Cap (S&P 500)
-T - Stock - Large Cap (S&P 500)
-TFC - Stock - Large Cap (S&P 500)
-TJX - Stock - Large Cap (S&P 500)
-TMUS - Stock - Large Cap (S&P 500)
-TRV - Stock - Large Cap (S&P 500)
-UNP - Stock - Large Cap (S&P 500)
-USB - Stock - Large Cap (S&P 500)
-V - Stock - Large Cap (S&P 500)
-VLO - Stock - Large Cap (S&P 500)
-VRTX - Stock - Large Cap (S&P 500)
-VZ - Stock - Large Cap (S&P 500)
-WBA - Stock - Large Cap (S&P 500)
-WM - Stock - Large Cap (S&P 500)
-ZTS - Stock - Large Cap (S&P 500)
+AAPL - Stock - Apple
+MSFT - Stock - Microsoft
+GOOGL - Stock - Alphabet
+AMZN - Stock - Amazon
+META - Stock - Meta
+NVDA - Stock - Nvidia
+TSLA - Stock - Tesla
+ORCL - Stock - Oracle
+IBM - Stock - IBM International Business Machines
+ADBE - Stock - Adobe
+CRM - Stock - Salesforce
+INTC - Stock - Intel
+AMD - Stock - AMD
+AVGO - Stock - Broadcom
+QCOM - Stock - Qualcomm
+CSCO - Stock - Cisco
+TXN - Stock - Texas Instruments
+MU - Stock - Micron Technology
+PYPL - Stock - PayPal
+SQ - Stock - Block Square
+JPM - Stock - JPMorgan
+BAC - Stock - Bank of America
+WFC - Stock - Wells Fargo
+C - Stock - Citigroup
+GS - Stock - Goldman Sachs
+MS - Stock - Morgan Stanley
+KO - Stock - Coca Cola
+PEP - Stock - PepsiCo
+MCD - Stock - McDonald's
+SBUX - Stock - Starbucks
+WMT - Stock - Walmart
+TGT - Stock - Target
+COST - Stock - Costco
+HD - Stock - Home Depot
+LOW - Stock - Lowe's
+NKE - Stock - Nike
+JNJ - Stock - Johnson & Johnson
+PFE - Stock - Pfizer
+MRK - Stock - Merck
+ABBV - Stock - AbbVie
+TMO - Stock - Thermo Fisher Scientific
+UNH - Stock - UnitedHealth Group
+XOM - Stock - Exxon Mobil
+CVX - Stock - Chevron
+COP - Stock - ConocoPhillips
+SLB - Stock - Schlumberger
+BA - Stock - Boeing
+CAT - Stock - Caterpillar
+GE - Stock - GE Aerospace General Electric
+HON - Stock - Honeywell
+UPS - Stock - United Parcel Service UPS
+FDX - Stock - FedEx
+ABT - Stock - Abbott Laboratories
+ACN - Stock - Accenture
+ADP - Stock - Automatic Data Processing
+AIG - Stock - American International Group
+ALL - Stock - Allstate
+AMAT - Stock - Applied Materials
+AMGN - Stock - Amgen
+APD - Stock - Air Products and Chemicals
+APH - Stock - Amphenol
+AXP - Stock - American Express
+BDX - Stock - Becton Dickinson
+BK - Stock - Bank of New York Mellon
+BKNG - Stock - Booking Holdings
+BLK - Stock - BlackRock
+BMY - Stock - Bristol Myers Squibb
+BRK-B - Stock - Berkshire Hathaway Class B
+BSX - Stock - Boston Scientific
+CB - Stock - Chubb
+CCI - Stock - Crown Castle
+CL - Stock - Colgate Palmolive
+CMCSA - Stock - Comcast
+CME - Stock - CME Group
+COF - Stock - Capital One Financial
+CSX - Stock - CSX
+CTAS - Stock - Cintas
+CVS - Stock - CVS Health
+DD - Stock - DuPont
+DE - Stock - Deere
+DHR - Stock - Danaher
+DOW - Stock - Dow
+DUK - Stock - Duke Energy
+EL - Stock - Estee Lauder
+EMR - Stock - Emerson Electric
+EOG - Stock - EOG Resources
+EQIX - Stock - Equinix
+ETN - Stock - Eaton
+F - Stock - Ford
+FIS - Stock - Fidelity National Information Services
+FISV - Stock - Fiserv
+GD - Stock - General Dynamics
+GILD - Stock - Gilead Sciences
+GM - Stock - General Motors
+GPN - Stock - Global Payments
+HAL - Stock - Halliburton
+HCA - Stock - HCA Healthcare
+HES - Stock - Hess
+HIG - Stock - Hartford Financial Services
+HUM - Stock - Humana
+ICE - Stock - Intercontinental Exchange
+ITW - Stock - Illinois Tool Works
+KMB - Stock - Kimberly Clark
+KMI - Stock - Kinder Morgan
+LHX - Stock - L3Harris Technologies
+LIN - Stock - Linde
+LLY - Stock - Eli Lilly
+LMT - Stock - Lockheed Martin
+MA - Stock - Mastercard
+MCO - Stock - Moody's
+MDLZ - Stock - Mondelez
+MDT - Stock - Medtronic
+MET - Stock - MetLife
+MMM - Stock - 3M
+MO - Stock - Altria
+MSCI - Stock - MSCI
+NEE - Stock - NextEra Energy
+NOW - Stock - ServiceNow
+NSC - Stock - Norfolk Southern
+OXY - Stock - Occidental Petroleum
+PAYX - Stock - Paychex
+PCAR - Stock - PACCAR
+PGR - Stock - Progressive
+PH - Stock - Parker Hannifin
+PLD - Stock - Prologis
+PM - Stock - Philip Morris
+PNC - Stock - PNC Financial Services
+PSA - Stock - Public Storage
+PSX - Stock - Phillips 66
+REGN - Stock - Regeneron Pharmaceuticals
+RTX - Stock - RTX Raytheon
+SCHW - Stock - Charles Schwab
+SO - Stock - Southern Company
+SPGI - Stock - S&P Global
+SYK - Stock - Stryker
+T - Stock - AT&T
+TFC - Stock - Truist Financial
+TJX - Stock - TJX Companies
+TMUS - Stock - T-Mobile US
+TRV - Stock - Travelers
+UNP - Stock - Union Pacific
+USB - Stock - U.S. Bancorp
+V - Stock - Visa
+VLO - Stock - Valero Energy
+VRTX - Stock - Vertex Pharmaceuticals
+VZ - Stock - Verizon
+WBA - Stock - Walgreens Boots Alliance
+WM - Stock - Waste Management
+ZTS - Stock - Zoetis

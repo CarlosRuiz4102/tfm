@@ -1,0 +1,53 @@
+{
+  "original_query": "Comparame Nvidia, Apple y Google desde 2015",
+  "intent": "compare_assets",
+  "assets_raw": [
+    "nvidia",
+    "apple",
+    "google"
+  ],
+  "assets_resolved": [
+    {
+      "raw_text": "nvidia",
+      "matched_text": "nvidia",
+      "ticker": "NVDA",
+      "asset_type": "Stock",
+      "description": "Nvidia",
+      "source": "alias_or_catalog",
+      "confidence": 0.95
+    },
+    {
+      "raw_text": "apple",
+      "matched_text": "apple",
+      "ticker": "AAPL",
+      "asset_type": "Stock",
+      "description": "Apple",
+      "source": "alias_or_catalog",
+      "confidence": 0.95
+    },
+    {
+      "raw_text": "google",
+      "matched_text": "google",
+      "ticker": "GOOGL",
+      "asset_type": "Stock",
+      "description": "Alphabet",
+      "source": "alias_or_catalog",
+      "confidence": 0.95
+    }
+  ],
+  "interval": "1d",
+  "start": "2015-01-01",
+  "end": null,
+  "period": null,
+  "group_by": "ticker",
+  "auto_adjust": false,
+  "threads": true,
+  "progress": false,
+  "warnings": [],
+  "needs_clarification": false,
+  "resolved_tickers": [
+    "NVDA",
+    "AAPL",
+    "GOOGL"
+  ]
+}
