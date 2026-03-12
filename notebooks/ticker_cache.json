@@ -1,0 +1,26 @@
+{
+  "apple": {
+    "ticker": "AAPL",
+    "source": "alias"
+  },
+  "nvidia": {
+    "ticker": "NVIDIA",
+    "source": "direct_ticker"
+  },
+  "s&p 500": {
+    "ticker": "^GSPC",
+    "source": "alias"
+  },
+  "oro": {
+    "ticker": "ORO",
+    "source": "direct_ticker"
+  },
+  "amd": {
+    "ticker": "AMD",
+    "source": "direct_ticker"
+  },
+  "bitcoin": {
+    "ticker": "BITCOIN",
+    "source": "direct_ticker"
+  }
+}

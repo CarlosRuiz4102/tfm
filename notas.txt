@@ -2,27 +2,41 @@
 
 - Empezar a realizar cosas de la memoria (Preguntale a Adrian)
 
-Modelos de financias de HGFce:
-- Qwen-Open-Finance-R-8B
-- FinBERT
-
-LLMs generales:
-- llama 3 + SQLCoder
 
 ------------------------------------------------------------------------------
-Donde hacemos mejor con lo del requirements, en colab o en vs? COLAB y reordenar un poco estructura del tfm
+DUDAS:
+-Hay que hacer anteproyecto
+-LLM o parser + alias locales pequeños + resolución dinámica + caché
 
-Tenemos aun que definir bien el flujo --> Draw.io
+--------------------------------------------------------------------------------
 
-Necesitamos algo como un LLM financiero mas algo que nos pase de NL->SQL para generar los insight sobre lo que nos ha preguntado el usuario??
--> esperar que estos dos te digan algo
+PRIMERA ETAPA: El primer agente no debe producir directamente una respuesta final, sino un objeto de consulta financiera normalizado y validado.
 
-VIERNES--> haz un EDA con los datos de yfinance
+Etapa 1. Interpretación:
+Convierte lenguaje natural en una consulta financiera estructurada.
 
+Etapa 2. Resolución:
+Transforma nombres y alias en símbolos compatibles con Yahoo Finance.
 
+Etapa 3. Normalización temporal:
+Convierte expresiones humanas de tiempo en period o start/end.
 
-PRINCIPAL: Lo que realmente queremos con este tfm es que le realice el usuario preguntas y este sea capaz de obtener los datos (con yfinance), realizar con 
-sql su estructura, de ahi analizar los resultados y que le muestre los insights como este quiera.
+Etapa 4. Validación:
+Comprueba compatibilidad entre ticker, rango e intervalo.
+
+Etapa 5. Construcción de la petición:
+Genera los parámetros de yf.download().
+
+Etapa 6. Descarga:
+Obtiene el dataframe bruto.
+
+Etapa 7. Postproceso:
+Guarda CSV, metadata y posibles advertencias.
+
+-------------------------------------------------------------------------------
+
+PRINCIPAL: Lo que realmente queremos con este tfm es que le realice el usuario preguntas y este sea capaz de obtener los datos (con yfinance). Ya con 
+los datos, pasarselos junto el mensaje del usuario al analista. Este será capaz de mostrar los resultados y los insights que el usuario pidio.
 
 Cosas secundarias: 
 - Detectar sentimiento en noticias financieras positivas/neutras/negativas con FinBERT
@@ -36,3 +50,35 @@ Que es mejor montar una BBDD gigante o que segun lo que el usuario quiera monte 
 TAREAS:
 
 -mirar el requirements para instalarlo como lo hace pablo, desde colab
+
+--------------------------------------------------------------------------------
+consensus buscar papers
+poetry lo intentamos meter
+
+tfm-financial-llm/
+│
+├── README.md
+├── requirements.txt
+├── .gitignore
+│
+├── data/
+│   ├── raw/              # Datos descargados originales
+│   ├── processed/        # Datos limpios y con features
+│
+├── notebooks/
+│   ├── 01_data_download.ipynb
+│   ├── 02_feature_engineering.ipynb
+│   ├── 03_trend_model.ipynb
+│   ├── 04_sentiment_analysis.ipynb
+│
+├── src/
+│   ├── data_loader.py
+│   ├── features.py
+│   ├── models.py
+│   ├── evaluation.py
+│
+├── results/
+│   ├── figures/
+│   ├── tables/
+│
+└── .venv/   (no se sube a git)
