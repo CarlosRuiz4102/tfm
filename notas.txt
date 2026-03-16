@@ -1,57 +1,41 @@
-- Plantear un anteproyecto (13 Marzo) [Resumen del proyecto (~300 palabras)]
-
-- Empezar a realizar cosas de la memoria (Preguntale a Adrian)
-
-
-------------------------------------------------------------------------------
 DUDAS:
--Hay que hacer anteproyecto
 -LLM o parser + alias locales pequeños + resolución dinámica + caché
-
---------------------------------------------------------------------------------
-
-PRIMERA ETAPA: El primer agente no debe producir directamente una respuesta final, sino un objeto de consulta financiera normalizado y validado.
-
-Etapa 1. Interpretación:
-Convierte lenguaje natural en una consulta financiera estructurada.
-
-Etapa 2. Resolución:
-Transforma nombres y alias en símbolos compatibles con Yahoo Finance.
-
-Etapa 3. Normalización temporal:
-Convierte expresiones humanas de tiempo en period o start/end.
-
-Etapa 4. Validación:
-Comprueba compatibilidad entre ticker, rango e intervalo.
-
-Etapa 5. Construcción de la petición:
-Genera los parámetros de yf.download().
-
-Etapa 6. Descarga:
-Obtiene el dataframe bruto.
-
-Etapa 7. Postproceso:
-Guarda CSV, metadata y posibles advertencias.
-
--------------------------------------------------------------------------------
-
-PRINCIPAL: Lo que realmente queremos con este tfm es que le realice el usuario preguntas y este sea capaz de obtener los datos (con yfinance). Ya con 
-los datos, pasarselos junto el mensaje del usuario al analista. Este será capaz de mostrar los resultados y los insights que el usuario pidio.
-
-Cosas secundarias: 
-- Detectar sentimiento en noticias financieras positivas/neutras/negativas con FinBERT
-- Intentemos realizar una prediccion a futuro? muy dificil??
-
-
-Que es mejor montar una BBDD gigante o que segun lo que el usuario quiera monte la consulta SQL y de ahi generemos los datos
--> Montra una BBDD limitada de bolsa segun el LLM que encontremos  
 
 --------------------------------------------------------------------------------
 TAREAS:
 
 -mirar el requirements para instalarlo como lo hace pablo, desde colab
+-empezar a realizar la memoria
+
+-------------------------------------------------------------------------------
+
+PRINCIPAL: teniendo de la query (intencion, fecha y ticker/s) junto los datos en csv de la libreria y finance,
+queremos que nuestro sistema multiagentico analista nos analice la peticion del usuario. 
+
+Flujo: obtenemos la query de la siguiente manera:
+	query	intent	tickers	start	end	period	interval
+0	Cuánto ha crecido Nvidia en 5 años	price_growth	[NVDA]	None	None	5y	1d		
+1	Descárgame el histórico del S&P 500 desde 2020	historical_download	[^GSPC]	2020-01-01	None	None	1d		
+2	Quiero el oro en 1 semana a 1h	historical_download	[GC=F]	None	None	1wk	1h		
+3	Compara Nvidia y AMD en 2 años	compare_assets	[NVDA, AMD]	None	None	2y	1d		
+4	Datos de Bitcoin desde 2024-01-01 hasta 2024-12-31	historical_download	[BTC-USD]	2024-01-01	2024-12-31	None	1d		
+5	QQQ y SPY desde 2024-01-01 hasta 2024-12-31	historical_download	[QQQ, SPY]	2024-01-01	2024-12-31	None	1d		
+6	AAPL en 3 meses	historical_download	[AAPL]	None	None	3mo	1d		
+7	EUR/USD en 10 días a 1h	historical_download	[EURUSD=X]	None	None	10d	1h	
+ por otro lado obtendremos los csv de cada query con los datos como indique en ella. Entonces lo que 
+ viene ahora seria un agente que trabaje como orguestado que diferencie la intencion de nuestra query y
+ se lo mande al agente que realice esa tarea en especifico de nuestro multiagente analista. Cuando el 
+ agente en especifico tenga la tarea hecha nos devolveran un codigo en python para mostrar el resultado 
+ que se definira mas adelane en cada tarea/intencion. Despues tendremos que ejecutar ese codigo python 
+ que nos dara un analisis realizado junto sus interpretaciones.
+
+Cosas secundarias: 
+- Realizar la primera etapa
+- Detectar sentimiento en noticias financieras positivas/neutras/negativas con FinBERT
+- Intentemos realizar una prediccion a futuro? muy dificil??
 
 --------------------------------------------------------------------------------
+
 consensus buscar papers
 poetry lo intentamos meter
 
@@ -86,3 +70,30 @@ tfm-financial-llm/
 ------------------------------------------------------
 
 stelterlab/Mistral-Small-24B-Instruct-2501-AWQ
+
+-------------------------------------------------------------------------------
+
+PRIMERA ETAPA: El primer agente no debe producir directamente una respuesta final, sino un objeto de consulta financiera normalizado y validado.
+
+Etapa 1. Interpretación:
+Convierte lenguaje natural en una consulta financiera estructurada.
+
+Etapa 2. Resolución:
+Transforma nombres y alias en símbolos compatibles con Yahoo Finance.
+
+Etapa 3. Normalización temporal:
+Convierte expresiones humanas de tiempo en period o start/end.
+
+Etapa 4. Validación:
+Comprueba compatibilidad entre ticker, rango e intervalo.
+
+Etapa 5. Construcción de la petición:
+Genera los parámetros de yf.download().
+
+Etapa 6. Descarga:
+Obtiene el dataframe bruto.
+
+Etapa 7. Postproceso:
+Guarda CSV, metadata y posibles advertencias.
+
+-------------------------------------------------------------------------------
