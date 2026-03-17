@@ -1,0 +1,14 @@
+{
+  "query": "Compara Nvidia y AMD en 2 a?os",
+  "intent": "compare_assets",
+  "tickers": [
+    "NVDA",
+    "AMD"
+  ],
+  "start": null,
+  "end": null,
+  "period": "2y",
+  "interval": "1d",
+  "needs_clarification": false,
+  "warnings": ""
+}

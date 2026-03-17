@@ -1,0 +1,13 @@
+{
+  "query": "AAPL en 3 meses",
+  "intent": "historical_download",
+  "tickers": [
+    "AAPL"
+  ],
+  "start": null,
+  "end": null,
+  "period": "3mo",
+  "interval": "1d",
+  "needs_clarification": false,
+  "warnings": ""
+}

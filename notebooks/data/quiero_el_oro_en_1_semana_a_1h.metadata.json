@@ -1,0 +1,13 @@
+{
+  "query": "Quiero el oro en 1 semana a 1h",
+  "intent": "historical_download",
+  "tickers": [
+    "GC=F"
+  ],
+  "start": null,
+  "end": null,
+  "period": "1wk",
+  "interval": "1h",
+  "needs_clarification": false,
+  "warnings": ""
+}

@@ -1,6 +1,11 @@
 DUDAS:
 -LLM o parser + alias locales pequeños + resolución dinámica + caché
 
+Cosas secundarias: 
+- Realizar la primera etapa
+- Detectar sentimiento en noticias financieras positivas/neutras/negativas con FinBERT
+- Intentemos realizar una prediccion a futuro? muy dificil??
+
 --------------------------------------------------------------------------------
 TAREAS:
 
@@ -9,30 +14,58 @@ TAREAS:
 
 -------------------------------------------------------------------------------
 
-PRINCIPAL: teniendo de la query (intencion, fecha y ticker/s) junto los datos en csv de la libreria y finance,
-queremos que nuestro sistema multiagentico analista nos analice la peticion del usuario. 
+PRINCIPAL: Diseño e implementación de un sistema multiagéntico analista capaz de interpretar peticiones de usuarios 
+sobre datos financieros y generar automáticamente un análisis útil a partir de ellas.
 
-Flujo: obtenemos la query de la siguiente manera:
-	query	intent	tickers	start	end	period	interval
-0	Cuánto ha crecido Nvidia en 5 años	price_growth	[NVDA]	None	None	5y	1d		
-1	Descárgame el histórico del S&P 500 desde 2020	historical_download	[^GSPC]	2020-01-01	None	None	1d		
-2	Quiero el oro en 1 semana a 1h	historical_download	[GC=F]	None	None	1wk	1h		
-3	Compara Nvidia y AMD en 2 años	compare_assets	[NVDA, AMD]	None	None	2y	1d		
-4	Datos de Bitcoin desde 2024-01-01 hasta 2024-12-31	historical_download	[BTC-USD]	2024-01-01	2024-12-31	None	1d		
-5	QQQ y SPY desde 2024-01-01 hasta 2024-12-31	historical_download	[QQQ, SPY]	2024-01-01	2024-12-31	None	1d		
-6	AAPL en 3 meses	historical_download	[AAPL]	None	None	3mo	1d		
-7	EUR/USD en 10 días a 1h	historical_download	[EURUSD=X]	None	None	10d	1h	
- por otro lado obtendremos los csv de cada query con los datos como indique en ella. Entonces lo que 
- viene ahora seria un agente que trabaje como orguestado que diferencie la intencion de nuestra query y
- se lo mande al agente que realice esa tarea en especifico de nuestro multiagente analista. Cuando el 
- agente en especifico tenga la tarea hecha nos devolveran un codigo en python para mostrar el resultado 
- que se definira mas adelane en cada tarea/intencion. Despues tendremos que ejecutar ese codigo python 
- que nos dara un analisis realizado junto sus interpretaciones.
+La idea principal parte de una query en lenguaje natural introducida por el usuario, por ejemplo: “Cuánto ha crecido
+Nvidia en 5 años” o “Compara Nvidia y AMD en 2 años”. Esa consulta se transforma previamente en una estructura más 
+formal con campos definidos, como la intención de la petición, los tickers involucrados, las fechas de inicio y fin o, 
+en su defecto, el periodo y el intervalo temporal de los datos. De esta manera, cada consulta queda representada de forma 
+normalizada y preparada para ser procesada por el sistema.
 
-Cosas secundarias: 
-- Realizar la primera etapa
-- Detectar sentimiento en noticias financieras positivas/neutras/negativas con FinBERT
-- Intentemos realizar una prediccion a futuro? muy dificil??
+A partir de esa query estructurada, el sistema obtiene también los datos históricos en formato CSV desde la librería 
+financiera correspondiente, de forma que dispone tanto de la intención del usuario como de los datos necesarios para responder.
+Con estos dos elementos, la arquitectura propuesta introduce un agente orquestador, cuya función es identificar qué tipo de 
+tarea debe realizarse y derivarla al agente especializado adecuado dentro del sistema multiagente.
+
+El agente orquestador constituye la pieza central de coordinación del sistema. Su responsabilidad no consiste en ejecutar 
+directamente el análisis financiero, sino en interpretar la query estructurada, validar sus parámetros y decidir qué agente 
+especializado debe intervenir. Para ello, comprueba que la petición sea coherente, que los tickers estén correctamente 
+definidos, que el número de activos coincida con el tipo de análisis solicitado y que el rango temporal o el intervalo sean 
+compatibles con los datos requeridos. Una vez validada la entrada, el orquestador enruta la consulta hacia el agente que mejor 
+se ajusta a la intención detectada.
+
+Con el fin de mantener un alcance claro y coherente con los objetivos del TFM, se definen seis intenciones analíticas 
+principales, todas ellas orientadas al análisis histórico y descriptivo de activos financieros.
+| Intención            		| Objetivo                                                   | Entrada mínima                   | Salida esperada                                           |
+| --------------------------| ---------------------------------------------------------- | -------------------------------- | --------------------------------------------------------- |
+| `asset_overview`     		| Ofrecer una visión general del comportamiento de un activo | 1 ticker + rango temporal        | resumen descriptivo, métricas básicas y gráfico           |
+| `price_growth`       		| Calcular crecimiento o decrecimiento entre dos fechas      | 1 ticker + rango temporal        | variación absoluta, porcentual e interpretación           |
+| `compare_assets`     		| Comparar el comportamiento de varios activos               | 2 o más tickers + rango temporal | comparación normalizada, tabla de métricas y conclusiones |
+| `return_analysis`    		| Estudiar la serie de retornos del activo                   | 1 o más tickers + rango temporal | retornos, distribución, medias y extremos                 |
+| `historical_risk_analysis`| Evaluar el riesgo histórico de uno o varios activos        | 1 o más tickers + rango temporal | volatilidad, drawdown, ratios simples y análisis          |
+| `technical_analysis` 		| Analizar indicadores técnicos sobre precios históricos     | 1 ticker mínimo + rango temporal | indicadores, señales y gráficos técnicos                  |
+Todas estas intenciones se limitan al análisis histórico de datos financieros. En consecuencia, el sistema no incorpora módulos 
+de predicción futura, forecasting ni estimación prospectiva, sino que centra su funcionamiento en la interpretación descriptiva 
+y comparativa de series temporales históricas.
+
+Una característica importante de la propuesta es que la salida de estos agentes no es solo un dato numérico o un texto breve, 
+sino un código en Python generado específicamente para resolver la tarea solicitada y mostrar el resultado. Ese código se 
+ejecuta posteriormente para producir la salida final, que incluye tanto el análisis cuantitativo como sus interpretaciones. 
+Por tanto, el sistema no solo comprende la consulta y selecciona el agente adecuado, sino que además automatiza la construcción
+de la respuesta analítica final.
+
+En otras palabras, el TFM plantea una tubería completa en la que:
+1.el usuario formula una consulta financiera en lenguaje natural,
+2.esa consulta se transforma en una estructura interpretable por el sistema,
+3.se recuperan los datos históricos asociados,
+4.un orquestador decide qué agente especializado debe intervenir,
+5.el agente genera el código necesario para analizar los datos,
+6.dicho código se ejecuta,
+7.y finalmente se obtiene un resultado analítico comprensible para el usuario.
+
+Este flujo coincide con el esquema que aparece en tu diagrama: 
+Query + Datos CSV → Orquestador → Multiagente Analista → Respuesta → Ejecución → Análisis
 
 --------------------------------------------------------------------------------
 
