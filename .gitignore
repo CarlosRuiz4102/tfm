@@ -40,3 +40,9 @@ Thumbs.db
 # LOGS
 # =========================
 *.log
+
+# =========================
+# GENERATED RESULTS
+# =========================
+results/code/
+results/logs/

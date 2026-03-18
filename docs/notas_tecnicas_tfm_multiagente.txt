@@ -1,0 +1,659 @@
+NOTAS TECNICAS DEL TFM - SISTEMA MULTIAGENTE ANALISTA
+=====================================================
+
+0. OBJETIVO REAL DEL DESARROLLO
+-------------------------------
+No hay que construir desde cero un sistema que entienda lenguaje natural completo,
+porque esa parte ya esta resuelta.
+
+La entrada del sistema ya sera:
+- query estructurada
+- intencion
+- tickers
+- fechas o periodo
+- intervalo
+- rutas a los CSV
+
+Por tanto, el trabajo nuevo consiste en construir un pipeline que:
+1. valide esa entrada
+2. decida que analisis corresponde
+3. genere un plan analitico
+4. genere codigo Python
+5. ejecute ese codigo
+6. devuelva un resultado interpretable
+
+En una frase:
+El TFM no va de parsear la query, sino de orquestar el analisis.
+
+
+1. IDEA GENERAL DE LA ARQUITECTURA
+----------------------------------
+Separar el sistema en 3 capas:
+
+CAPA 1. ORQUESTACION
+- Libreria principal: LangGraph
+- Funcion: organizar el flujo del sistema
+
+CAPA 2. GENERACION CON LLM
+- Libreria/infraestructura: vLLM
+- Funcion: servir el modelo que usaran algunos nodos
+
+CAPA 3. EJECUCION DE CODIGO
+- Libreria: subprocess
+- Funcion: ejecutar el script Python generado y capturar resultados
+
+Resumen:
+- LangGraph organiza
+- vLLM responde como modelo
+- subprocess ejecuta el analisis real
+
+
+2. QUE DEBE HACER LANGGRAPH EN ESTE PROYECTO
+--------------------------------------------
+LangGraph debe representar el workflow del sistema.
+No debe rehacer el parser de query ni la descarga de datos.
+Debe arrancar desde la entrada estructurada ya disponible.
+
+Su papel principal sera:
+- mantener un estado compartido
+- ejecutar nodos
+- decidir transiciones entre nodos
+- enrutar por intencion
+- manejar errores
+
+Flujo conceptual:
+
+query estructurada + csv_paths
+-> ingest
+-> router/orchestrator
+-> specialist_analysis
+-> code_generation
+-> code_execution
+-> interpretation
+-> output final
+
+
+3. QUE DEBE HACER vLLM EN ESTE PROYECTO
+---------------------------------------
+vLLM NO organiza el pipeline.
+vLLM NO decide el flujo.
+vLLM solo sirve el modelo.
+
+Su papel es:
+- exponer el LLM con API compatible con OpenAI
+- permitir que LangGraph o LangChain llamen al modelo
+- responder a prompts de planning, codegen e interpretacion
+
+Tareas donde SI usar el LLM:
+- confirmar intencion si alguna vez llega ambigua
+- generar plan analitico
+- generar codigo Python
+- interpretar el resultado final
+
+Tareas donde NO usar el LLM:
+- cargar CSV
+- validar rutas de ficheros
+- comprobar numero de tickers
+- validar periodo o intervalo si ya esta normalizado
+- ejecutar el script
+
+
+4. QUE DEBE HACER SUBPROCESS
+----------------------------
+Subprocess se usara para ejecutar el codigo Python generado.
+
+Funcion esperada:
+- guardar el codigo en un archivo .py
+- lanzar el script como proceso externo
+- capturar stdout
+- capturar stderr
+- guardar returncode
+- detectar si el script fallo o no
+
+Reglas practicas:
+- no usar shell=True
+- usar lista de argumentos
+- poner timeout
+- guardar logs
+
+Patron base:
+subprocess.run(["python", script_path], capture_output=True, text=True, timeout=60, check=False)
+
+
+5. INTENCIONES ANALITICAS DEFINIDAS
+-----------------------------------
+El sistema debe trabajar con estas 6 intenciones:
+
++-----------------------------+-----------------------------------------------+-----------------------------------------+
+| INTENCION                   | OBJETIVO                                      | SALIDA ESPERADA                         |
++-----------------------------+-----------------------------------------------+-----------------------------------------+
+| asset_overview              | vision general de un activo                   | resumen + metricas basicas + grafico    |
+| price_growth                | crecimiento o caida en un periodo             | variacion absoluta y porcentual         |
+| compare_assets              | comparacion entre varios activos              | comparacion normalizada + conclusiones  |
+| return_analysis             | estudio de la serie de retornos               | retornos, medias, extremos              |
+| historical_risk_analysis    | riesgo historico, no predictivo               | volatilidad, drawdown, ratios simples   |
+| technical_analysis          | indicadores tecnicos                          | indicadores, senales y graficos         |
++-----------------------------+-----------------------------------------------+-----------------------------------------+
+
+Restriccion importante:
+- no hacer prediccion futura
+- no hacer forecasting
+- no hacer sentiment con noticias
+- no hacer fundamental analysis complejo
+
+
+6. DECISION CLAVE DE DISENO
+---------------------------
+No empezar con 6 agentes totalmente separados desde el primer dia.
+
+Empezar con un workflow controlado y pequeno:
+- router/orchestrator
+- specialist_analysis
+- code_generator
+- code_executor
+- result_interpreter
+
+Luego, cuando funcione el flujo general, dividir specialist_analysis en agentes por intencion.
+
+Ventaja:
+- menos complejidad inicial
+- mas facil depurar
+- mas facil saber donde falla
+- mas rapido llegar a un MVP funcional
+
+
+7. MVP RECOMENDADO
+------------------
+MVP = Minimum Viable Product
+En este proyecto significa:
+la version minima del pipeline que ya funciona de principio a fin.
+
+MVP 1 recomendado:
+- solo 2 intenciones: price_growth y compare_assets
+- 1 solo nodo specialist_analysis
+- 1 code_generation_node con prompt cerrado
+- 1 code_execution_node
+- 1 interpretation_node simple
+
+Objetivo del MVP 1:
+probar que el flujo entero funciona.
+
+MVP 2:
+- anadir asset_overview y return_analysis
+- separar nodos especialistas por familia
+
+MVP 3:
+- anadir historical_risk_analysis y technical_analysis
+- mejorar prompts
+- mejorar evaluacion
+
+
+8. ENTRADA QUE DEBE RECIBIR EL GRAFO
+------------------------------------
+Formato recomendado de entrada al workflow:
+
+{
+  "query": "Compara Nvidia y AMD en 2 anos",
+  "intent": "compare_assets",
+  "tickers": ["NVDA", "AMD"],
+  "start": null,
+  "end": null,
+  "period": "2y",
+  "interval": "1d",
+  "csv_paths": [
+    "data/raw/NVDA_2y_1d.csv",
+    "data/raw/AMD_2y_1d.csv"
+  ]
+}
+
+Idea clave:
+LangGraph debe arrancar aqui.
+No debe volver a inferir la query desde cero.
+
+
+9. ESTADO COMPARTIDO MINIMO DEL GRAFO
+-------------------------------------
+El grafo debe compartir un estado comun entre nodos.
+
+Campos minimos recomendados:
+
+- user_query: str
+- normalized_query: dict
+- csv_paths: list[str]
+- detected_intent: str
+- selected_agent: str
+- analysis_plan: dict
+- generated_code: str
+- execution_stdout: str
+- execution_stderr: str
+- execution_returncode: int
+- final_answer: str
+- warnings: list[str]
+
+Idea practica:
+Cada nodo lee parte del estado y devuelve nuevas claves o actualizaciones.
+
+
+10. NODOS MINIMOS DEL WORKFLOW
+------------------------------
+
+10.1 ingest_node
+----------------
+Funcion:
+- recibe la query estructurada y las rutas a CSV
+- comprueba que existe la entrada minima
+- verifica que las rutas existan
+
+Usa:
+- Python normal
+- sin LLM
+
+Salida:
+- estado validado inicialmente
+- errores simples si falta algo
+
+
+10.2 orchestrator_router_node
+-----------------------------
+Funcion:
+- valida coherencia de la peticion
+- revisa intencion
+- revisa numero de tickers
+- revisa rango temporal / periodo / intervalo
+- selecciona el agente o ruta siguiente
+
+Usa:
+- LangGraph
+- Python normal
+- opcionalmente LLM si algun dia hay ambiguedad
+
+Salida:
+- selected_agent
+- warnings
+- o salto a invalid_request_node
+
+
+10.3 specialist_analysis_node
+-----------------------------
+Funcion:
+- traduce la intencion a un plan de analisis concreto
+- decide metricas, graficos, columnas necesarias y foco del analisis
+
+Usa:
+- LLM o mezcla de Python + LLM
+
+Importante:
+- no debe devolver texto libre ambiguo
+- debe devolver una estructura clara
+
+Ejemplo de salida:
+{
+  "intent": "compare_assets",
+  "metrics": ["cumulative_return", "normalized_performance"],
+  "plots": ["normalized_price_chart"],
+  "required_columns": ["Date", "Close"]
+}
+
+
+10.4 code_generation_node
+-------------------------
+Funcion:
+- convertir el plan analitico en codigo Python ejecutable
+
+Usa:
+- LLM
+
+Reglas:
+- prompt muy restringido
+- imports controlados
+- salida ideal: solo codigo o JSON con campo code
+- debe trabajar sobre CSV reales del sistema
+
+
+10.5 code_execution_node
+------------------------
+Funcion:
+- guardar el script
+- ejecutarlo con subprocess
+- capturar stdout, stderr y returncode
+- guardar resultados en results/
+
+Usa:
+- Python normal
+- subprocess
+
+
+10.6 interpretation_node
+------------------------
+Funcion:
+- leer las metricas o salidas del script
+- redactar la respuesta final
+- resumir limitaciones o warnings
+
+Usa:
+- LLM o plantilla programatica
+
+
+10.7 invalid_request_node
+-------------------------
+Funcion:
+- manejar entradas mal construidas o inconsistentes
+
+
+10.8 execution_error_node
+-------------------------
+Funcion:
+- manejar errores de ejecucion del script generado
+
+
+11. WORKFLOW VISUAL RECOMENDADO
+-------------------------------
+
+[Entrada: query estructurada + csv_paths]
+                |
+                v
+        [1. Ingest / Validacion]
+                |
+                v
+     [2. Orquestador / Router]
+                |
+                v
+      [3. Specialist Analysis]
+                |
+                v
+        [4. Code Generator]
+                |
+                v
+        [5. Code Executor]
+                |
+        +-------+-------+
+        |               |
+        v               v
+ [6A. Error Handler] [6B. Result Interpreter]
+        |               |
+        +-------+-------+
+                |
+                v
+         [7. Final Response]
+
+
+12. QUE TIENE QUE HACER CADA FASE DEL FLUJO
+-------------------------------------------
+
++-------------------------+--------------------------------------------+------------------------------+
+| FASE                    | QUE HACE                                   | TECNOLOGIA                   |
++-------------------------+--------------------------------------------+------------------------------+
+| Ingest                  | valida entrada minima                      | Python                       |
+| Router                  | decide ruta y agente                       | LangGraph + Python           |
+| Specialist Analysis     | crea plan analitico                        | LLM (via vLLM)               |
+| Code Generator          | genera script Python                       | LLM (via vLLM)               |
+| Code Executor           | ejecuta script                             | subprocess                   |
+| Result Interpreter      | redacta respuesta final                    | LLM o plantilla programatica |
+| Error Handler           | resume errores                             | Python o LLM                 |
++-------------------------+--------------------------------------------+------------------------------+
+
+
+13. ESTRUCTURA RECOMENDADA DEL PROYECTO
+---------------------------------------
+
+ tfm-financial-multiagent/
+ |
+ |- README.md
+ |- requirements.txt
+ |- .env.example
+ |- .gitignore
+ |
+ |- data/
+ |  |- raw/
+ |  |- processed/
+ |  |- generated/
+ |
+ |- notebooks/
+ |  |- 01_yfinance_eda_avanzado.ipynb
+ |  |- 02_catalogo_queries_y_csv.ipynb
+ |  |- 03_langgraph_mvp.ipynb
+ |
+ |- src/
+ |  |- config.py
+ |  |- schemas.py
+ |  |- prompts.py
+ |  |- graph/
+ |  |  |- state.py
+ |  |  |- nodes.py
+ |  |  |- routing.py
+ |  |  |- build_graph.py
+ |  |- agents/
+ |  |  |- overview_agent.py
+ |  |  |- growth_agent.py
+ |  |  |- compare_agent.py
+ |  |  |- returns_agent.py
+ |  |  |- risk_agent.py
+ |  |  |- technical_agent.py
+ |  |- execution/
+ |  |  |- code_runner.py
+ |  |  |- sandbox_utils.py
+ |  |- io/
+ |  |  |- csv_loader.py
+ |  |  |- result_writer.py
+ |  |- evaluation/
+ |     |- benchmark_intents.py
+ |     |- benchmark_code_exec.py
+ |     |- benchmark_outputs.py
+ |
+ |- results/
+ |  |- figures/
+ |  |- tables/
+ |  |- code/
+ |  |- logs/
+ |
+ |- tests/
+    |- test_routing.py
+    |- test_execution.py
+    |- test_prompts.py
+
+
+14. FICHEROS QUE DEBERIAN EXISTIR PRONTO
+----------------------------------------
+Prioridad alta:
+- src/schemas.py
+- src/prompts.py
+- src/graph/state.py
+- src/graph/nodes.py
+- src/graph/routing.py
+- src/graph/build_graph.py
+- src/execution/code_runner.py
+- notebooks/03_langgraph_mvp.ipynb
+
+
+15. QUE DEBE IR EN CADA FICHERO
+-------------------------------
+
+schemas.py
+- modelos Pydantic de entrada
+- modelos Pydantic de salidas estructuradas
+- modelo del analysis plan
+- modelo del router output
+
+state.py
+- definicion del estado compartido del grafo
+
+nodes.py
+- implementacion de ingest_node
+- orchestrator_router_node
+- specialist_analysis_node
+- code_generation_node
+- code_execution_node
+- interpretation_node
+- invalid_request_node
+- execution_error_node
+
+routing.py
+- reglas de routing condicional entre nodos
+
+build_graph.py
+- construccion del StateGraph
+- union de nodos y edges
+- compilacion del grafo
+
+prompts.py
+- prompt del specialist_analysis_node
+- prompt del code_generation_node
+- prompt del interpretation_node
+
+code_runner.py
+- guardar script
+- ejecutar con subprocess
+- devolver stdout, stderr, returncode
+- registrar errores
+
+
+16. SALIDAS ESTRUCTURADAS QUE HAY QUE DEFINIR
+--------------------------------------------
+Definir como minimo estos objetos:
+
+A. RouterOutput
+- selected_agent: str
+- is_valid: bool
+- warnings: list[str]
+- error_message: str | None
+
+B. AnalysisPlan
+- intent: str
+- metrics: list[str]
+- plots: list[str]
+- required_columns: list[str]
+- textual_focus: str
+
+C. CodeGenOutput
+- code: str
+- expected_outputs: list[str]
+
+Estas salidas deben ser lo mas cerradas posible.
+Evitar texto libre cuando el siguiente nodo necesite informacion exacta.
+
+
+17. ORDEN DE IMPLEMENTACION RECOMENDADO
+--------------------------------------
+
+FASE 1. ESQUELETO
+- crear estructura de carpetas
+- crear schemas.py
+- crear estado del grafo
+- crear build_graph.py con nodos vacios
+
+FASE 2. ROUTING BASICO
+- implementar ingest_node
+- implementar router determinista usando intent ya dado
+- probar con 2 ejemplos del catalogo
+
+FASE 3. ANALISIS Y CODEGEN
+- implementar specialist_analysis_node
+- implementar code_generation_node
+- probar solo 2 intenciones: price_growth y compare_assets
+
+FASE 4. EJECUCION
+- implementar code_runner.py
+- guardar script generado
+- guardar stdout/stderr/logs
+
+FASE 5. INTERPRETACION
+- implementar interpretation_node
+- producir respuesta final legible
+
+FASE 6. EVALUACION
+- lanzar 10-20 queries del catalogo
+- medir fallos
+- clasificar errores
+
+
+18. EVALUACION MINIMA QUE HAY QUE MEDIR
+---------------------------------------
+
++--------------------------------------+----------------------------------------+
+| METRICA                              | QUE MIDE                               |
++--------------------------------------+----------------------------------------+
+| routing accuracy                     | si el flujo envia al nodo correcto     |
+| code execution success rate          | si el script generado funciona         |
+| useful response rate                 | si la respuesta sirve sin retoque      |
+| average latency                      | tiempo por consulta                    |
+| error distribution                   | tipos de fallo dominantes              |
++--------------------------------------+----------------------------------------+
+
+
+19. RIESGOS TECNICOS A VIGILAR
+------------------------------
+- vLLM puede ser lo mas dificil de instalar
+- el codigo generado puede romper por columnas mal nombradas
+- puede haber inconsistencias entre CSV esperado y CSV real
+- un prompt demasiado libre puede generar codigo fragil
+- la interpretacion final puede ser buena aunque la metrica este mal, por eso hay que validar antes
+
+Medidas practicas:
+- empezar con routing determinista
+- usar prompts muy cerrados
+- usar pocas intenciones al principio
+- registrar todo en logs
+- guardar scripts generados
+
+
+20. RECOMENDACION TACTICA IMPORTANTE
+------------------------------------
+No bloquear el desarrollo esperando a tener vLLM perfecto.
+
+Orden recomendado:
+1. hacer funcionar LangGraph con un backend de modelo accesible
+2. estabilizar workflow, prompts y ejecucion
+3. sustituir despues el backend por vLLM si hace falta
+
+La prioridad al principio no es el serving perfecto del modelo,
+sino demostrar que el pipeline multiagente funciona.
+
+
+21. PRIMER ENTREGABLE TECNICO UTIL
+----------------------------------
+Un notebook o script que reciba:
+- una query estructurada
+- uno o varios csv_paths
+
+y devuelva:
+- agente seleccionado
+- plan analitico
+- codigo generado
+- stdout/stderr/returncode
+- interpretacion final
+
+Si eso funciona con 2 intenciones, ya hay una base muy valida del sistema.
+
+
+22. PREGUNTAS ABIERTAS PARA IR CERRANDO
+---------------------------------------
+- necesitamos un agente distinto por intencion desde el inicio?
+- el script leera siempre CSV desde disco o a veces DataFrames ya cargados?
+- la interpretacion final la hara el LLM o una plantilla programatica?
+- guardaremos cada ejecucion con metadata para la memoria?
+- queremos reintentos automaticos si falla el script?
+
+
+23. PROXIMO PASO RECOMENDADO
+----------------------------
+Empezar por esto:
+
+PASO 1
+- definir InputSchema, RouterOutput, AnalysisPlan y CodeGenOutput
+
+PASO 2
+- crear build_graph.py con este flujo minimo:
+  ingest -> router -> specialist_analysis -> code_generation -> code_execution -> interpretation
+
+PASO 3
+- probar 2 casos reales:
+  - "Cuanto ha crecido Nvidia en 5 anos"
+  - "Compara Nvidia y AMD en 2 anos"
+
+PASO 4
+- guardar logs y scripts generados
+
+PASO 5
+- evaluar donde rompe y ajustar
+
+FIN DE NOTAS

@@ -1,15 +1,13 @@
-# Dependencias detectadas en los notebooks activos del proyecto
-# 01_yfinance_eda_avanzado.ipynb -> matplotlib, numpy, pandas, yfinance
-# 02_catalogo_queries_y_csv.ipynb -> pandas, yfinance
-# agente1_pipeline_financequery_fase1.ipynb -> pandas, yfinance
-
-# Core dependencies for the TFM finance notebooks and pipeline
+# MVP minimo del TFM
 numpy>=1.26,<3
 pandas>=2.2,<3
 matplotlib>=3.8,<4
 yfinance>=0.2.54
 
-# Optional local notebook tooling
-# Uncomment if you want to run Jupyter locally outside Colab
-# ipykernel>=6.29
-# notebook>=7
+# Dependencias previstas para la siguiente iteracion
+langgraph>=0.2
+langchain>=0.3
+langchain-openai>=0.2
+openai>=1.0
+pydantic>=2.8
+python-dotenv>=1.0
