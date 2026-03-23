@@ -1,0 +1,72 @@
+El primer MVP desarrollado en este trabajo constituye una prueba funcional mínima del sistema multiagente analista 
+orientado a consultas financieras sobre series temporales históricas. Su objetivo no es resolver todavía todo el problema 
+final en su máxima complejidad, sino demostrar que la arquitectura principal del sistema puede ejecutarse de extremo a
+ extremo de forma coherente, controlada y reproducible. En esta primera versión, el sistema parte de una entrada ya 
+ estructurada, compuesta por la consulta original del usuario, la intención analítica detectada, los tickers implicados, 
+ el rango temporal o periodo, el intervalo de los datos y las rutas a los archivos CSV que contienen la información 
+ financiera. A partir de esa entrada, el sistema valida la petición, decide qué tipo de análisis corresponde, construye un 
+ plan analítico, genera código Python para realizar el cálculo, ejecuta dicho código y finalmente produce una respuesta 
+ final interpretable.
+
+La decisión de construir este primer MVP a partir de una entrada estructurada responde a un criterio metodológico y de 
+ingeniería. El propósito central del TFM no es rehacer desde cero la interpretación del lenguaje natural, sino diseñar e 
+implementar la parte verdaderamente nueva del sistema: la orquestación del análisis, la especialización por intención, la 
+generación controlada de lógica analítica y la ejecución segura del resultado. Separar el problema de esta manera permite 
+aislar mejor las responsabilidades del sistema y validar cada capa con mayor claridad. En lugar de introducir desde el 
+principio toda la complejidad asociada al parsing del lenguaje natural, la resolución de entidades o el uso de modelos 
+grandes en producción, se opta por fijar una interfaz de entrada estable y centrarse en comprobar que el pipeline 
+analítico funciona correctamente.
+
+Desde el punto de vista arquitectónico, este MVP implementa un flujo secuencial compuesto por varias fases bien definidas. 
+En primer lugar, un nodo de ingesta verifica que la consulta contiene los campos mínimos necesarios y que los ficheros CSV 
+realmente existen. En segundo lugar, un nodo orquestador o router comprueba la coherencia de la petición y determina qué 
+agente especializado debe encargarse del análisis, en función de la intención detectada. En esta versión inicial se 
+soportan únicamente dos intenciones: price_growth, para estudiar el crecimiento o decrecimiento de un activo en un periodo, 
+y compare_assets, para comparar el comportamiento de varios activos. A continuación, un nodo de análisis especializado 
+traduce esa intención a un plan analítico estructurado, indicando qué métricas deben calcularse, qué columnas son 
+necesarias y cuál debe ser el foco interpretativo de la respuesta. Después, un nodo de generación produce un script Python 
+ajustado a ese plan, y un nodo de ejecución lanza dicho script mediante subprocess, capturando su salida, posibles errores 
+y artefactos generados. Finalmente, un nodo de interpretación transforma los resultados numéricos en una respuesta final 
+legible para el usuario.
+
+De forma resumida, el pequeño flujo implementado en este primer MVP puede describirse así: entrada estructurada de la 
+consulta y de los CSV, validación inicial, enrutado por intención, construcción del plan analítico, generación del código 
+de análisis, ejecución automática del script y producción de una respuesta final comprensible. Este flujo, aunque reducido, 
+ya reproduce la lógica principal del sistema multiagente que se quiere defender en el TFM, ya que separa claramente la 
+función de coordinación, la preparación del análisis, la obtención de resultados y la interpretación final.
+
+Para comprobar el funcionamiento del sistema se definieron dos primeros ejemplos de validación, elegidos por ser sencillos, 
+representativos y suficientes para verificar que la arquitectura básica era correcta. El primero fue una consulta del tipo 
+“Cuánto ha crecido Nvidia en 5 años”, asociada a la intención price_growth. Este ejemplo permite validar el caso más simple 
+del sistema: un único activo, una única serie temporal y un cálculo directo de crecimiento absoluto y porcentual entre el 
+inicio y el final del rango disponible. El segundo ejemplo fue una consulta del tipo “Compara Nvidia y AMD en 2 años”, 
+asociada a la intención compare_assets. Este caso introduce ya una mayor complejidad, ya que exige trabajar con más de un 
+ticker, calcular métricas comparativas para cada activo y determinar cuál ha mostrado un mejor comportamiento relativo. 
+Ambos ejemplos fueron suficientes para probar que el workflow completo podía ejecutarse correctamente desde la entrada 
+hasta la respuesta final.
+
+Este diseño se ha planteado así por varios motivos. El primero es la simplicidad controlada: un MVP debe reducir al mínimo 
+las variables del problema para poder comprobar si la idea principal funciona. El segundo es la trazabilidad: al separar 
+claramente validación, enrutado, planificación, generación, ejecución e interpretación, resulta mucho más sencillo detectar 
+en qué fase aparece un fallo. El tercero es la robustez: la generación de código y su ejecución están acotadas por una 
+estructura conocida, con entradas controladas y registros en disco de scripts, payloads y logs. El cuarto es la 
+escalabilidad del desarrollo: una vez validado este flujo mínimo, la arquitectura puede crecer de forma natural, 
+incorporando nuevas intenciones analíticas, agentes más especializados o nodos LLM reales sin necesidad de replantear toda 
+la base del sistema.
+
+Otra decisión importante en este MVP es no depender todavía de un LLM real para la planificación, la generación de código 
+o la interpretación final. Aunque el diseño general del TFM contempla el uso futuro de tecnologías como LangGraph para la 
+orquestación y vLLM como backend de modelos, en esta fase inicial se ha optado por implementar plantillas programáticas 
+deterministas. Esta elección permite que el sistema sea ejecutable de inmediato, incluso en entornos sin GPU ni 
+infraestructura de inferencia avanzada, y facilita la validación del pipeline antes de introducir una capa adicional de 
+complejidad. En otras palabras, primero se verifica que el flujo multiagente tiene sentido y que las piezas encajan entre 
+sí; después, sobre una base estable, se podrá sustituir parte de la lógica programática por nodos apoyados en modelos de 
+lenguaje.
+
+En consecuencia, este primer MVP no debe entenderse como la versión final del sistema, sino como una base experimental 
+sólida sobre la que construir iteraciones posteriores. Su valor principal reside en demostrar que la arquitectura propuesta 
+es viable, que puede transformar una consulta financiera estructurada en un análisis ejecutable y que es posible organizar 
+el proceso mediante una lógica de orquestación clara. A partir de este punto, la evolución natural del trabajo consistirá 
+en ampliar el número de intenciones soportadas, incorporar agentes más específicos, refinar la generación de código, 
+enriquecer la interpretación final y, cuando el entorno técnico lo permita, integrar modelos de lenguaje reales dentro de 
+algunos nodos del pipeline.
