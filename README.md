@@ -1,8 +1,8 @@
 # TFM Financial Multiagent MVP
 
-Este repositorio contiene un primer MVP pequeño del sistema multiagente analista del TFM.
+Este repositorio contiene el MVP del sistema multiagente analista del TFM y una segunda iteracion que amplia su cobertura analitica.
 
-El MVP no rehace el parser de lenguaje natural. Parte de una entrada ya estructurada con:
+El proyecto no rehace el parser de lenguaje natural. Parte de una entrada ya estructurada con:
 
 - `query`
 - `intent`
@@ -11,9 +11,9 @@ El MVP no rehace el parser de lenguaje natural. Parte de una entrada ya estructu
 - `interval`
 - `csv_paths`
 
-## Que hace este MVP
+## Que hace el sistema ahora
 
-Implementa un flujo completo y pequeño:
+Implementa un flujo completo y pequeno:
 
 1. `ingest`
 2. `router`
@@ -22,12 +22,14 @@ Implementa un flujo completo y pequeño:
 5. `code_execution`
 6. `interpretation`
 
-Soporta dos intenciones:
+Actualmente soporta cuatro intenciones:
 
 - `price_growth`
 - `compare_assets`
+- `asset_overview`
+- `return_analysis`
 
-La generacion de plan, codigo y respuesta final esta hecha con plantillas programaticas para que el pipeline sea ejecutable ya mismo, incluso si `langgraph` o `vllm` aun no estan instalados.
+La generacion de plan, codigo y respuesta final sigue hecha con plantillas programaticas. Esto permite ejecutar y depurar el pipeline sin depender todavia de un LLM real, GPU o `vllm`.
 
 ## Estructura
 
@@ -44,6 +46,8 @@ La generacion de plan, codigo y respuesta final esta hecha con plantillas progra
 ```bash
 python run_mvp.py --example growth_nvda
 python run_mvp.py --example compare_nvda_amd
+python run_mvp.py --example overview_aapl
+python run_mvp.py --example returns_qqq_spy
 ```
 
 Tambien puedes pasar un JSON de entrada:
@@ -51,6 +55,14 @@ Tambien puedes pasar un JSON de entrada:
 ```bash
 python run_mvp.py --input-json path/a/input.json
 ```
+
+## Como probar
+
+```bash
+python -m unittest tests/test_mvp.py
+```
+
+Los tests validan las cuatro intenciones soportadas.
 
 ## Que hace cada modulo
 
@@ -60,14 +72,22 @@ python run_mvp.py --input-json path/a/input.json
 - `src/graph/routing.py`: validaciones y reglas de enrutado
 - `src/graph/build_graph.py`: construccion del workflow y fallback secuencial
 - `src/execution/code_runner.py`: persistencia y ejecucion segura del script generado
-- `src/prompts.py`: plantillas de plan y de codigo
+- `src/prompts.py`: plantillas de plan y de codigo para cada intencion
+- `src/examples/sample_inputs.py`: ejemplos listos para ejecutar
+
+## En que mejora al primer MVP
+
+- amplia la cobertura de 2 a 4 intenciones
+- introduce un analisis descriptivo general con `asset_overview`
+- introduce un analisis de rentabilidades con `return_analysis`
+- mantiene el workflow estable y determinista
+- aumenta la cobertura de pruebas con ejemplos reales adicionales
 
 ## Siguiente paso tecnico recomendado
 
-Cuando este MVP este estable, lo siguiente es sustituir las plantillas programaticas por nodos LLM reales:
+Cuando esta iteracion este estable, lo siguiente es:
 
-1. plan analitico estructurado
-2. generacion de codigo controlada
-3. interpretacion final con LLM
-
-Y solo despues integrar `vLLM` como backend del modelo.
+1. separar mejor la logica por agentes o familias analiticas
+2. ampliar a `historical_risk_analysis` y `technical_analysis`
+3. incorporar nodos LLM reales para planificacion, codegen e interpretacion
+4. evaluar tasa de exito, utilidad de respuesta y distribucion de errores

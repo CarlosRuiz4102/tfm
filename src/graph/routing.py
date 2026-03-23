@@ -44,7 +44,27 @@ def route_intent(query_input: FinancialQueryInput) -> RouterOutput:
             error_message="compare_assets requiere al menos 2 tickers.",
         )
 
-    selected_agent = "growth_agent" if query_input.intent == "price_growth" else "compare_agent"
+    if query_input.intent == "asset_overview" and len(query_input.tickers) != 1:
+        return RouterOutput(
+            selected_agent="invalid_request_node",
+            is_valid=False,
+            error_message="asset_overview requiere exactamente 1 ticker.",
+        )
+
+    if query_input.intent == "return_analysis" and len(query_input.tickers) < 1:
+        return RouterOutput(
+            selected_agent="invalid_request_node",
+            is_valid=False,
+            error_message="return_analysis requiere al menos 1 ticker.",
+        )
+
+    agent_map = {
+        "price_growth": "growth_agent",
+        "compare_assets": "compare_agent",
+        "asset_overview": "overview_agent",
+        "return_analysis": "returns_agent",
+    }
+    selected_agent = agent_map[query_input.intent]
     return RouterOutput(
         selected_agent=selected_agent,
         is_valid=True,

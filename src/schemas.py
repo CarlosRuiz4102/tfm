@@ -5,7 +5,12 @@ from pathlib import Path
 from typing import Any
 
 
-SUPPORTED_INTENTS = {"price_growth", "compare_assets"}
+SUPPORTED_INTENTS = {
+    "price_growth",
+    "compare_assets",
+    "asset_overview",
+    "return_analysis",
+}
 
 
 @dataclass

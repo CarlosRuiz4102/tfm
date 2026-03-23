@@ -23,6 +23,19 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("Comparativa completada", state.final_answer)
         self.assertEqual(state.execution_returncode, 0)
 
+    def test_asset_overview_example_completes(self) -> None:
+        state = self.workflow.invoke(FinancialQueryInput.from_dict(SAMPLE_INPUTS["overview_aapl"]))
+        self.assertEqual(state.status, "completed")
+        self.assertIn("AAPL", state.final_answer)
+        self.assertIn("media de cierre", state.final_answer)
+        self.assertEqual(state.execution_returncode, 0)
+
+    def test_return_analysis_example_completes(self) -> None:
+        state = self.workflow.invoke(FinancialQueryInput.from_dict(SAMPLE_INPUTS["returns_qqq_spy"]))
+        self.assertEqual(state.status, "completed")
+        self.assertIn("Analisis de retornos completado", state.final_answer)
+        self.assertEqual(state.execution_returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

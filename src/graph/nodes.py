@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from src.execution.code_runner import run_generated_code
+from src.graph.routing import route_intent, validate_input
 from src.prompts import build_analysis_plan, build_code_template
 from src.schemas import FinancialQueryInput, WorkflowState
-from src.graph.routing import route_intent, validate_input
 
 
 def ingest_node(state: WorkflowState) -> WorkflowState:
@@ -99,6 +99,27 @@ def interpretation_node(state: WorkflowState) -> WorkflowState:
         state.final_answer = (
             f"Comparativa completada. {'; '.join(parts)}. "
             f"El mejor comportamiento fue {output['winner']}."
+        )
+    elif intent == "asset_overview":
+        overview = output["overview"]
+        state.final_answer = (
+            f"{overview['ticker']} presenta {overview['rows']} registros entre {overview['start_date']} "
+            f"y {overview['end_date']}. El cierre paso de {overview['first_close']:.2f} a "
+            f"{overview['last_close']:.2f}, con un cambio de {overview['absolute_change']:.2f} "
+            f"({overview['percentage_change']:.2f}%). En el periodo, el minimo fue {overview['min_close']:.2f}, "
+            f"el maximo {overview['max_close']:.2f} y la media de cierre {overview['average_close']:.2f}."
+        )
+    elif intent == "return_analysis":
+        summaries = output["returns_summary"]
+        parts = []
+        for item in summaries:
+            parts.append(
+                f"{item['ticker']} retorno acumulado {item['cumulative_return']:.2f}%, "
+                f"media diaria {item['mean_daily_return']:.3f}% y volatilidad {item['volatility']:.3f}%"
+            )
+        state.final_answer = (
+            f"Analisis de retornos completado. {'; '.join(parts)}. "
+            f"El mejor retorno acumulado fue {output['best_ticker_by_cumulative_return']}."
         )
     else:
         state.final_answer = "La ejecucion termino, pero no se pudo interpretar la salida."
