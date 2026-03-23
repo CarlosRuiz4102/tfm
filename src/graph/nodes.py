@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from src.execution.code_runner import run_generated_code
 from src.graph.routing import route_intent, validate_input
-from src.prompts import build_analysis_plan, build_code_template
+from src.graph.prompts import build_analysis_plan, build_code_template
 from src.schemas import FinancialQueryInput, WorkflowState
 
 
