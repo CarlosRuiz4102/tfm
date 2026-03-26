@@ -121,6 +121,26 @@ def interpretation_node(state: WorkflowState) -> WorkflowState:
             f"Analisis de retornos completado. {'; '.join(parts)}. "
             f"El mejor retorno acumulado fue {output['best_ticker_by_cumulative_return']}."
         )
+    elif intent == "historical_risk_analysis":
+        summaries = output["risk_summary"]
+        parts = []
+        for item in summaries:
+            parts.append(
+                f"{item['ticker']} volatilidad {item['volatility']:.3f}%, "
+                f"drawdown maximo {item['max_drawdown']:.2f}% y peor dia {item['worst_day_return']:.2f}%"
+            )
+        state.final_answer = (
+            f"Analisis de riesgo historico completado. {'; '.join(parts)}. "
+            f"El activo con mayor drawdown observado fue {output['highest_risk_ticker']}."
+        )
+    elif intent == "technical_analysis":
+        summary = output["technical_summary"]
+        state.final_answer = (
+            f"Analisis tecnico completado para {summary['ticker']}. El ultimo cierre fue "
+            f"{summary['last_close']:.2f}, la media movil corta {summary['sma_short']:.2f}, "
+            f"la media movil larga {summary['sma_long']:.2f} y el RSI(14) {summary['rsi_14']:.2f}. "
+            f"La senal tecnica actual es {summary['signal']}."
+        )
     else:
         state.final_answer = "La ejecucion termino, pero no se pudo interpretar la salida."
 

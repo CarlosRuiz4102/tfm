@@ -1,0 +1,77 @@
+La tercera iteracion del MVP supone un nuevo avance sobre la segunda fase del proyecto, y puede entenderse como la primera 
+ampliacion que acerca el sistema a una cobertura analitica mas completa dentro del alcance historico-descriptivo definido 
+para el TFM. Si la segunda iteracion habia consolidado el pipeline y habia extendido el sistema con nuevas capacidades 
+descriptivas y de retorno, esta tercera fase profundiza en dos lineas especialmente relevantes: por un lado, la 
+incorporacion de una capacidad explicita de analisis tecnico; por otro, el refuerzo de la robustez del sistema mediante 
+una validacion mas amplia de escenarios de error. En conjunto, esta iteracion no modifica la filosofia de desarrollo del 
+proyecto, pero si incrementa de manera apreciable tanto la riqueza del analisis como la solidez del prototipo.
+
+La principal novedad respecto a la segunda iteracion es la incorporacion de la intencion `technical_analysis`. Esta nueva 
+capacidad permite que el sistema ya no se limite a describir niveles de precio, comparar rendimientos, estudiar retornos o 
+medir riesgo historico, sino que tambien sea capaz de producir una lectura tecnica basica de un activo a partir de 
+indicadores ampliamente utilizados en analisis de mercado. En esta primera version del analisis tecnico se han introducido 
+medias moviles de corto y largo plazo, el indicador RSI con ventana de 14 periodos y una senal interpretativa sencilla 
+derivada de la relacion entre ambas medias y del nivel del RSI. Aunque se trata todavia de una aproximacion controlada y 
+deliberadamente simple, su inclusion es metodologicamente importante, ya que amplia el espectro de tareas que el sistema 
+puede abordar y demuestra que la arquitectura no solo soporta analisis descriptivos o estadisticos, sino tambien analisis 
+de naturaleza mas cercana al estudio tecnico de series financieras.
+
+Desde la perspectiva funcional, esta tercera iteracion incrementa nuevamente el numero de intenciones soportadas. Frente a 
+las cuatro intenciones descritas en la segunda fase, el sistema pasa ahora a cubrir tambien una quinta familia de consulta 
+orientada a la lectura tecnica del mercado. Esta ampliacion tiene valor por si misma, pero tambien porque introduce una 
+dimension nueva en el tipo de conocimiento que el sistema puede devolver: ya no se limita a cuantificar evolucion, retorno 
+o riesgo, sino que empieza a ofrecer una interpretacion operativa sencilla basada en indicadores tecnicos. En terminos de 
+memoria, esto permite argumentar que el prototipo ha dejado de ser exclusivamente una herramienta de resumen y comparacion 
+para convertirse en una base analitica mas rica, capaz de abordar perspectivas complementarias sobre una misma serie 
+temporal.
+
+Otra mejora relevante con respecto a la segunda iteracion es el refuerzo de la validacion del sistema frente a entradas 
+incorrectas o escenarios de fallo. En esta fase no solo se han mantenido los tests de ejecucion correcta para las distintas 
+intenciones soportadas, sino que se han anadido comprobaciones adicionales para entradas no validas, como intenciones no 
+soportadas, rutas CSV inexistentes o un numero incorrecto de tickers en aquellas intenciones donde la cardinalidad es una 
+restriccion esencial. Este aspecto es especialmente importante desde el punto de vista de la calidad del software, ya que 
+un sistema que pretende servir de base a una arquitectura multiagente debe ser capaz no solo de producir respuestas utiles 
+en condiciones ideales, sino tambien de fallar de forma controlada, explicable y trazable cuando la entrada no cumple las 
+condiciones esperadas.
+
+Desde el punto de vista tecnico, la tercera iteracion mantiene la coherencia del flujo general del sistema. La entrada 
+sigue siendo estructurada; el nodo de ingesta continua validando la consistencia minima de la peticion; el nodo orquestador 
+sigue decidiendo la ruta analitica correspondiente; el nodo de analisis especializado traduce la intencion a un plan 
+estructurado; el nodo de generacion construye el script Python; el nodo de ejecucion lanza ese codigo mediante `subprocess`
+; y el nodo de interpretacion convierte la salida numerica en una respuesta legible para el usuario. Lo importante de esta 
+continuidad no es solo que el flujo siga funcionando, sino que cada nueva capacidad introducida puede integrarse sin 
+alterar la arquitectura de base. Esta es, precisamente, una de las evidencias mas fuertes de que la propuesta del TFM esta 
+bien planteada: la complejidad crece, pero lo hace sobre un esqueleto estable, reutilizable y facil de extender.
+
+En lo relativo a la cobertura experimental, la tercera iteracion incorpora un nuevo ejemplo de validacion asociado al 
+analisis tecnico, concretamente sobre AAPL en una ventana temporal de tres meses. Este caso complementa los ejemplos ya 
+existentes de crecimiento, comparacion, overview, retornos y riesgo, permitiendo comprobar que la arquitectura tambien 
+responde correctamente cuando el analisis requerido depende de transformaciones tecnicas adicionales sobre la serie de 
+precios. Con ello, el conjunto de ejemplos deja de centrarse exclusivamente en lecturas de nivel y dispersion y empieza a 
+incluir una dimension mas aplicada, vinculada a reglas e indicadores clasicos del analisis tecnico. Esto enriquece la 
+representatividad del prototipo y mejora su valor demostrativo dentro de la memoria.
+
+Al igual que en las iteraciones anteriores, esta fase mantiene un enfoque determinista. Las nuevas capacidades no se han 
+incorporado mediante prompts abiertos ni mediante un LLM real, sino mediante reglas programaticas y plantillas de 
+generacion controladas. La razon sigue siendo la misma: antes de introducir una capa de generacion basada en modelos de 
+lenguaje, resulta conveniente consolidar la semantica del workflow, las estructuras de entrada y salida, los criterios de 
+validacion y la estabilidad de la ejecucion. La tercera iteracion refuerza, por tanto, la estrategia gradual del proyecto: 
+primero se consolida una arquitectura solida, trazable y verificable; despues, cuando esa base sea suficientemente robusta, 
+podra incorporarse una capa LLM con menor riesgo de introducir fragilidad estructural.
+
+En comparacion con la segunda iteracion, las mejoras mas destacables de esta tercera fase pueden resumirse en tres ejes. 
+En primer lugar, se amplia la cobertura analitica con la incorporacion del analisis tecnico, que introduce una nueva 
+familia de indicadores y una forma distinta de interpretar la serie temporal. En segundo lugar, se incrementa la solidez 
+del prototipo mediante nuevas validaciones y pruebas de error, reforzando la calidad del sistema desde la perspectiva del 
+desarrollo software. Y en tercer lugar, se demuestra una vez mas que la arquitectura inicial es extensible, ya que puede 
+absorber nuevas tareas analiticas sin requerir una reestructuracion profunda del pipeline. Gracias a ello, la tercera 
+iteracion no solo suma funcionalidad, sino que aumenta de manera clara la madurez del proyecto.
+
+En definitiva, respecto a la segunda iteracion descrita previamente, la tercera fase incorpora una capacidad nueva de 
+analisis tecnico, mejora la cobertura de pruebas, refuerza el control de errores y consolida aun mas la idea de un sistema 
+multiagente analitico extensible construido sobre un workflow determinista. Esta evolucion tiene un valor claro de cara a 
+la memoria del TFM, porque permite argumentar que el proyecto ha seguido una progresion metodologica consistente: de una 
+primera prueba de concepto se paso a una segunda iteracion de ampliacion funcional, y de ahi a una tercera fase donde se 
+incrementan tanto la riqueza analitica como la robustez del sistema. El siguiente paso natural, una vez alcanzado este 
+punto, consistira en modularizar con mayor claridad las familias de agentes y preparar la integracion de nodos apoyados en 
+modelos de lenguaje reales sobre una base ya madura y bien instrumentada.

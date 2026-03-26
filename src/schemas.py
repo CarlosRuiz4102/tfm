@@ -10,6 +10,8 @@ SUPPORTED_INTENTS = {
     "compare_assets",
     "asset_overview",
     "return_analysis",
+    "historical_risk_analysis",
+    "technical_analysis",
 }
 
 

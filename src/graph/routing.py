@@ -58,11 +58,27 @@ def route_intent(query_input: FinancialQueryInput) -> RouterOutput:
             error_message="return_analysis requiere al menos 1 ticker.",
         )
 
+    if query_input.intent == "historical_risk_analysis" and len(query_input.tickers) < 1:
+        return RouterOutput(
+            selected_agent="invalid_request_node",
+            is_valid=False,
+            error_message="historical_risk_analysis requiere al menos 1 ticker.",
+        )
+
+    if query_input.intent == "technical_analysis" and len(query_input.tickers) != 1:
+        return RouterOutput(
+            selected_agent="invalid_request_node",
+            is_valid=False,
+            error_message="technical_analysis requiere exactamente 1 ticker.",
+        )
+
     agent_map = {
         "price_growth": "growth_agent",
         "compare_assets": "compare_agent",
         "asset_overview": "overview_agent",
         "return_analysis": "returns_agent",
+        "historical_risk_analysis": "risk_agent",
+        "technical_analysis": "technical_agent",
     }
     selected_agent = agent_map[query_input.intent]
     return RouterOutput(

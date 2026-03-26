@@ -62,6 +62,36 @@ def build_analysis_plan(query_input: FinancialQueryInput) -> AnalysisPlan:
             textual_focus="analizar la serie de retornos historicos y destacar rentabilidad acumulada, volatilidad y extremos",
             agent_name="returns_agent",
         )
+    if query_input.intent == "historical_risk_analysis":
+        return AnalysisPlan(
+            intent="historical_risk_analysis",
+            metrics=[
+                "volatility",
+                "max_drawdown",
+                "worst_day_return",
+                "best_day_return",
+                "drawdown_end",
+            ],
+            plots=["drawdown_line", "rolling_volatility_line"],
+            required_columns=["Date", "Ticker", "Close"],
+            textual_focus="evaluar el riesgo historico mediante volatilidad, drawdown maximo y extremos diarios",
+            agent_name="risk_agent",
+        )
+    if query_input.intent == "technical_analysis":
+        return AnalysisPlan(
+            intent="technical_analysis",
+            metrics=[
+                "last_close",
+                "sma_short",
+                "sma_long",
+                "rsi_14",
+                "signal",
+            ],
+            plots=["close_with_moving_averages", "rsi_line"],
+            required_columns=["Date", "Ticker", "Close"],
+            textual_focus="identificar senales tecnicas simples con medias moviles y RSI",
+            agent_name="technical_agent",
+        )
     raise ValueError(f"Intent no soportada en el MVP: {query_input.intent}")
 
 
@@ -174,6 +204,72 @@ def build_code_template(plan: AnalysisPlan) -> str:
                 "worst_day_return": float(returns.min() * 100),
                 "cumulative_return": float(cumulative_return),
             }
+
+
+        def summarize_risk(market: pd.DataFrame, ticker: str) -> dict:
+            series = market.loc[market["Ticker"] == ticker].copy()
+            if series.empty:
+                raise ValueError(f"No hay datos para {ticker}.")
+            series = series.sort_values("Date")
+            series["daily_return"] = series["Close"].pct_change()
+            returns = series["daily_return"].dropna()
+            if returns.empty:
+                raise ValueError(f"No hay suficientes datos para calcular riesgo historico de {ticker}.")
+            series["cummax_close"] = series["Close"].cummax()
+            series["drawdown"] = (series["Close"] / series["cummax_close"]) - 1
+            max_drawdown_idx = series["drawdown"].idxmin()
+            drawdown_end = series.loc[max_drawdown_idx, "Date"].strftime("%Y-%m-%d")
+            return {
+                "ticker": ticker,
+                "rows": int(len(series)),
+                "start_date": series["Date"].iloc[0].strftime("%Y-%m-%d"),
+                "end_date": series["Date"].iloc[-1].strftime("%Y-%m-%d"),
+                "volatility": float(returns.std(ddof=0) * 100),
+                "max_drawdown": float(series["drawdown"].min() * 100),
+                "worst_day_return": float(returns.min() * 100),
+                "best_day_return": float(returns.max() * 100),
+                "drawdown_end": drawdown_end,
+            }
+
+
+        def summarize_technical(market: pd.DataFrame, ticker: str) -> dict:
+            series = market.loc[market["Ticker"] == ticker].copy()
+            if series.empty:
+                raise ValueError(f"No hay datos para {ticker}.")
+            series = series.sort_values("Date").copy()
+            series["sma_short"] = series["Close"].rolling(window=5, min_periods=5).mean()
+            series["sma_long"] = series["Close"].rolling(window=20, min_periods=20).mean()
+            delta = series["Close"].diff()
+            gain = delta.clip(lower=0)
+            loss = -delta.clip(upper=0)
+            avg_gain = gain.rolling(window=14, min_periods=14).mean()
+            avg_loss = loss.rolling(window=14, min_periods=14).mean()
+            rs = avg_gain / avg_loss.replace(0, pd.NA)
+            series["rsi_14"] = 100 - (100 / (1 + rs))
+            valid = series.dropna(subset=["sma_short", "sma_long", "rsi_14"])
+            if valid.empty:
+                raise ValueError(f"No hay suficientes datos para calcular analisis tecnico de {ticker}.")
+            last = valid.iloc[-1]
+            signal = "neutral"
+            if float(last["sma_short"]) > float(last["sma_long"]) and float(last["rsi_14"]) < 70:
+                signal = "alcista moderada"
+            elif float(last["sma_short"]) < float(last["sma_long"]) and float(last["rsi_14"]) > 30:
+                signal = "bajista moderada"
+            if float(last["rsi_14"]) >= 70:
+                signal = "sobrecompra"
+            elif float(last["rsi_14"]) <= 30:
+                signal = "sobreventa"
+            return {
+                "ticker": ticker,
+                "rows": int(len(series)),
+                "start_date": series["Date"].iloc[0].strftime("%Y-%m-%d"),
+                "end_date": series["Date"].iloc[-1].strftime("%Y-%m-%d"),
+                "last_close": float(last["Close"]),
+                "sma_short": float(last["sma_short"]),
+                "sma_long": float(last["sma_long"]),
+                "rsi_14": float(last["rsi_14"]),
+                "signal": signal,
+            }
         """
     ).strip()
 
@@ -260,6 +356,52 @@ def build_code_template(plan: AnalysisPlan) -> str:
                     "intent": "return_analysis",
                     "returns_summary": summaries,
                     "best_ticker_by_cumulative_return": best["ticker"],
+                    "textual_focus": payload["analysis_plan"]["textual_focus"],
+                }
+                print(json.dumps(output, ensure_ascii=False))
+                return 0
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """
+        ).strip()
+    elif plan.intent == "historical_risk_analysis":
+        body = dedent(
+            """
+            def main() -> int:
+                payload_path = Path(sys.argv[1])
+                payload = json.loads(payload_path.read_text(encoding="utf-8"))
+                market = load_market_data(payload["csv_paths"])
+                summaries = [summarize_risk(market, ticker) for ticker in payload["tickers"]]
+                highest_risk = max(summaries, key=lambda item: abs(item["max_drawdown"]))
+                output = {
+                    "intent": "historical_risk_analysis",
+                    "risk_summary": summaries,
+                    "highest_risk_ticker": highest_risk["ticker"],
+                    "textual_focus": payload["analysis_plan"]["textual_focus"],
+                }
+                print(json.dumps(output, ensure_ascii=False))
+                return 0
+
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """
+        ).strip()
+    elif plan.intent == "technical_analysis":
+        body = dedent(
+            """
+            def main() -> int:
+                payload_path = Path(sys.argv[1])
+                payload = json.loads(payload_path.read_text(encoding="utf-8"))
+                market = load_market_data(payload["csv_paths"])
+                ticker = payload["tickers"][0]
+                technical_summary = summarize_technical(market, ticker)
+                output = {
+                    "intent": "technical_analysis",
+                    "ticker": ticker,
+                    "technical_summary": technical_summary,
                     "textual_focus": payload["analysis_plan"]["textual_focus"],
                 }
                 print(json.dumps(output, ensure_ascii=False))
