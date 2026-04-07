@@ -75,3 +75,35 @@ primera prueba de concepto se paso a una segunda iteracion de ampliacion funcion
 incrementan tanto la riqueza analitica como la robustez del sistema. El siguiente paso natural, una vez alcanzado este 
 punto, consistira en modularizar con mayor claridad las familias de agentes y preparar la integracion de nodos apoyados en 
 modelos de lenguaje reales sobre una base ya madura y bien instrumentada.
+
+La metodologia de validacion de esta tercera iteracion combina dos criterios complementarios. El primero es funcional:
+cada intencion soportada debe poder ejecutarse sobre un caso de prueba representativo y completar el flujo completo desde
+la entrada estructurada hasta la respuesta final. El segundo es de robustez: el sistema debe responder de forma controlada
+ante entradas no validas, como intenciones no soportadas, rutas CSV inexistentes o cardinalidades incorrectas de tickers.
+Con ello, la evaluacion deja de limitarse a comprobar ejecuciones ideales y empieza a medir tambien la capacidad del
+workflow para detectar fallos previsibles y devolver mensajes explicables. Esta metodologia es coherente con el objetivo
+del TFM, ya que un sistema multiagente analitico no solo debe producir resultados cuando la entrada es correcta, sino
+tambien mantener trazabilidad y control cuando la solicitud no cumple las restricciones del pipeline.
+
+Los resultados obtenidos en esta fase consolidan el MVP como una base funcional de seis intenciones analiticas. La bateria
+de pruebas automatizadas ejecutada sobre `tests/test_mvp.py` contiene nueve casos: seis pruebas de ejecucion correcta,
+una por cada intencion soportada, y tres pruebas de error controlado. Todas las pruebas finalizan correctamente, lo que
+indica que el sistema completa el flujo para los escenarios principales y gestiona adecuadamente los fallos basicos
+definidos en esta etapa. La siguiente tabla resume la cobertura funcional validada:
+
++----------------------------+---------------------------------------------+-----------------------------------------------+---------------------+
+| Intencion                  | Caso de prueba                              | Objetivo validado                              | Resultado del test  |
++----------------------------+---------------------------------------------+-----------------------------------------------+---------------------+
+| price_growth               | Cuanto ha crecido Nvidia en 5 anos          | Crecimiento absoluto y porcentual de NVDA      | Superado            |
+| compare_assets             | Compara Nvidia y AMD en 2 anos              | Comparacion relativa entre NVDA y AMD          | Superado            |
+| asset_overview             | Vision general de AAPL en 3 meses           | Resumen descriptivo de un activo               | Superado            |
+| return_analysis            | Retornos de QQQ y SPY en 2024               | Rentabilidad acumulada, media y volatilidad    | Superado            |
+| historical_risk_analysis   | Riesgo historico de QQQ y SPY en 2024       | Volatilidad, drawdown y extremos diarios       | Superado            |
+| technical_analysis         | Analisis tecnico de AAPL en 3 meses         | Medias moviles, RSI y senal tecnica simple     | Superado            |
++----------------------------+---------------------------------------------+-----------------------------------------------+---------------------+
+
+Ademas de estas seis pruebas funcionales, la validacion automatizada incluye tres escenarios negativos: una intencion no
+soportada, una ruta CSV inexistente y una peticion de analisis tecnico con mas de un ticker. Estos casos tambien se
+resuelven de forma correcta, generando estados de error controlados y respuestas explicativas. En conjunto, el resultado
+experimental de la tercera iteracion puede resumirse como una ejecucion satisfactoria de nueve pruebas sobre nueve, con
+cobertura de las seis intenciones implementadas y de los principales errores de entrada contemplados en el MVP.

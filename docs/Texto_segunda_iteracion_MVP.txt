@@ -86,3 +86,18 @@ defendible y tecnicamente consistente para continuar el desarrollo del TFM. A pa
 sera seguir ampliando las intenciones analiticas, modularizar con mayor claridad los agentes especializados y, una vez 
 estabilizada por completo la base del sistema, introducir nodos apoyados en modelos de lenguaje reales para la 
 planificacion, la generacion de codigo y la interpretacion final.
+
+La metodologia aplicada en esta segunda iteracion mantiene el criterio incremental de la primera fase, pero amplia el
+alcance experimental para comprobar la extensibilidad del sistema. En lugar de modificar la arquitectura general, se
+mantiene el mismo flujo de trabajo y se incorporan nuevas intenciones sobre las mismas interfaces: entrada estructurada,
+validacion inicial, enrutado, plan analitico, generacion de codigo, ejecucion controlada e interpretacion final. Esta
+decision permite evaluar si el diseno original soporta nuevas familias analiticas sin introducir cambios estructurales
+profundos. Por tanto, la prueba principal de esta fase no es solo que las nuevas metricas se calculen correctamente, sino
+que se integren en el pipeline sin romper las capacidades previamente validadas.
+
+Los resultados de esta segunda iteracion confirman esa extensibilidad. A los casos iniciales de crecimiento y comparacion
+se suman un resumen descriptivo de AAPL y un analisis de retornos de QQQ y SPY, lo que eleva la cobertura funcional de dos
+a cuatro intenciones. El sistema conserva la misma secuencia de ejecucion, mantiene la trazabilidad de los artefactos
+generados y produce respuestas finales coherentes para los nuevos escenarios. Este resultado refuerza la validez
+metodologica del enfoque, porque demuestra que el MVP no era una solucion puntual para dos consultas concretas, sino una
+base reutilizable capaz de absorber nuevas tareas financieras sin redisenar el conjunto del sistema.

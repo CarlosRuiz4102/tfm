@@ -94,3 +94,18 @@ que comparar futuras iteraciones del sistema. Y en cuarto lugar, establece un ma
 en el que cada nueva capacidad analitica podra incorporarse sobre una estructura ya verificada. Precisamente por ello, 
 este primer MVP no constituye una version final del sistema, sino el punto de partida solido sobre el que se construyen las
  iteraciones posteriores del TFM.
+
+Desde el punto de vista metodologico, esta primera iteracion se valida como un experimento incremental y controlado. La
+metodologia seguida consiste en fijar primero el contrato de entrada del sistema, mantener constante el origen de los datos
+mediante CSV historicos ya descargados y comprobar, sobre un numero reducido de intenciones, que cada fase del workflow
+produce una salida util para la fase siguiente. De este modo, la evaluacion no se plantea como una comparacion con modelos
+externos, sino como una prueba de integracion interna: se verifica que la entrada estructurada se transforma en un estado
+comun, que el router selecciona la ruta adecuada, que el plan analitico contiene las metricas necesarias, que el codigo
+generado se ejecuta correctamente y que la respuesta final conserva la interpretabilidad financiera del resultado.
+
+Los resultados de esta primera fase muestran que el pipeline minimo es operativo en los dos escenarios iniciales
+seleccionados. La consulta de crecimiento de Nvidia permite comprobar el caso de activo unico, mientras que la comparacion
+entre Nvidia y AMD permite comprobar un caso multi-activo con conclusion relativa. En ambos casos, el sistema completa el
+flujo extremo a extremo, genera codigo ejecutable, captura la salida de ejecucion y produce una respuesta final legible.
+Este resultado es relevante porque proporciona una primera evidencia empirica de que la arquitectura propuesta puede
+funcionar como base del TFM antes de incorporar mas intenciones, mas agentes especializados o una capa LLM real.
