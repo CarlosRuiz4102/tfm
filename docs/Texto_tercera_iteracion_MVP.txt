@@ -17,8 +17,8 @@ puede abordar y demuestra que la arquitectura no solo soporta analisis descripti
 de naturaleza mas cercana al estudio tecnico de series financieras.
 
 Desde la perspectiva funcional, esta tercera iteracion incrementa nuevamente el numero de intenciones soportadas. Frente a 
-las cuatro intenciones descritas en la segunda fase, el sistema pasa ahora a cubrir tambien una quinta familia de consulta 
-orientada a la lectura tecnica del mercado. Esta ampliacion tiene valor por si misma, pero tambien porque introduce una 
+la cobertura anterior, el sistema pasa ahora a consolidar seis intenciones analiticas y a cubrir de forma explicita una
+familia de consulta orientada a la lectura tecnica del mercado. Esta ampliacion tiene valor por si misma, pero tambien porque introduce una 
 dimension nueva en el tipo de conocimiento que el sistema puede devolver: ya no se limita a cuantificar evolucion, retorno 
 o riesgo, sino que empieza a ofrecer una interpretacion operativa sencilla basada en indicadores tecnicos. En terminos de 
 memoria, esto permite argumentar que el prototipo ha dejado de ser exclusivamente una herramienta de resumen y comparacion 
@@ -107,3 +107,35 @@ soportada, una ruta CSV inexistente y una peticion de analisis tecnico con mas d
 resuelven de forma correcta, generando estados de error controlados y respuestas explicativas. En conjunto, el resultado
 experimental de la tercera iteracion puede resumirse como una ejecucion satisfactoria de nueve pruebas sobre nueve, con
 cobertura de las seis intenciones implementadas y de los principales errores de entrada contemplados en el MVP.
+
+Como cierre tecnico de esta tercera iteracion, se ha realizado ademas una reorganizacion interna del codigo orientada a
+hacer mas explicita la naturaleza multiagente del sistema antes de incorporar modelos de lenguaje reales. Hasta este
+punto, el MVP ya funcionaba correctamente, pero parte de la logica de planificacion, generacion de codigo e interpretacion
+permanecia concentrada en modulos generales del grafo, especialmente en `src/graph/prompts.py` y `src/graph/nodes.py`.
+Esta estructura era suficiente para un prototipo determinista, pero podia dificultar la explicacion arquitectonica del
+sistema como una composicion de agentes especializados.
+
+Para resolverlo, se ha introducido el paquete `src/agents/`, que agrupa la logica por familias analiticas. En esta nueva
+organizacion, las consultas de crecimiento y comparacion se agrupan en una familia de evolucion relativa de precios; la
+vision general de un activo queda separada como familia descriptiva; el analisis de rentabilidades, el analisis de riesgo
+historico y el analisis tecnico disponen de modulos propios; y un registro comun centraliza la relacion entre cada
+intencion, su agente, su plan analitico, el cuerpo de codigo generado y la forma de interpretar la salida. Con ello, el
+workflow mantiene los mismos nodos principales, pero estos nodos pasan a apoyarse en un registro de agentes en lugar de
+contener directamente toda la logica especifica de cada intencion.
+
+Esta modularizacion no cambia el comportamiento funcional del MVP: las mismas seis intenciones siguen ejecutandose sobre
+los mismos ejemplos y la validacion automatizada continua superando nueve pruebas sobre nueve. Su aportacion principal es
+arquitectonica y metodologica. Por un lado, permite explicar con mayor claridad que el sistema ya no es solo una secuencia
+de reglas dentro de un unico modulo, sino una base multiagente determinista compuesta por especialistas analiticos. Por
+otro lado, prepara el siguiente salto del TFM: la integracion de nodos LLM para planificacion, generacion de codigo e
+interpretacion. A partir de esta estructura, sera posible sustituir gradualmente partes deterministas por llamadas a un
+modelo de lenguaje manteniendo interfaces estables, trazabilidad del flujo y posibilidad de conservar fallbacks
+programaticos si el LLM no devuelve una salida valida.
+
+Por tanto, el cierre de la tercera iteracion no se limita a anadir analisis tecnico y pruebas de robustez, sino que deja
+el proyecto en un estado mas limpio y profesional para la siguiente fase. La base resultante combina seis capacidades
+analiticas validadas, control de errores basicos, documentacion actualizada y una separacion inicial por familias de
+agentes. Esta decision reduce el riesgo de la futura integracion LLM, porque antes de introducir generacion abierta se ha
+dejado definida una estructura clara de responsabilidades: el router selecciona la familia analitica, el agente construye
+el plan, la generacion produce el script correspondiente, la ejecucion devuelve una salida estructurada y la interpretacion
+transforma esa salida en una respuesta legible.

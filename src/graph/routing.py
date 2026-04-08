@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.agents import agent_name_by_intent
 from src.io.csv_loader import csv_exists
 from src.schemas import FinancialQueryInput, RouterOutput, SUPPORTED_INTENTS
 
@@ -72,14 +73,7 @@ def route_intent(query_input: FinancialQueryInput) -> RouterOutput:
             error_message="technical_analysis requiere exactamente 1 ticker.",
         )
 
-    agent_map = {
-        "price_growth": "growth_agent",
-        "compare_assets": "compare_agent",
-        "asset_overview": "overview_agent",
-        "return_analysis": "returns_agent",
-        "historical_risk_analysis": "risk_agent",
-        "technical_analysis": "technical_agent",
-    }
+    agent_map = agent_name_by_intent()
     selected_agent = agent_map[query_input.intent]
     return RouterOutput(
         selected_agent=selected_agent,

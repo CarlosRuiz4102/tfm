@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from src.execution.code_runner import run_generated_code
+from src.agents import interpret_agent_output
 from src.graph.routing import route_intent, validate_input
 from src.graph.prompts import build_analysis_plan, build_code_template
 from src.schemas import FinancialQueryInput, WorkflowState
@@ -79,71 +80,7 @@ def interpretation_node(state: WorkflowState) -> WorkflowState:
     if state.execution_returncode != 0:
         return execution_error_node(state)
 
-    intent = output.get("intent")
-    if intent == "price_growth":
-        summary = output["summary"]
-        state.final_answer = (
-            f"{summary['ticker']} paso de {summary['start_close']:.2f} a {summary['end_close']:.2f} "
-            f"entre {summary['start_date']} y {summary['end_date']}. "
-            f"La variacion absoluta fue {summary['absolute_growth']:.2f} y la variacion porcentual "
-            f"fue {summary['percentage_growth']:.2f}%."
-        )
-    elif intent == "compare_assets":
-        comparisons = output["comparisons"]
-        parts = []
-        for item in comparisons:
-            parts.append(
-                f"{item['ticker']} cambio {item['percentage_growth']:.2f}% "
-                f"({item['start_close']:.2f} -> {item['end_close']:.2f})"
-            )
-        state.final_answer = (
-            f"Comparativa completada. {'; '.join(parts)}. "
-            f"El mejor comportamiento fue {output['winner']}."
-        )
-    elif intent == "asset_overview":
-        overview = output["overview"]
-        state.final_answer = (
-            f"{overview['ticker']} presenta {overview['rows']} registros entre {overview['start_date']} "
-            f"y {overview['end_date']}. El cierre paso de {overview['first_close']:.2f} a "
-            f"{overview['last_close']:.2f}, con un cambio de {overview['absolute_change']:.2f} "
-            f"({overview['percentage_change']:.2f}%). En el periodo, el minimo fue {overview['min_close']:.2f}, "
-            f"el maximo {overview['max_close']:.2f} y la media de cierre {overview['average_close']:.2f}."
-        )
-    elif intent == "return_analysis":
-        summaries = output["returns_summary"]
-        parts = []
-        for item in summaries:
-            parts.append(
-                f"{item['ticker']} retorno acumulado {item['cumulative_return']:.2f}%, "
-                f"media diaria {item['mean_daily_return']:.3f}% y volatilidad {item['volatility']:.3f}%"
-            )
-        state.final_answer = (
-            f"Analisis de retornos completado. {'; '.join(parts)}. "
-            f"El mejor retorno acumulado fue {output['best_ticker_by_cumulative_return']}."
-        )
-    elif intent == "historical_risk_analysis":
-        summaries = output["risk_summary"]
-        parts = []
-        for item in summaries:
-            parts.append(
-                f"{item['ticker']} volatilidad {item['volatility']:.3f}%, "
-                f"drawdown maximo {item['max_drawdown']:.2f}% y peor dia {item['worst_day_return']:.2f}%"
-            )
-        state.final_answer = (
-            f"Analisis de riesgo historico completado. {'; '.join(parts)}. "
-            f"El activo con mayor drawdown observado fue {output['highest_risk_ticker']}."
-        )
-    elif intent == "technical_analysis":
-        summary = output["technical_summary"]
-        state.final_answer = (
-            f"Analisis tecnico completado para {summary['ticker']}. El ultimo cierre fue "
-            f"{summary['last_close']:.2f}, la media movil corta {summary['sma_short']:.2f}, "
-            f"la media movil larga {summary['sma_long']:.2f} y el RSI(14) {summary['rsi_14']:.2f}. "
-            f"La senal tecnica actual es {summary['signal']}."
-        )
-    else:
-        state.final_answer = "La ejecucion termino, pero no se pudo interpretar la salida."
-
+    state.final_answer = interpret_agent_output(output)
     state.status = "completed"
     return state
 

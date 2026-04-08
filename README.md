@@ -1,6 +1,6 @@
 # TFM Financial Multiagent MVP
 
-Este repositorio contiene el MVP del sistema multiagente analista del TFM y una segunda iteracion que amplia su cobertura analitica.
+Este repositorio contiene el MVP del sistema multiagente analista del TFM. La version actual consolida la tercera iteracion: amplia la cobertura analitica, incorpora analisis tecnico, refuerza los escenarios de error y deja la logica organizada por familias de agentes antes de integrar nodos LLM reales.
 
 El proyecto no rehace el parser de lenguaje natural. Parte de una entrada ya estructurada con:
 
@@ -31,7 +31,7 @@ Actualmente soporta seis intenciones:
 - `historical_risk_analysis`
 - `technical_analysis`
 
-La generacion de plan, codigo y respuesta final sigue hecha con plantillas programaticas. Esto permite ejecutar y depurar el pipeline sin depender todavia de un LLM real, GPU o `vllm`.
+La generacion de plan, codigo y respuesta final sigue hecha con plantillas programaticas. Esto permite ejecutar y depurar el pipeline sin depender todavia de un LLM real, GPU o `vllm`. La logica analitica esta modularizada en familias de agentes para facilitar la futura sustitucion de plantillas por nodos LLM.
 
 ## Estructura
 
@@ -39,6 +39,7 @@ La generacion de plan, codigo y respuesta final sigue hecha con plantillas progr
 - `data/catalog/`: catalogo de casos y utilidades
 - `docs/`: notas y material auxiliar
 - `src/`: codigo del MVP
+- `src/agents/`: familias analiticas del MVP y registro de agentes
 - `results/code/`: scripts generados
 - `results/logs/`: payloads y salidas de ejecucion
 - `tests/`: pruebas basicas
@@ -71,11 +72,12 @@ Los tests validan las seis intenciones soportadas y varios escenarios de error.
 ## Que hace cada modulo
 
 - `src/schemas.py`: modelos de entrada, salida y estado
+- `src/agents/`: definicion modular de agentes por familia analitica
 - `src/io/csv_loader.py`: lectura de CSV de yfinance y normalizacion a formato tabular
 - `src/graph/nodes.py`: nodos del workflow
 - `src/graph/routing.py`: validaciones y reglas de enrutado
 - `src/graph/build_graph.py`: construccion del workflow y fallback secuencial
-- `src/graph/prompts.py`: plantillas de plan y de codigo para cada intencion
+- `src/graph/prompts.py`: fachada de generacion de plan y codigo a partir del registro de agentes
 - `src/execution/code_runner.py`: persistencia y ejecucion segura del script generado
 - `src/examples/sample_inputs.py`: ejemplos listos para ejecutar
 
@@ -88,12 +90,22 @@ Los tests validan las seis intenciones soportadas y varios escenarios de error.
 - introduce un analisis tecnico con `technical_analysis`
 - mantiene el workflow estable y determinista
 - aumenta la cobertura de pruebas con ejemplos reales y errores controlados
+- modulariza la logica por familias de agentes antes de integrar LLM reales
+
+## Estado de validacion
+
+La bateria principal se ejecuta con:
+
+```bash
+python -m unittest tests/test_mvp.py
+```
+
+Estado actual: 9 pruebas superadas sobre 9. La cobertura incluye seis ejecuciones correctas, una por cada intencion soportada, y tres escenarios negativos: intent no soportada, CSV inexistente y cardinalidad incorrecta en `technical_analysis`.
 
 ## Siguiente paso tecnico recomendado
 
-Cuando esta iteracion este estable, lo siguiente es:
+Con la tercera iteracion cerrada y la modularizacion por agentes realizada, lo siguiente es:
 
-1. separar mejor la logica por agentes o familias analiticas
-2. separar mejor la logica por agentes o familias analiticas
-3. incorporar nodos LLM reales para planificacion, codegen e interpretacion
-4. evaluar tasa de exito, utilidad de respuesta y distribucion de errores
+1. definir la interfaz de los nodos LLM para planificacion, codegen e interpretacion
+2. incorporar una primera version LLM manteniendo fallback determinista
+3. evaluar tasa de exito, utilidad de respuesta y distribucion de errores

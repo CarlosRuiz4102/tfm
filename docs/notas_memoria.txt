@@ -1,0 +1,26 @@
+Tabla de contenido
+Índice general	7
+Índice de tablas	11
+Abreviaturas y acrónimos	12
+1.	Introducción	12
+1.1.	Introducción y definición del problema	12
+1.2.	Motivación	12
+1.3.	Objetivos	12
+2.	Estado de la cuestión	13
+2.1.	Trabajos previos y estudios relevantes	13
+2.2.	Limitaciones en la literatura	13
+3.	Material y métodos	14
+3.1.	Descripción del dataset	14
+3.2.	Resultados en modelos baseline	14
+3.3.	Metodología y entrenamiento	14
+4.	Resultados y análisis	15
+4.1.	Resultados obtenidos	15
+4.2.	Comparativa con otros enfoques y baseline	15
+5.	Despliegue (OPCIONAL)	16
+5.1.	Desarrollo de API	16
+6.	Aspectos éticos/limitaciones	17
+7.	Reproducibilidad	18
+7.1.	Enlace a repositorio GitHub	18
+8.	Conclusiones	19
+9.	Anexos	15
+
