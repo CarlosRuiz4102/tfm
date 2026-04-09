@@ -8,7 +8,7 @@ from src.agents.risk import HISTORICAL_RISK_AGENT
 from src.agents.technical import TECHNICAL_ANALYSIS_AGENT
 from src.schemas import AnalysisPlan, FinancialQueryInput
 
-
+# Catálogo: inventario completo de análisis soportados
 AGENTS: tuple[AgentSpec, ...] = (
     PRICE_GROWTH_AGENT,
     COMPARE_ASSETS_AGENT,
@@ -18,6 +18,7 @@ AGENTS: tuple[AgentSpec, ...] = (
     TECHNICAL_ANALYSIS_AGENT,
 )
 
+#Router, resuelve a que agente corresponde un intent
 AGENTS_BY_INTENT: dict[str, AgentSpec] = {agent.intent: agent for agent in AGENTS}
 
 
