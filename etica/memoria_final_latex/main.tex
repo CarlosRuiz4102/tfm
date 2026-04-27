@@ -1,0 +1,191 @@
+\documentclass{article}
+
+\usepackage{PRIMEarxiv}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{xurl}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\graphicspath{{media/}}
+
+\pagestyle{fancy}
+\thispagestyle{empty}
+\rhead{\textit{}}
+\fancyhead[LO]{Ética aplicada a un sistema multiagente de análisis financiero}
+
+\title{Evaluación ética, legal y social de un sistema multiagente de IA para análisis financiero histórico}
+
+\author{
+  Autor: Carlos Ruiz Oyarzun \\
+  Trabajo de Ética aplicado al TFM \\
+  Máster en Deep Learning \\
+  Universidad Politécnica de Madrid \\
+  \texttt{c.ruizoyarzun@alumnos.upm.es}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este trabajo analiza las implicaciones éticas, sociales y legales de un Trabajo Fin de Máster orientado al desarrollo de un sistema multiagente de inteligencia artificial para el análisis financiero histórico-descriptivo. Aunque el TFM se encuentra todavía en desarrollo, el análisis se plantea como si el sistema estuviera terminado y disponible en una versión funcional. El sistema recibe una consulta financiera estructurada, valida sus parámetros, selecciona una familia analítica, genera código Python, ejecuta dicho código sobre series temporales históricas y devuelve una respuesta interpretable para el usuario. El estudio aplica los requisitos de IA confiable propuestos por la Unión Europea, revisa la posible clasificación del sistema bajo el Reglamento Europeo de Inteligencia Artificial, valora los riesgos de protección de datos conforme al RGPD y examina las implicaciones de propiedad intelectual asociadas al uso de datos financieros, código generado, documentación y modelos de lenguaje. La conclusión principal es que el sistema no encaja, en su uso previsto, como sistema de alto riesgo ni como modelo de propósito general propio, pero sí presenta riesgos relevantes de confianza excesiva, opacidad, seguridad de ejecución, trazabilidad, uso indebido de resultados financieros y gestión de logs. Por ello, se propone un conjunto de medidas de diseño responsable basadas en transparencia, supervisión humana, limitación funcional, minimización de datos, auditoría, control de ejecución y documentación de las limitaciones del sistema.
+\end{abstract}
+
+\keywords{ética de la inteligencia artificial \and análisis financiero \and sistemas multiagente \and RGPD \and Reglamento de IA \and propiedad intelectual}
+
+\section{Introducción}
+
+El caso de estudio de este trabajo es el TFM titulado, de forma provisional, \textit{Sistema multiagente de IA para análisis financiero histórico}. El objetivo técnico del proyecto es construir un pipeline capaz de transformar una consulta financiera ya estructurada en un análisis reproducible sobre datos históricos de mercado. La entrada esperada no es texto libre sin procesar, sino un objeto normalizado que contiene la consulta original, la intención analítica, los tickers implicados, el periodo o rango temporal, el intervalo de los datos y las rutas a los archivos CSV. A partir de esa entrada, el sistema valida la petición, enruta la tarea a una familia analítica, genera un plan de análisis, produce código Python, ejecuta ese código de forma controlada y redacta una respuesta final comprensible.
+
+El alcance funcional considerado en esta memoria incluye seis tipos de análisis: crecimiento de precio, comparación de activos, visión general de un activo, análisis de retornos, análisis de riesgo histórico y análisis técnico. La arquitectura prevista combina una capa de orquestación, una capa de agentes especializados y una capa de ejecución de código. En la versión actual del TFM gran parte de la lógica es determinista, mediante plantillas programáticas, pero el diseño contempla la futura incorporación de modelos de lenguaje servidos mediante infraestructura como vLLM para tareas de planificación, generación de código e interpretación.
+
+El interés ético del caso no reside únicamente en que el sistema utilice técnicas de IA, sino en el dominio financiero en el que opera. Incluso un análisis histórico que no predice el futuro puede influir en decisiones económicas reales. Un usuario puede interpretar una respuesta como recomendación de inversión, asumir que el sistema es más fiable de lo que realmente es o ignorar que los resultados dependen de la calidad de los datos, de la ventana temporal seleccionada y de las métricas elegidas. Por tanto, aunque el sistema no tome decisiones automáticas sobre personas, sí puede producir efectos indirectos sobre la conducta de usuarios, especialmente si se presenta con una apariencia de autoridad técnica. Esta preocupación es coherente con las advertencias regulatorias sobre el uso de IA y aprendizaje automático en intermediarios y gestores financieros \cite{iosco2021ai}.
+
+La metodología seguida consiste en aplicar tres marcos de análisis. En primer lugar, se revisan los requisitos de IA confiable propuestos por el Grupo de Expertos de Alto Nivel de la Comisión Europea y la lista ALTAI, que organizan la evaluación en torno a agencia humana, robustez, privacidad, transparencia, equidad, bienestar social y rendición de cuentas \cite{hleg2019trustworthy,hleg2020altai}. En segundo lugar, se examina la clasificación jurídica del sistema conforme al Reglamento (UE) 2024/1689 de Inteligencia Artificial \cite{eu2024aiact}. En tercer lugar, se valoran los riesgos de protección de datos y propiedad intelectual tomando como referencia el RGPD \cite{eu2016gdpr} y el marco europeo de derechos de autor.
+
+\section{Descripción del sistema y uso previsto}
+
+El sistema se concibe como una herramienta de apoyo al análisis financiero, no como un asesor financiero automatizado. Su uso previsto es exploratorio, educativo o de apoyo técnico: ayudar a resumir el comportamiento histórico de activos financieros a partir de datos tabulares. El sistema no debe recomendar comprar, vender o mantener activos; no debe establecer perfiles de riesgo de usuarios; no debe ejecutar órdenes; no debe ofrecer predicciones futuras como si fueran certezas; y no debe sustituir el juicio profesional de una persona cualificada.
+
+Desde el punto de vista técnico, el flujo puede resumirse en siete fases. La primera es la ingesta de la consulta estructurada y de los CSV. La segunda es la validación de campos mínimos, existencia de rutas y compatibilidad entre intención y número de activos. La tercera es el enrutado hacia el agente analítico correspondiente. La cuarta es la construcción de un plan de análisis con métricas, columnas necesarias y foco textual. La quinta es la generación de código Python. La sexta es la ejecución controlada del script, capturando salida, errores y código de retorno. La séptima es la interpretación final, que transforma las métricas obtenidas en lenguaje natural.
+
+Esta arquitectura tiene ventajas éticas importantes. Al separar validación, enrutado, planificación, generación, ejecución e interpretación, el sistema permite auditar qué ocurre en cada fase. Además, al conservar logs, código generado y metadatos de ejecución, es posible reconstruir cómo se obtuvo una respuesta. Sin embargo, esas mismas características introducen riesgos: los logs pueden contener información innecesaria, el código generado puede ser inseguro, el usuario puede no comprender las limitaciones del análisis y el sistema puede producir una respuesta fluida incluso cuando los datos de entrada son pobres o incompletos.
+
+El análisis ético se realiza bajo una hipótesis razonable: el TFM terminado sería un prototipo académico funcional, ejecutado en entorno controlado, con datos de mercado descargados de fuentes externas y con una interfaz que permite al usuario formular o seleccionar consultas. No se presupone que el sistema sea desplegado como producto financiero regulado, pero sí se considera la posibilidad de que una versión futura se use por terceros. Esta hipótesis es importante porque muchas obligaciones jurídicas dependen del contexto real de comercialización, pero las buenas prácticas éticas deben incorporarse ya desde la fase de diseño.
+
+\section{Clasificación bajo el Reglamento Europeo de IA}
+
+El Reglamento (UE) 2024/1689 establece un enfoque basado en riesgo. En su uso previsto, el sistema analizado no parece encajar como sistema de alto riesgo. No se utiliza para identificación biométrica, infraestructuras críticas, educación, empleo, acceso a servicios esenciales, aplicación de la ley, migración, justicia o procesos democráticos. Tampoco decide sobre concesión de crédito, seguros o elegibilidad de personas para recursos económicos esenciales. Su función principal es calcular y explicar métricas históricas de activos financieros.
+
+No obstante, la conclusión debe formularse con cautela. Si el sistema se integrara en una plataforma que asesora a clientes, perfila inversores, recomienda productos financieros personalizados o automatiza decisiones de inversión, el análisis regulatorio cambiaría. En ese caso podrían aparecer obligaciones sectoriales adicionales y mayores exigencias de gobernanza, explicabilidad, supervisión y control. Por tanto, la clasificación de bajo riesgo no es una propiedad absoluta del código, sino del uso previsto, del contexto de despliegue y de las funciones activadas.
+
+El sistema tampoco constituye, por sí mismo, un modelo de IA de propósito general. El TFM no entrena ni comercializa un modelo fundacional; utiliza una arquitectura de orquestación y, eventualmente, podría llamar a un LLM externo para tareas concretas. Si se empleara un modelo de lenguaje de terceros, el proyecto actuaría como integrador o usuario de ese componente, no como proveedor del modelo base. Aun así, debería documentar qué modelo se usa, con qué versión, para qué tareas, con qué límites y bajo qué condiciones de licencia.
+
+Desde una perspectiva ética, aunque no sea alto riesgo, el sistema debe asumir obligaciones de diligencia. La ausencia de clasificación como alto riesgo no elimina la necesidad de transparencia, trazabilidad, seguridad, control humano y evaluación de impactos. En particular, el dominio financiero exige evitar que el usuario confunda análisis histórico con asesoramiento personalizado. La interfaz y la memoria técnica deberían declarar expresamente que las salidas son informativas, dependen de datos pasados y no garantizan rendimientos futuros.
+
+\section{Aplicación de los requisitos de IA confiable}
+
+La guía europea de IA confiable propone siete requisitos que pueden usarse como checklist de diseño. La Tabla \ref{tab:altai} resume su aplicación al TFM.
+
+\begin{table}[h]
+\centering
+\caption{Aplicación de requisitos de IA confiable al sistema del TFM}
+\label{tab:altai}
+\small
+\begin{tabular}{p{0.28\linewidth}p{0.34\linewidth}p{0.28\linewidth}}
+\toprule
+\textbf{Requisito} & \textbf{Riesgo principal} & \textbf{Medida propuesta} \\
+\midrule
+Agencia y supervisión humana & Uso de la respuesta como recomendación automática & Avisos claros, no ejecución de operaciones y revisión humana \\
+Robustez y seguridad técnica & Fallos por datos incorrectos o código generado inseguro & Validación, sandbox, timeouts, tests y logs \\
+Privacidad y gobernanza de datos & Inclusión accidental de datos personales en consultas o logs & Minimización, filtrado y retención limitada \\
+Transparencia & Opacidad sobre métricas, datos y límites & Mostrar intención, fuentes, periodo y supuestos \\
+Equidad y no discriminación & Sesgos indirectos si se amplía a perfiles de usuarios & Evitar perfilado personal y auditar futuras extensiones \\
+Bienestar social y ambiental & Incentivo a conductas financieras imprudentes o coste computacional & Limitar alcance, usar modelos proporcionales y educar sobre riesgo \\
+Rendición de cuentas & Dificultad para reconstruir una salida & Versionado, trazabilidad y documentación de decisiones \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Agencia humana y supervisión}
+
+El requisito de agencia humana exige que el sistema aumente la capacidad de decisión de las personas sin sustituir indebidamente su juicio. En este caso, la medida más importante es definir límites funcionales. El sistema debe responder sobre métricas históricas, no sobre decisiones personalizadas. Una salida adecuada diría, por ejemplo, que un activo tuvo mayor retorno acumulado que otro en un periodo concreto, pero no que el usuario deba invertir en él.
+
+También es recomendable incorporar supervisión en dos niveles. En desarrollo, el estudiante debe revisar ejemplos de salida para comprobar que el tono no es prescriptivo. En despliegue, si existiera, el usuario debería poder inspeccionar los datos usados, repetir el cálculo y descartar respuestas que no entienda. La interfaz debería incluir advertencias discretas pero visibles: análisis histórico, no asesoramiento financiero, no predicción garantizada.
+
+\subsection{Robustez técnica y seguridad}
+
+La robustez técnica es uno de los puntos más críticos porque el sistema genera y ejecuta código. Aunque el prototipo actual utilice plantillas deterministas, la futura incorporación de LLMs aumenta el riesgo de que se genere código incorrecto, inseguro o incompatible con los datos. Las medidas recomendadas son: ejecución sin \texttt{shell=True}, timeout por proceso, directorio de trabajo limitado, lista de imports permitidos, bloqueo de acceso a red durante la ejecución, validación previa del AST cuando sea posible y registro de \texttt{stdout}, \texttt{stderr} y \texttt{returncode}.
+
+La robustez también depende de la calidad de los datos. Los CSV pueden tener columnas inesperadas, valores nulos, periodos incompletos o errores de descarga. Por ello, el sistema debe validar columnas, frecuencia temporal, número mínimo de observaciones y coherencia entre ticker, intervalo y periodo. Cuando los datos sean insuficientes, la respuesta correcta no debe rellenar huecos con lenguaje convincente, sino detener el análisis y explicar el problema.
+
+\subsection{Privacidad y gobernanza de datos}
+
+El tratamiento principal del TFM se basa en datos financieros históricos de mercado: precios, volúmenes, fechas y tickers. Estos datos no son personales en el sentido del RGPD porque no se refieren a una persona física identificada o identificable. Sin embargo, el sistema también puede procesar consultas de usuario, rutas de archivo, logs y metadatos. Es posible que una persona introduzca accidentalmente información personal en una consulta, por ejemplo, referencias a su cartera, a su nombre o a circunstancias económicas propias.
+
+Por ese motivo, la gobernanza de datos debe basarse en minimización. El sistema no necesita almacenar datos personales para cumplir su finalidad. Los logs deberían excluir identificadores innecesarios, truncar consultas largas si no son imprescindibles, separar métricas técnicas de contenido de usuario y definir un periodo de conservación. En un prototipo académico local, el riesgo es limitado; en una aplicación multiusuario, serían necesarios control de acceso, cifrado en reposo, política de retención y documentación de la base jurídica del tratamiento.
+
+\subsection{Transparencia y explicabilidad}
+
+La explicabilidad del sistema no debe limitarse a que la respuesta final sea clara. También debe explicar qué se ha calculado y con qué supuestos. Una respuesta responsable debería incluir, al menos, el activo o activos analizados, el periodo temporal, el intervalo de datos, la métrica principal y una advertencia sobre el carácter histórico del resultado. En análisis técnico, por ejemplo, debe indicarse qué ventanas se han usado para las medias móviles y el RSI.
+
+La transparencia también afecta a la arquitectura. El usuario o evaluador debería poder ver qué agente fue seleccionado, qué plan analítico se generó, qué código se ejecutó y qué salida produjo. Esta trazabilidad convierte el sistema en una herramienta más auditable y reduce el riesgo de aceptar acríticamente una explicación generada. En un TFM, este punto es especialmente valioso porque permite defender no solo el resultado final, sino el proceso que lo produjo.
+
+\subsection{Equidad, bienestar social y rendición de cuentas}
+
+En su versión actual, el sistema no toma decisiones sobre personas, por lo que los riesgos clásicos de discriminación algorítmica son bajos. Aun así, podrían aparecer en extensiones futuras si el sistema incorporara perfiles de usuario, tolerancia al riesgo, edad, ingresos o patrimonio. La recomendación ética es mantener el prototipo fuera del perfilado personal y, si alguna vez se añade personalización, realizar una evaluación específica de sesgos y proporcionalidad.
+
+El bienestar social se relaciona con el impacto financiero de la herramienta. Un sistema que ofrece respuestas muy seguras puede inducir confianza excesiva. Por ello, el lenguaje debe evitar promesas, recomendaciones directas y conclusiones simplistas. También debe advertir que los indicadores técnicos y las métricas históricas no predicen por sí solos el comportamiento futuro. En términos ambientales, el enfoque incremental y determinista del TFM es positivo porque evita usar modelos grandes cuando no son necesarios. Si se incorpora un LLM, debería justificarse por mejora real de utilidad y no por mera sofisticación.
+
+La rendición de cuentas exige asignar responsabilidades. En el contexto académico, el estudiante es responsable de documentar alcance, limitaciones, datos, dependencias y decisiones de diseño. En un eventual despliegue, habría que diferenciar proveedor del sistema, proveedor del modelo externo, responsable del tratamiento de datos y usuario profesional que interpreta los resultados.
+
+\section{Protección de datos y análisis de riesgos}
+
+El RGPD se aplica cuando se tratan datos personales. Como el núcleo del TFM utiliza datos de mercado no personales, el riesgo de protección de datos es moderado. Sin embargo, el principio de protección de datos desde el diseño aconseja prever escenarios de tratamiento incidental. La Tabla \ref{tab:datos} resume los tipos de datos.
+
+\begin{table}[h]
+\centering
+\caption{Tipología de datos tratados}
+\label{tab:datos}
+\small
+\begin{tabular}{p{0.25\linewidth}p{0.35\linewidth}p{0.30\linewidth}}
+\toprule
+\textbf{Dato} & \textbf{Ejemplo} & \textbf{Valoración} \\
+\midrule
+Datos de mercado & Precio, volumen, fecha, ticker & No personales \\
+Consulta estructurada & Intención, tickers, periodo & No personal salvo contenido incidental \\
+Logs técnicos & Código generado, errores, rutas & Riesgo bajo-medio según contenido \\
+Datos de usuario & Nombre, cartera o preferencias introducidas voluntariamente & Potencialmente personales \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No se tratan categorías especiales del artículo 9 RGPD, como salud, ideología, religión, origen étnico, biometría o afiliación sindical. Tampoco parece necesario realizar una evaluación de impacto formal en el prototipo académico, ya que no existe tratamiento sistemático a gran escala de datos personales ni decisiones automatizadas con efectos jurídicos sobre personas. No obstante, si el sistema se desplegara públicamente y registrara consultas de usuarios, sería prudente realizar una evaluación simplificada de riesgos y documentar medidas de mitigación.
+
+Los principales riesgos identificados son cuatro. El primero es la inclusión accidental de datos personales en consultas o logs. Su probabilidad es media y su impacto sería normalmente medio. La mitigación consiste en limitar campos libres, anonimizar o borrar consultas en logs, y ofrecer instrucciones para no introducir información personal. El segundo riesgo es el acceso no autorizado a resultados o logs. Su impacto podría ser medio-alto si aparecen estrategias de inversión o datos privados del usuario. La mitigación requiere permisos, almacenamiento seguro y separación de entornos.
+
+El tercer riesgo es la ejecución insegura de código generado. Aunque no sea estrictamente un riesgo de protección de datos, puede convertirse en uno si el código accede a archivos, red o variables de entorno. Debe mitigarse mediante sandboxing, timeouts, listas de librerías autorizadas y revisión de rutas. El cuarto riesgo es la retención excesiva. Guardar todos los scripts, consultas y salidas facilita la trazabilidad, pero también acumula información innecesaria. La solución es conservar lo necesario para depuración y reproducibilidad, con borrado periódico o anonimización cuando el sistema deje de estar en fase experimental.
+
+\section{Propiedad intelectual y uso de materiales}
+
+El TFM plantea varias cuestiones de propiedad intelectual, en un contexto europeo marcado por la Directiva (UE) 2019/790 sobre derechos de autor en el mercado único digital \cite{eu2019copyright}. La primera se refiere a los datos financieros. Los precios históricos de mercado pueden parecer datos puramente fácticos, pero su descarga, agregación y redistribución suelen estar sujetos a condiciones de uso de la fuente. Por ello, el proyecto debe evitar redistribuir masivamente datasets descargados si la licencia no lo permite, documentar la fuente de los datos y limitar el uso a fines académicos cuando corresponda.
+
+La segunda cuestión es el código generado. Si el sistema utiliza plantillas propias, la titularidad del código del repositorio corresponde al autor del TFM salvo que se incorporen fragmentos de terceros. Si en el futuro un LLM genera código, la situación puede depender de los términos del proveedor del modelo, de la licencia del modelo y de si la salida reproduce material protegido. La medida práctica es mantener prompts, salidas y dependencias documentadas, revisar el código generado antes de integrarlo y evitar copiar fragmentos extensos de fuentes no licenciadas.
+
+La tercera cuestión afecta a la documentación, artículos, diapositivas y materiales docentes usados para construir la memoria. Estos materiales pueden inspirar el análisis, pero no deben copiarse literalmente salvo citas breves y correctamente referenciadas. El uso de herramientas de IA generativa en la redacción también debe ser transparente: puede ayudar a estructurar o revisar el texto, pero el estudiante debe verificar el contenido, adaptar el análisis al caso real y asumir la responsabilidad académica del resultado.
+
+Por último, si el sistema se liberara como software, sería recomendable escoger una licencia explícita para el repositorio. La ausencia de licencia no equivale a libertad de uso. Una licencia permisiva permitiría reutilización amplia; una licencia más restrictiva podría limitar usos comerciales o exigir compartir modificaciones. Dado el carácter académico del TFM, lo mínimo es incluir un archivo de licencia, citar dependencias de terceros y separar claramente código propio, datos descargados y materiales de documentación.
+
+\section{Medidas de diseño responsable}
+
+De la evaluación anterior se deriva un conjunto de medidas concretas. En primer lugar, la interfaz y la documentación deben fijar el alcance: análisis histórico, no asesoramiento financiero. En segundo lugar, cada salida debe incluir metadatos básicos: tickers, periodo, intervalo, fuente de datos y métrica principal. En tercer lugar, el sistema debe registrar el plan analítico y el código ejecutado, pero minimizando el contenido personal y aplicando retención limitada.
+
+En cuarto lugar, la ejecución de código debe aislarse. El uso de \texttt{subprocess} debe realizarse con argumentos explícitos, sin shell, con timeout y con directorios controlados. En quinto lugar, los agentes deben devolver estructuras cerradas siempre que sea posible, reduciendo texto libre entre fases. En sexto lugar, las pruebas deben cubrir tanto ejecuciones correctas como errores previsibles: intención no soportada, CSV inexistente, cardinalidad incorrecta de tickers, columnas ausentes y datos insuficientes.
+
+En séptimo lugar, si se incorpora un LLM, debe mantenerse un fallback determinista o una validación fuerte de salida. El modelo no debe decidir por sí solo ejecutar operaciones no previstas ni inventar datos ausentes. En octavo lugar, la memoria del TFM debe incluir una sección de limitaciones éticas donde se reconozcan explícitamente los riesgos de confianza excesiva, dependencia de datos históricos, fragilidad de indicadores técnicos y ausencia de asesoramiento personalizado.
+
+\section{Conclusiones}
+
+El sistema analizado presenta un perfil ético manejable, pero no trivial. Su finalidad es razonable para un TFM: construir una arquitectura multiagente capaz de analizar datos financieros históricos de forma reproducible. No se aprecia, en el uso previsto, una clasificación como sistema de alto riesgo bajo el Reglamento Europeo de IA, ni como modelo de IA de propósito general propio. Tampoco se tratan de forma principal datos personales ni categorías especialmente protegidas.
+
+Sin embargo, la combinación de IA, finanzas y generación de código exige medidas de responsabilidad desde el diseño. Los riesgos principales son la confianza excesiva del usuario, la interpretación de resultados como recomendación financiera, la opacidad del flujo analítico, la ejecución insegura de código, la acumulación innecesaria de logs y las dudas sobre licencias de datos o salidas generadas. Estos riesgos pueden mitigarse con límites funcionales claros, trazabilidad, validación, supervisión humana, minimización de datos, control de ejecución y documentación transparente.
+
+En definitiva, el TFM puede considerarse viable desde el punto de vista ético si se mantiene como herramienta de análisis histórico-descriptivo, se evita el asesoramiento automatizado y se incorporan desde el diseño los requisitos de IA confiable. La principal recomendación es no tratar la ética como una sección añadida al final del proyecto, sino como una parte de la arquitectura: qué datos se aceptan, qué agentes pueden actuar, qué código puede ejecutarse, qué se registra, qué se explica y qué límites se comunican al usuario.
+
+\section*{Declaración de uso de IA generativa}
+
+Se ha utilizado IA generativa como apoyo auxiliar para estructurar el documento y mejorar la redacción. El análisis, la adaptación al caso del TFM, la revisión crítica y la versión final de la memoria han sido realizados por el autor.
+
+\section*{Agradecimientos}
+
+Este documento se ha elaborado como memoria ética aplicada al Trabajo Fin de Máster, tomando como base la guía de la asignatura, las actividades previas sobre protección de datos y la documentación técnica del propio proyecto.
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,31 @@
+Objetivo de los proyectos:
+El alumnado podrá comprender la importancia de algunas cuestiones éticas, sociales y legales que afectan a los proyectos de Ingeniería relacionados con la IA y se familiarizará con algunas buenas prácticas de instituciones que están tratando de incorporar estas sensibilidades en sus formas de hacer.
+
+Contenidos:
+Cada estudiante/pareja de trabajo elegirá un caso concreto, y trabajará los distintos conceptos tratados en las sesiones junto a la cheklist “Specification of Objectives against Ethical Requirements” que requiere la UE para la implementación de tecnologías con Inteligencia Artificial, que está en el documento del Tema 5 y en el bloque de entregas de la asignatura.
+
+Además, deberá hacerse una valoración de los factores de riesgo para la Protección de datos (Tema-3) relacionados con la tecnología o caso concreto elegido así como de las implicaciones que pueda tener en el ámbito de la Propiedad Intelectual.
+
+Con la guía de la profesora y el profesor, irá analizando la aplicación de los conceptos aprendidos a la aplicación de IA sobre la que se centre.
+
+Metodología:
+Formación de parejas y selección de casos. En el caso de realizar el trabajo individualmente apuntarse a un grupo también, ya que para realizar la entrega es imprescindible estar en un grupo
+Localización de materiales disponibles, búsqueda de otros recursos.
+Resolución de tareas propuestas en clase relacionadas con el caso de estudio, cuyas conclusiones se integrarán en el trabajo final.
+ 
+
+Evaluación:
+Presentación en clase/video (25%):
+ppt. o similar (vídeo, ppt o prezi, póster, entre otros, que se utilizará en la exposición oral del trabajo) o un cartel tipo infografía sobre el tema elegido.
+Exposición oral:
+En la modalidad presencial: exposición de 10 minutos del caso de estudio con preguntas y debate posterior, utilizando un sistema de presentación suficientemente completo.
+En la modalidad online, junto a la presentación se deberá incluir un enlace a un vídeo en el que se realiza su exposición.
+
+Memoria (75%): Entregar una memoria en pdf sobre el tema elegido, siguiendo las directrices y formato arXiv de Overleaf con una extensión aproximada de entre 3.000 y 4.000 palabras, como máximo.
+ 
+Fechas de entrega:
+Están disponibles en las tareas de Moodle.
+
+Uso de IA Generativa:
+
+Queremos aclarar que al igual que está prohibido el plagio, el uso de forma irresponsable de herramientas de IA Generativa será causa de reducción sustancial de la calificación o suspenso.

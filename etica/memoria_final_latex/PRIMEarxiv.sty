@@ -1,0 +1,23 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{PRIMEarxiv}[2026/04/26 Minimal arXiv-like style for ethics report]
+
+\RequirePackage[a4paper,margin=1in]{geometry}
+\RequirePackage{times}
+\RequirePackage{titlesec}
+\RequirePackage{abstract}
+\RequirePackage{xcolor}
+\RequirePackage{natbib}
+
+\setlength{\headheight}{13pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.8em}{}
+\renewcommand{\abstractnamefont}{\normalfont\bfseries}
+\renewcommand{\abstracttextfont}{\normalfont\small}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+
+\newcommand{\keywords}[1]{%
+  \vspace{0.5em}
+  \noindent\textbf{Palabras clave: } #1
+  \vspace{0.5em}
+}
