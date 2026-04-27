@@ -4,7 +4,8 @@ from src.execution.code_runner import run_generated_code
 from src.agents import interpret_agent_output
 from src.graph.routing import route_intent, validate_input
 from src.graph.prompts import build_analysis_plan, build_code_template
-from src.schemas import FinancialQueryInput, WorkflowState
+from src.llm.pipeline import maybe_build_llm_code, maybe_build_llm_interpretation, maybe_build_llm_plan
+from src.schemas import AnalysisPlan, FinancialQueryInput, WorkflowState
 
 
 def ingest_node(state: WorkflowState) -> WorkflowState:
@@ -33,7 +34,9 @@ def orchestrator_router_node(state: WorkflowState) -> WorkflowState:
 
 def specialist_analysis_node(state: WorkflowState) -> WorkflowState:
     query_input = FinancialQueryInput.from_dict(state.normalized_query)
-    plan = build_analysis_plan(query_input)
+    fallback_plan = build_analysis_plan(query_input)
+    plan, warnings = maybe_build_llm_plan(query_input, fallback_plan)
+    state.warnings.extend(warnings)
     state.analysis_plan = plan.to_dict()
     state.status = "planned"
     return state
@@ -45,9 +48,10 @@ def code_generation_node(state: WorkflowState) -> WorkflowState:
         state.error_message = "No existe analysis_plan para generar codigo."
         return state
 
-    query_input = FinancialQueryInput.from_dict(state.normalized_query)
-    plan = build_analysis_plan(query_input)
-    code_output = build_code_template(plan)
+    plan = AnalysisPlan(**state.analysis_plan)
+    fallback_code = build_code_template(plan)
+    code_output, warnings = maybe_build_llm_code(plan, fallback_code)
+    state.warnings.extend(warnings)
     state.generated_code = code_output
     state.status = "code_generated"
     return state
@@ -80,7 +84,10 @@ def interpretation_node(state: WorkflowState) -> WorkflowState:
     if state.execution_returncode != 0:
         return execution_error_node(state)
 
-    state.final_answer = interpret_agent_output(output)
+    fallback_answer = interpret_agent_output(output)
+    final_answer, warnings = maybe_build_llm_interpretation(output, fallback_answer)
+    state.warnings.extend(warnings)
+    state.final_answer = final_answer
     state.status = "completed"
     return state
 

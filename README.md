@@ -69,6 +69,33 @@ python -m unittest tests/test_mvp.py
 
 Los tests validan las seis intenciones soportadas y varios escenarios de error.
 
+## Preparacion para API LLM
+
+El MVP puede funcionar sin API externa. La integracion LLM esta preparada mediante un cliente compatible con OpenAI en `src/llm/`, pero queda desactivada por defecto.
+
+Para probar una API compatible con OpenAI:
+
+```bash
+copy .env.example .env
+```
+
+Configura en `.env`:
+
+```bash
+LLM_ENABLED=true
+LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_API_KEY=tu_clave
+LLM_MODEL=llama-3.3-70b-versatile
+```
+
+La activacion es granular:
+
+- `LLM_USE_FOR_PLANNING=true`: el LLM puede ajustar el plan analitico.
+- `LLM_USE_FOR_CODEGEN=true`: el LLM puede generar codigo Python. Mantener desactivado hasta validar bien el proveedor.
+- `LLM_USE_FOR_INTERPRETATION=true`: el LLM puede redactar la respuesta final.
+
+Si la API falla, falta configuracion o la respuesta no cumple el contrato minimo, el sistema mantiene el fallback determinista actual.
+
 ## Que hace cada modulo
 
 - `src/schemas.py`: modelos de entrada, salida y estado
