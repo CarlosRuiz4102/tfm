@@ -1,0 +1,13 @@
+{
+  "query": "EUR/USD en 10 d?as a 1h",
+  "intent": "historical_download",
+  "tickers": [
+    "EURUSD=X"
+  ],
+  "start": null,
+  "end": null,
+  "period": "10d",
+  "interval": "1h",
+  "needs_clarification": false,
+  "warnings": ""
+}

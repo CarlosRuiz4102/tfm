@@ -1,0 +1,36 @@
+\chapter{Anexos}
+
+\section{Ejecucion del MVP}
+
+El proyecto puede ejecutarse en modo determinista mediante los ejemplos incluidos en el repositorio:
+
+\begin{verbatim}
+python run_mvp.py --example growth_nvda
+python run_mvp.py --example compare_nvda_amd
+python run_mvp.py --example overview_aapl
+python run_mvp.py --example returns_qqq_spy
+python run_mvp.py --example risk_qqq_spy
+python run_mvp.py --example technical_aapl
+\end{verbatim}
+
+\section{Configuracion de APIs}
+
+Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe subirse al repositorio. Para trabajar sin APIs externas:
+
+\begin{verbatim}
+LLM_ENABLED=false
+\end{verbatim}
+
+Para activar Groq:
+
+\begin{verbatim}
+LLM_ENABLED=true
+LLM_PROFILE=groq
+\end{verbatim}
+
+Para activar Gemini:
+
+\begin{verbatim}
+LLM_ENABLED=true
+LLM_PROFILE=gemini
+\end{verbatim}

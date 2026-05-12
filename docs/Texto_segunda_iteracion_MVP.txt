@@ -1,0 +1,103 @@
+La segunda iteracion del MVP representa una fase de consolidacion y ampliacion del prototipo inicial desarrollado para este 
+TFM. Si la primera version tenia como objetivo principal demostrar que la arquitectura general del sistema multiagente 
+podia ejecutarse de extremo a extremo de forma coherente, esta segunda fase persigue un objetivo complementario y 
+necesario: comprobar que dicha arquitectura no solo funciona en un caso minimo, sino que tambien puede crecer de manera 
+controlada, manteniendo la estabilidad del workflow y ampliando el tipo de analisis financieros que es capaz de resolver. 
+En otras palabras, el paso del primer al segundo MVP no consiste en cambiar la idea central del sistema, sino en verificar 
+que esa idea es escalable, reutilizable y suficientemente solida como para sostener una evolucion posterior mas ambiciosa.
+
+La filosofia de esta segunda iteracion se mantiene alineada con la del primer MVP. El sistema sigue partiendo de una 
+entrada ya estructurada, compuesta por la consulta original, la intencion analitica, los tickers involucrados, el rango 
+temporal o periodo, el intervalo y las rutas a los archivos CSV. A partir de esa entrada, el workflow conserva la misma 
+secuencia basica: validacion inicial de la peticion, enrutado segun la intencion detectada, construccion de un plan 
+analitico estructurado, generacion del codigo Python necesario para ejecutar el analisis, ejecucion controlada del script 
+y produccion de una respuesta final interpretable. Mantener este flujo tiene una importancia metodologica clara, ya que 
+permite comparar ambas iteraciones sobre una base comun y demostrar que la arquitectura elegida en la primera fase era 
+adecuada para crecer sin necesidad de ser replanteada desde cero.
+
+La mejora mas visible introducida en esta segunda iteracion es la ampliacion del conjunto de intenciones soportadas. 
+El primer MVP validaba el pipeline con dos tareas analiticas concretas: `price_growth`, centrada en medir el crecimiento o 
+decrecimiento de un activo en un determinado periodo, y `compare_assets`, orientada a comparar el comportamiento relativo 
+de varios activos. La nueva iteracion incorpora dos capacidades adicionales: `asset_overview` y `return_analysis`. La 
+primera permite ofrecer una vision descriptiva general del comportamiento de un activo, resumiendo informacion relevante 
+como el precio inicial y final del periodo, la variacion absoluta y porcentual, el valor minimo, el valor maximo y la 
+media de cierres. La segunda permite estudiar la serie de retornos historicos de uno o varios activos, calculando 
+magnitudes como el retorno acumulado, la media diaria de retorno, la volatilidad y los extremos de la distribucion 
+observada. Con ello, el sistema da un paso cualitativo importante, ya que deja de estar limitado a una lectura basada 
+exclusivamente en niveles de precio y empieza a incorporar un tratamiento mas analitico de la dinamica temporal de los 
+activos.
+
+Desde el punto de vista tecnico, esta ampliacion resulta especialmente relevante porque no se ha conseguido anadiendo 
+complejidad arbitraria, sino reutilizando y extendiendo la logica del workflow existente. El nodo de ingesta sigue 
+encargandose de verificar la consistencia minima de la entrada; el nodo orquestador continua validando la coherencia 
+entre intencion y tickers y determinando que agente o ruta analitica corresponde; el nodo de analisis especializado sigue 
+traduciendo la intencion a un plan estructurado; el nodo de generacion de codigo produce un script Python ajustado a dicho 
+plan; el nodo de ejecucion mantiene el uso de `subprocess` para lanzar el analisis de forma controlada; y el nodo de 
+interpretacion sigue siendo el encargado de transformar la salida numerica en una respuesta final legible. Esta continuidad 
+arquitectonica es precisamente una de las fortalezas del segundo MVP, porque demuestra que la primera version no era un 
+experimento aislado, sino una base de software con capacidad real de evolucion.
+
+La segunda iteracion mejora al primer MVP tambien en terminos de utilidad analitica. Mientras que el prototipo inicial 
+permitia resolver consultas sencillas pero representativas, la nueva version responde a necesidades mas cercanas a un uso 
+real. `asset_overview` resulta util cuando el usuario no busca una comparacion directa ni una metrica unica de crecimiento, 
+sino una imagen general del comportamiento reciente de un activo. Se trata de una consulta tipica en fases exploratorias 
+del analisis financiero, donde interesa disponer de un resumen claro antes de profundizar en medidas mas especificas. Por 
+su parte, `return_analysis` introduce un enfoque mas maduro desde el punto de vista cuantitativo, ya que el estudio de 
+retornos constituye una base natural para tareas posteriores relacionadas con riesgo historico, estabilidad, dispersion o 
+comparacion relativa. De este modo, la segunda iteracion no solo aumenta el numero de intenciones disponibles, sino que 
+mejora la profundidad financiera de las respuestas que el sistema es capaz de construir.
+
+Otro aspecto importante de esta fase es el refuerzo de la validacion experimental del sistema. Si en el primer MVP se 
+utilizaron como casos de comprobacion las consultas “Cuanto ha crecido Nvidia en 5 anos” y “Compara Nvidia y AMD en 2 anos”, 
+en esta nueva iteracion se incorporan dos ejemplos adicionales que amplian la diversidad de escenarios evaluados: una 
+vision general de AAPL en tres meses y un analisis de retornos de QQQ y SPY en 2024. La eleccion de estos ejemplos no es 
+casual. El caso de AAPL permite validar un escenario de activo unico con salida descriptiva, mientras que el caso QQQ-SPY 
+permite comprobar el comportamiento del sistema en un escenario multi-activo donde ya no se comparan solo niveles de 
+precio, sino magnitudes derivadas de los retornos. Gracias a ello, la evaluacion del prototipo deja de depender de un 
+conjunto demasiado reducido de situaciones y gana en solidez, representatividad y valor demostrativo de cara a la memoria 
+del TFM.
+
+Desde una perspectiva de ingenieria, la segunda iteracion mantiene deliberadamente el caracter determinista del sistema. 
+La planificacion del analisis, la generacion del codigo y la interpretacion final siguen basandose en plantillas 
+programaticas y reglas cerradas, en lugar de delegarse todavia en un LLM real. Esta decision responde a una motivacion 
+clara: en esta etapa del proyecto, el objetivo principal no es maximizar la sofisticacion del sistema, sino asegurar que 
+la arquitectura, la trazabilidad y la ejecucion son robustas antes de incorporar una capa adicional de complejidad. 
+Mantener un enfoque determinista permite probar el workflow en entornos sencillos, sin necesidad de GPU ni de 
+infraestructura de serving, y facilita enormemente la depuracion, la reproducibilidad de resultados y la interpretacion de 
+errores. En consecuencia, la ausencia de un modelo de lenguaje en esta fase no debe verse como una limitacion conceptual, 
+sino como una decision estrategica orientada a consolidar primero la base tecnica del sistema.
+
+Esta iteracion aporta ademas una mejora importante en terminos de justificabilidad academica. En un TFM no basta con 
+mostrar que un sistema “funciona”; es necesario demostrar que existe una progresion metodologica razonada entre versiones, 
+que las decisiones de diseno responden a objetivos claros y que cada fase aporta evidencia nueva sobre la validez de la 
+propuesta. El segundo MVP cumple precisamente esa funcion: actua como puente entre una primera prueba de concepto y una 
+futura arquitectura mas rica, permitiendo argumentar que el sistema multiagente no solo es viable, sino tambien extensible. 
+El hecho de haber ampliado intenciones, incorporado nuevos ejemplos de prueba, mantenido la estabilidad del workflow y 
+mejorado la utilidad analitica del sistema refuerza la defensa de la arquitectura como una solucion bien planteada desde 
+el inicio.
+
+En resumen, la segunda iteracion del MVP mejora el primer prototipo en cuatro dimensiones principales. En primer lugar, 
+amplía la cobertura funcional del sistema al pasar de dos a cuatro intenciones analiticas. En segundo lugar, enriquece la 
+calidad del analisis al incorporar un resumen descriptivo general y un estudio de retornos historicos. En tercer lugar, 
+confirma que la arquitectura inicial puede escalar sin perder coherencia ni trazabilidad. Y, en cuarto lugar, fortalece la 
+validacion experimental mediante nuevos casos de uso que aumentan la representatividad del prototipo. Gracias a esta fase, 
+el proyecto deja de ser unicamente una demostracion minima de viabilidad y pasa a convertirse en una base mas madura, 
+defendible y tecnicamente consistente para continuar el desarrollo del TFM. A partir de aqui, el siguiente paso natural 
+sera seguir ampliando las intenciones analiticas, modularizar con mayor claridad los agentes especializados y, una vez 
+estabilizada por completo la base del sistema, introducir nodos apoyados en modelos de lenguaje reales para la 
+planificacion, la generacion de codigo y la interpretacion final.
+
+La metodologia aplicada en esta segunda iteracion mantiene el criterio incremental de la primera fase, pero amplia el
+alcance experimental para comprobar la extensibilidad del sistema. En lugar de modificar la arquitectura general, se
+mantiene el mismo flujo de trabajo y se incorporan nuevas intenciones sobre las mismas interfaces: entrada estructurada,
+validacion inicial, enrutado, plan analitico, generacion de codigo, ejecucion controlada e interpretacion final. Esta
+decision permite evaluar si el diseno original soporta nuevas familias analiticas sin introducir cambios estructurales
+profundos. Por tanto, la prueba principal de esta fase no es solo que las nuevas metricas se calculen correctamente, sino
+que se integren en el pipeline sin romper las capacidades previamente validadas.
+
+Los resultados de esta segunda iteracion confirman esa extensibilidad. A los casos iniciales de crecimiento y comparacion
+se suman un resumen descriptivo de AAPL y un analisis de retornos de QQQ y SPY, lo que eleva la cobertura funcional de dos
+a cuatro intenciones. El sistema conserva la misma secuencia de ejecucion, mantiene la trazabilidad de los artefactos
+generados y produce respuestas finales coherentes para los nuevos escenarios. Este resultado refuerza la validez
+metodologica del enfoque, porque demuestra que el MVP no era una solucion puntual para dos consultas concretas, sino una
+base reutilizable capaz de absorber nuevas tareas financieras sin redisenar el conjunto del sistema.

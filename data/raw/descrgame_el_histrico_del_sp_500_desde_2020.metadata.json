@@ -1,0 +1,13 @@
+{
+  "query": "Desc?rgame el hist?rico del S&P 500 desde 2020",
+  "intent": "historical_download",
+  "tickers": [
+    "^GSPC"
+  ],
+  "start": "2020-01-01",
+  "end": null,
+  "period": null,
+  "interval": "1d",
+  "needs_clarification": false,
+  "warnings": ""
+}

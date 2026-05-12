@@ -1,0 +1,13 @@
+\chapter{Estado de la cuestion}
+
+\section{Sistemas basados en modelos de lenguaje}
+
+Los modelos de lenguaje de gran escala han abierto la posibilidad de construir sistemas capaces de interpretar instrucciones, generar codigo y redactar explicaciones adaptadas al usuario. Sin embargo, su uso directo en tareas analiticas puede introducir problemas de verificabilidad si no se acompana de estructuras de control. En dominios donde los resultados dependen de calculos concretos, como el analisis financiero, resulta conveniente combinar componentes generativos con ejecucion programatica y validaciones explicitas.
+
+\section{Arquitecturas multiagente}
+
+Las arquitecturas multiagente permiten dividir una tarea compleja en responsabilidades mas pequenas. En este proyecto, la idea de agente no se entiende como una entidad autonoma sin restricciones, sino como una familia analitica con una interfaz clara: recibe una intencion, produce un plan, genera o selecciona codigo y contribuye a la interpretacion final. Esta separacion facilita la extension del sistema, ya que nuevas intenciones pueden incorporarse sin reescribir el flujo completo.
+
+\section{Limitaciones de los enfoques monoliticos}
+
+Un enfoque monolitico, en el que una unica funcion o prompt realiza todo el proceso, puede ser suficiente para una demostracion pequena, pero presenta limitaciones cuando se desea evaluar el sistema de forma rigurosa. Entre ellas destacan la dificultad para aislar errores, la falta de trazabilidad entre la entrada y la salida, y la ausencia de puntos intermedios donde aplicar validaciones. El diseno propuesto en este TFM busca precisamente evitar estas limitaciones.

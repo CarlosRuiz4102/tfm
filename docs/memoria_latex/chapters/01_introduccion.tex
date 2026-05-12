@@ -1,0 +1,31 @@
+\chapter{Introduccion}
+
+\section{Contexto y definicion del problema}
+
+El analisis financiero historico suele combinar varias tareas que, aunque son conceptualmente distintas, aparecen juntas en el trabajo practico: carga de datos, validacion de entradas, seleccion del tipo de analisis, calculo de metricas, generacion de graficos, interpretacion de resultados y comunicacion final al usuario. En muchos prototipos basados en modelos de lenguaje, estas fases se mezclan dentro de una unica llamada generativa, lo que dificulta la trazabilidad del resultado y aumenta el riesgo de errores silenciosos.
+
+Este trabajo plantea una aproximacion diferente. En lugar de delegar todo el proceso en un modelo generativo, se disena un flujo multiagente en el que cada fase tiene una responsabilidad delimitada. El sistema no intenta resolver desde cero el problema completo de comprension del lenguaje natural, sino que parte de una consulta financiera ya estructurada: intencion, tickers, rango temporal, intervalo y rutas a los ficheros CSV. A partir de esta entrada, el objetivo es orquestar un analisis reproducible y controlado.
+
+\section{Motivacion}
+
+La motivacion principal del proyecto es explorar como una arquitectura multiagente puede aportar orden, modularidad y robustez a un sistema de analisis financiero asistido por inteligencia artificial. La aplicacion de modelos de lenguaje al dominio financiero resulta atractiva por su capacidad de generar explicaciones y adaptar el lenguaje al usuario, pero tambien exige mecanismos de control. En un contexto financiero, incluso cuando el objetivo es puramente descriptivo, resulta esencial separar los calculos verificables de la redaccion final.
+
+Por esta razon, el MVP se ha construido inicialmente con plantillas deterministas. Esta decision permite validar el flujo completo antes de introducir APIs externas o modelos servidos localmente. Una vez estabilizada la arquitectura, la incorporacion opcional de proveedores como Groq o Gemini puede realizarse de forma gradual, empezando por la fase de interpretacion y conservando fallbacks programaticos.
+
+\section{Objetivos}
+
+El objetivo general del trabajo es desarrollar y validar un prototipo multiagente capaz de ejecutar analisis financieros historicos a partir de entradas estructuradas y datos en CSV.
+
+Los objetivos especificos son:
+
+\begin{itemize}
+    \item Definir un workflow modular que separe ingesta, enrutado, planificacion, generacion de codigo, ejecucion e interpretacion.
+    \item Implementar familias de agentes especializadas para distintas intenciones analiticas.
+    \item Mantener una base determinista que permita pruebas reproducibles y control de errores.
+    \item Preparar la arquitectura para integrar modelos de lenguaje mediante APIs compatibles con OpenAI.
+    \item Evaluar el MVP mediante casos funcionales y escenarios de error controlado.
+\end{itemize}
+
+\section{Alcance}
+
+El sistema se limita al analisis historico-descriptivo de activos financieros a partir de datos ya descargados. No realiza prediccion futura, recomendacion de inversion ni analisis fundamental complejo. Esta restriccion es deliberada: el foco del TFM no es construir un asesor financiero, sino estudiar la arquitectura de un pipeline multiagente trazable para analisis historico.

@@ -1,0 +1,60 @@
+\chapter{Integracion opcional de modelos de lenguaje}
+
+\section{Motivacion de la integracion}
+
+Una vez consolidado el MVP determinista, el siguiente paso consiste en incorporar modelos de lenguaje de forma controlada. La arquitectura no depende de un proveedor concreto: se ha preparado un cliente compatible con APIs tipo OpenAI, lo que permite alternar entre distintos backends sin modificar el workflow principal.
+
+\section{Proveedores preparados}
+
+En esta fase se han preparado tres perfiles de API:
+
+\begin{itemize}
+    \item \textbf{Groq}: seleccionado como primera opcion por su compatibilidad con OpenAI, baja latencia y facilidad de integracion.
+    \item \textbf{Gemini}: incorporado como segunda opcion para comparar calidad y robustez de las respuestas.
+    \item \textbf{Modelo universitario}: expuesto mediante un endpoint vLLM compatible con OpenAI, usando el modelo \texttt{openai/gpt-oss-20b}.
+\end{itemize}
+
+\section{Activacion granular}
+
+La integracion LLM se ha disenado para activarse por fases:
+
+\begin{itemize}
+    \item \texttt{LLM\_USE\_FOR\_INTERPRETATION}: el modelo redacta la respuesta final a partir de resultados ya calculados.
+    \item \texttt{LLM\_USE\_FOR\_PLANNING}: el modelo puede ajustar el plan analitico sin cambiar la intencion.
+    \item \texttt{LLM\_USE\_FOR\_CODEGEN}: el modelo puede generar codigo Python bajo un contrato minimo.
+\end{itemize}
+
+La recomendacion actual es comenzar solo por la interpretacion, ya que es la fase con menor riesgo tecnico. El calculo de metricas permanece controlado por codigo determinista y, si la API falla o la respuesta no cumple el contrato esperado, el sistema conserva el fallback programatico.
+
+\section{Validacion inicial del modelo universitario}
+
+El endpoint universitario se configuro como perfil \texttt{university} mediante las variables \texttt{UNIVERSITY\_BASE\_URL}, \texttt{UNIVERSITY\_API\_KEY} y \texttt{UNIVERSITY\_MODEL}. La URL utilizada fue:
+
+\begin{center}
+\url{https://w1.etsisi.upm.es/vllm/v1}
+\end{center}
+
+El modelo configurado fue \texttt{openai/gpt-oss-20b}. La clave se mantuvo exclusivamente en el archivo local \texttt{.env}, ignorado por el control de versiones.
+
+Para la primera validacion se activo unicamente \texttt{LLM\_USE\_FOR\_INTERPRETATION}. De este modo, el modelo no modifica la seleccion del agente, el plan analitico ni el codigo ejecutado; solo redacta la respuesta final a partir de la salida estructurada del calculo determinista.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Caso} & \textbf{Estado} & \textbf{Modo} & \textbf{Tiempo} \\
+\midrule
+\texttt{compare\_nvda\_amd} & \texttt{completed} & LLM directo & 8.24 s \\
+\texttt{growth\_nvda} & \texttt{completed} & LLM directo & 5.17 s \\
+\texttt{overview\_aapl} & \texttt{completed} & LLM directo & 6.23 s \\
+\texttt{returns\_qqq\_spy} & \texttt{completed} & LLM directo & 9.87 s \\
+\texttt{risk\_qqq\_spy} & \texttt{completed} & LLM directo & 6.31 s \\
+\texttt{technical\_aapl} & \texttt{completed} & LLM directo & 4.71 s \\
+\bottomrule
+\end{tabular}
+\caption{Validacion inicial completa del perfil universitario con vLLM.}
+\end{table}
+
+En los seis casos el flujo finalizo sin \textit{fallback}, sin avisos y sin incluir recomendaciones directas de inversion. La prueba confirma que el endpoint responde con una interfaz compatible con OpenAI Chat Completions. Tambien se observo que el servidor devuelve un campo adicional \texttt{reasoning}; el sistema lo conserva en la respuesta cruda, pero solo utiliza el contenido final del mensaje para el usuario.
+
+Durante esta validacion se detecto inicialmente un problema de codificacion en algunas respuestas con tildes y simbolos especiales. Para evitar que afecte a los resultados guardados, el cliente LLM incorpora una reparacion defensiva de texto UTF-8 interpretado accidentalmente como latin-1 o Windows-1252. La evaluacion final quedo guardada sin marcadores de mojibake.
