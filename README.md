@@ -79,13 +79,22 @@ Para probar una API compatible con OpenAI:
 copy .env.example .env
 ```
 
-Configura en `.env`:
+Configura en `.env` el perfil que quieras usar:
 
 ```bash
 LLM_ENABLED=true
-LLM_BASE_URL=https://api.groq.com/openai/v1
-LLM_API_KEY=tu_clave
-LLM_MODEL=llama-3.3-70b-versatile
+LLM_PROFILE=groq
+GROQ_API_KEY=tu_clave_groq
+GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+Tambien se puede probar Gemini cambiando el perfil:
+
+```bash
+LLM_ENABLED=true
+LLM_PROFILE=gemini
+GEMINI_API_KEY=tu_clave_gemini
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 La activacion es granular:
@@ -95,6 +104,8 @@ La activacion es granular:
 - `LLM_USE_FOR_INTERPRETATION=true`: el LLM puede redactar la respuesta final.
 
 Si la API falla, falta configuracion o la respuesta no cumple el contrato minimo, el sistema mantiene el fallback determinista actual.
+
+Hay una guia corta en `docs/llm_api_setup.md` con la diferencia entre ejecutar el MVP con y sin APIs externas.
 
 ## Que hace cada modulo
 

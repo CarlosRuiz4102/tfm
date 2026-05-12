@@ -38,6 +38,7 @@ class LLMConfigTests(unittest.TestCase):
         config = LLMConfig(
             enabled=False,
             provider="openai-compatible",
+            profile="",
             base_url=None,
             api_key="",
             model="",
@@ -50,6 +51,40 @@ class LLMConfigTests(unittest.TestCase):
         )
 
         self.assertIsNone(create_llm_client(config))
+
+    def test_llm_config_reads_groq_profile(self) -> None:
+        env = {
+            "LLM_ENABLED": "true",
+            "LLM_PROFILE": "groq",
+            "GROQ_API_KEY": "test-groq-key",
+            "LLM_USE_FOR_INTERPRETATION": "true",
+        }
+        with patch.dict("os.environ", env, clear=True):
+            config = LLMConfig.from_env()
+
+        self.assertTrue(config.enabled)
+        self.assertTrue(config.is_configured)
+        self.assertEqual(config.profile, "groq")
+        self.assertEqual(config.base_url, "https://api.groq.com/openai/v1")
+        self.assertEqual(config.api_key, "test-groq-key")
+        self.assertEqual(config.model, "llama-3.3-70b-versatile")
+
+    def test_llm_config_reads_gemini_profile(self) -> None:
+        env = {
+            "LLM_ENABLED": "true",
+            "LLM_PROFILE": "gemini",
+            "GEMINI_API_KEY": "test-gemini-key",
+            "GEMINI_MODEL": "gemini-test-model",
+        }
+        with patch.dict("os.environ", env, clear=True):
+            config = LLMConfig.from_env()
+
+        self.assertTrue(config.enabled)
+        self.assertTrue(config.is_configured)
+        self.assertEqual(config.profile, "gemini")
+        self.assertEqual(config.base_url, "https://generativelanguage.googleapis.com/v1beta/openai/")
+        self.assertEqual(config.api_key, "test-gemini-key")
+        self.assertEqual(config.model, "gemini-test-model")
 
 
 if __name__ == "__main__":
