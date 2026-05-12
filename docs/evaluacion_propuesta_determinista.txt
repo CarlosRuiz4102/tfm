@@ -1,0 +1,77 @@
+EVALUACION POR PROPUESTA: MODO DETERMINISTA SIN API
+===================================================
+
+Fecha de referencia: 12/05/2026
+Proyecto: TFM Financial Multiagent MVP
+
+
+1. OBJETIVO
+-----------
+
+Esta propuesta corresponde al modo base del sistema: ejecucion completa sin API
+externa y sin llamadas a modelos de lenguaje. El plan analitico, la generacion
+de codigo y la interpretacion final se resuelven mediante reglas y plantillas
+deterministas del propio proyecto.
+
+Este modo sirve como linea base experimental porque es reproducible, no depende
+de internet, no tiene coste asociado y permite comprobar que el pipeline
+financiero funciona antes de introducir variabilidad generativa.
+
+
+2. CONFIGURACION
+----------------
+
+LLM_ENABLED=false
+
+En esta configuracion no se usa ningun proveedor externo. Aunque existan claves
+en `.env`, el sistema no llama a ninguna API.
+
+
+3. CASOS EVALUADOS
+------------------
+
+Se validaron los seis casos representativos del MVP:
+
+- growth_nvda: price_growth.
+- compare_nvda_amd: compare_assets.
+- overview_aapl: asset_overview.
+- returns_qqq_spy: return_analysis.
+- risk_qqq_spy: historical_risk_analysis.
+- technical_aapl: technical_analysis.
+
+
+4. RESULTADO
+------------
+
+Los seis casos finalizaron correctamente en modo determinista. No se observaron
+warnings y los scripts generados devolvieron returncode 0.
+
+Resumen:
+
+- growth_nvda: OK.
+- compare_nvda_amd: OK.
+- overview_aapl: OK.
+- returns_qqq_spy: OK.
+- risk_qqq_spy: OK.
+- technical_aapl: OK.
+
+
+5. INTERPRETACION PARA LA MEMORIA
+---------------------------------
+
+El modo determinista demuestra que la arquitectura del MVP no depende de un LLM
+para completar el flujo principal. La parte numerica queda controlada por codigo
+propio, lo que facilita la depuracion y la reproducibilidad.
+
+La limitacion principal es que las respuestas finales son correctas pero mas
+rigidas y menos naturales que las generadas por un LLM. Por tanto, este modo se
+mantiene como baseline y como fallback ante errores de APIs externas.
+
+
+6. CONCLUSION
+-------------
+
+La propuesta determinista es la base estable del sistema. Debe conservarse como
+referencia de comparacion frente a Groq, Gemini y el modelo universitario, y como
+mecanismo de continuidad cuando una API falle por red, cuota, dependencia o
+formato de respuesta.

@@ -1,0 +1,107 @@
+EVALUACION POR API: GEMINI
+==========================
+
+Fecha de referencia: 12/05/2026
+Proyecto: TFM Financial Multiagent MVP
+
+
+1. OBJETIVO
+-----------
+
+Esta ficha resume la evaluacion inicial del perfil `gemini` como segunda API LLM
+externa del MVP. Gemini se incorporo para comprobar que la arquitectura no estaba
+acoplada a un unico proveedor y para comparar calidad y robustez frente a Groq.
+
+La prueba se realizo solo en la fase de interpretacion, manteniendo plan,
+codigo y metricas bajo control determinista.
+
+
+2. CONFIGURACION
+----------------
+
+Perfil:
+
+LLM_ENABLED=true
+LLM_PROFILE=gemini
+LLM_PROVIDER=openai-compatible
+
+Activacion por fase:
+
+LLM_USE_FOR_PLANNING=false
+LLM_USE_FOR_CODEGEN=false
+LLM_USE_FOR_INTERPRETATION=true
+
+Modelo de referencia:
+
+GEMINI_MODEL=gemini-2.5-flash
+
+La clave API se mantiene en `.env` y no se documenta en el repositorio.
+
+
+3. CASOS EVALUADOS
+------------------
+
+Se ejecutaron los seis casos representativos del MVP:
+
+- growth_nvda.
+- compare_nvda_amd.
+- overview_aapl.
+- returns_qqq_spy.
+- risk_qqq_spy.
+- technical_aapl.
+
+
+4. RESULTADO
+------------
+
+Gemini funciono, pero mostro una limitacion practica relevante asociada a cuotas
+y disponibilidad temporal.
+
+Primera ejecucion:
+
+- growth_nvda: completed.
+- compare_nvda_amd: completed.
+- overview_aapl: completed.
+- returns_qqq_spy: fallo temporal 503 por alta demanda.
+- risk_qqq_spy: fallo 429 por cuota por minuto.
+- technical_aapl: fallo 429 por cuota por minuto.
+
+Tras esperar la ventana indicada por la API y reintentar los casos pendientes:
+
+- returns_qqq_spy: completed, sin warnings.
+- risk_qqq_spy: completed, sin warnings.
+- technical_aapl: completed, sin warnings.
+
+
+5. OBSERVACIONES
+----------------
+
+Gemini genero respuestas claras y alineadas con los datos recibidos. En algunos
+casos amplio la explicacion con detalles utiles, como mejor dia y peor dia en el
+analisis de retornos.
+
+La principal limitacion observada fue operativa: el free tier puede dificultar
+la ejecucion de baterias completas seguidas por errores 429 o 503.
+
+El fallback determinista funciono correctamente cuando Gemini no pudo responder.
+Esto refuerza la decision de mantener la API como capa opcional y no como
+dependencia critica del flujo.
+
+
+6. VALOR PARA EL TFM
+--------------------
+
+Gemini aporta valor como proveedor secundario de comparacion. Sirve para mostrar
+que el sistema puede cambiar de backend LLM sin modificar el workflow principal.
+
+Tambien aporta una evidencia metodologica importante: los fallos reales de cuota
+o disponibilidad no rompen el MVP gracias al fallback determinista.
+
+
+7. CONCLUSION
+-------------
+
+Gemini es util para comparativas puntuales y para demostrar portabilidad entre
+proveedores. Sin embargo, para baterias repetidas de evaluacion puede ser menos
+comodo que Groq si se usa el free tier. La configuracion recomendada sigue siendo
+activar solo `LLM_USE_FOR_INTERPRETATION`.

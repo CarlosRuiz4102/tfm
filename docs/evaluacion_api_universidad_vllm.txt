@@ -1,0 +1,170 @@
+EVALUACION POR API: MODELO UNIVERSITARIO VLLM
+=============================================
+
+Fecha de referencia: 12/05/2026
+Proyecto: TFM Financial Multiagent MVP
+Evidencia JSON: results/evaluations/llm_profile_evaluation_20260512_180051.json
+
+
+1. OBJETIVO
+-----------
+
+Esta ficha resume la primera validacion real del modelo de la universidad
+expuesto mediante vLLM. El objetivo fue comprobar conectividad, compatibilidad
+con el cliente OpenAI-compatible del proyecto y comportamiento en la fase de
+interpretacion final.
+
+Como en el resto de APIs, el modelo no modifica el plan, no genera codigo y no
+calcula metricas financieras. Solo redacta la respuesta final a partir de la
+salida estructurada generada por el pipeline determinista.
+
+
+2. CONFIGURACION
+----------------
+
+Perfil:
+
+LLM_ENABLED=true
+LLM_PROFILE=university
+LLM_PROVIDER=openai-compatible
+
+Endpoint:
+
+UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
+
+Modelo:
+
+UNIVERSITY_MODEL=openai/gpt-oss-20b
+
+Activacion por fase:
+
+LLM_USE_FOR_PLANNING=false
+LLM_USE_FOR_CODEGEN=false
+LLM_USE_FOR_INTERPRETATION=true
+
+La clave API se mantiene en `.env`, archivo ignorado por Git. No se documenta en
+el repositorio.
+
+
+3. VALIDACION TECNICA PREVIA
+----------------------------
+
+Primero se realizo una llamada minima de conectividad al endpoint vLLM. La
+respuesta confirmo compatibilidad con OpenAI Chat Completions.
+
+Se observo que el servidor devuelve un campo adicional `reasoning`, propio del
+modelo. El sistema conserva esa informacion en la respuesta cruda, pero para el
+usuario final solo utiliza `message.content`.
+
+Tambien se detecto inicialmente mojibake en algunas respuestas con tildes y
+simbolos especiales. Para corregirlo se incorporo una reparacion defensiva en el
+cliente LLM para texto UTF-8 interpretado como latin-1 o Windows-1252.
+
+
+4. COMANDO DE EVALUACION
+------------------------
+
+Se ejecuto la bateria completa con:
+
+python scripts/evaluate_llm_profiles.py --profiles university --examples all
+
+
+5. RESULTADO COMPLETO
+---------------------
+
+Resumen de la ejecucion final:
+
++----------------------+---------------------------+------------+-------------+----------+
+| Caso                 | Intencion                 | Estado     | Modo        | Tiempo   |
++----------------------+---------------------------+------------+-------------+----------+
+| compare_nvda_amd     | compare_assets            | completed  | LLM directo | 8.24 s   |
+| growth_nvda          | price_growth              | completed  | LLM directo | 5.17 s   |
+| overview_aapl        | asset_overview            | completed  | LLM directo | 6.23 s   |
+| returns_qqq_spy      | return_analysis           | completed  | LLM directo | 9.87 s   |
+| risk_qqq_spy         | historical_risk_analysis  | completed  | LLM directo | 6.31 s   |
+| technical_aapl       | technical_analysis        | completed  | LLM directo | 4.71 s   |
++----------------------+---------------------------+------------+-------------+----------+
+
+Indicadores globales:
+
+- 6 de 6 casos completados.
+- 0 fallbacks.
+- 0 warnings.
+- 0 errores de ejecucion.
+- Los seis casos evitaron recomendaciones directas de inversion.
+- No se detectaron marcadores de mojibake en las respuestas finales guardadas.
+
+
+6. OBSERVACIONES POR CASO
+-------------------------
+
+compare_nvda_amd:
+
+- El modelo resumio correctamente que NVDA tuvo mayor rendimiento que AMD.
+- Respeto los porcentajes calculados: NVDA 107.13 % y AMD 3.11 %.
+- No introdujo datos externos.
+
+growth_nvda:
+
+- Redacto una respuesta breve sobre el crecimiento historico de NVDA.
+- Respeto las fechas, precio inicial, precio final y crecimiento porcentual.
+
+overview_aapl:
+
+- Presento una vision descriptiva de AAPL en el periodo disponible.
+- Incluyo cambio absoluto, cambio porcentual, minimo, maximo y media de cierre.
+
+returns_qqq_spy:
+
+- Genero una respuesta mas extensa y estructurada.
+- Comparo retorno acumulado, media diaria, volatilidad, mejor dia y peor dia.
+- Identifico correctamente que QQQ obtuvo mayor retorno acumulado.
+
+risk_qqq_spy:
+
+- Resume volatilidad, drawdown maximo, peor dia y mejor dia.
+- Identifico QQQ como activo con mayor riesgo observado.
+
+technical_aapl:
+
+- Presento ultimo cierre, medias moviles y RSI.
+- Respeto la senal tecnica calculada: sobreventa.
+
+
+7. VALOR PARA EL TFM
+--------------------
+
+El modelo universitario es especialmente relevante porque representa el backend
+facilitado por la universidad. La prueba confirma que puede integrarse en la
+misma arquitectura que Groq y Gemini sin cambiar el workflow principal.
+
+La evaluacion completa aporta evidencia para la memoria en tres sentidos:
+
+- compatibilidad tecnica con vLLM/OpenAI Chat Completions;
+- ejecucion completa de los seis casos sin fallback;
+- mejora de la redaccion final manteniendo calculo determinista.
+
+
+8. LIMITACIONES Y PRECAUCIONES
+------------------------------
+
+La primera ejecucion dentro del sandbox fallo por bloqueo local de red, no por
+problema del endpoint. Al permitir salida de red, el modelo respondio
+correctamente.
+
+Aunque la primera bateria final fue limpia, conviene seguir registrando:
+
+- latencia por caso;
+- posibles fallos de red;
+- cambios de formato de respuesta;
+- calidad cualitativa de las respuestas;
+- aparicion de recomendaciones directas de inversion.
+
+
+9. CONCLUSION
+-------------
+
+El modelo universitario vLLM queda validado como proveedor operativo del MVP en
+la fase de interpretacion. En la evaluacion completa del 12/05/2026 completo los
+seis casos sin fallback ni warnings. Es una opcion solida para incluir en la
+comparativa final de APIs del TFM junto con Groq, Gemini y el modo determinista.
