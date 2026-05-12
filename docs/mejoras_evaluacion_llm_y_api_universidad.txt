@@ -15,9 +15,9 @@ Cuando se reciba la clave, la configuracion esperada sera:
 
 LLM_ENABLED=true
 LLM_PROFILE=university
-UNIVERSITY_BASE_URL=https://endpoint_del_modelo/openai/v1
+UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
 UNIVERSITY_API_KEY=clave_recibida
-UNIVERSITY_MODEL=nombre_del_modelo
+UNIVERSITY_MODEL=openai/gpt-oss-20b
 
 La ventaja de este cambio es que no sera necesario modificar el codigo cuando
 llegue la API. Bastara con rellenar las variables anteriores en `.env`.
@@ -141,3 +141,54 @@ Esto refuerza la parte experimental de la memoria porque permite documentar no
 solo si una API funciona, sino tambien como se comporta frente a los mismos casos
 de prueba, si necesita fallback, cuanto tarda y si mantiene respuestas alineadas
 con el objetivo historico-descriptivo del sistema.
+
+
+8. PRIMERA VALIDACION REAL CON VLLM UNIVERSITARIO
+-------------------------------------------------
+
+Fecha: 12/05/2026
+
+Se ha configurado localmente el perfil `university` con:
+
+UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
+UNIVERSITY_MODEL=openai/gpt-oss-20b
+
+La clave se mantiene en `.env`, archivo ignorado por Git, y no se documenta en
+el repositorio.
+
+Primero se ejecuto una llamada minima de conectividad al endpoint vLLM. El
+servidor respondio con formato compatible con OpenAI Chat Completions e incluyo
+un campo adicional `reasoning`, propio del modelo, ademas del contenido final.
+
+Despues se evaluaron dos casos representativos como validacion rapida:
+
+python scripts/evaluate_llm_profiles.py --profiles university --examples growth_nvda technical_aapl
+
+Tras corregir la codificacion, se ejecuto la bateria completa:
+
+python scripts/evaluate_llm_profiles.py --profiles university --examples all
+
+Resultado final guardado:
+
+results/evaluations/llm_profile_evaluation_20260512_180051.json
+
+Resumen:
+
+- compare_nvda_amd: completed, sin fallback, 8.24 s.
+- growth_nvda: completed, sin fallback, 5.17 s.
+- overview_aapl: completed, sin fallback, 6.23 s.
+- returns_qqq_spy: completed, sin fallback, 9.87 s.
+- risk_qqq_spy: completed, sin fallback, 6.31 s.
+- technical_aapl: completed, sin fallback, 4.71 s.
+- warnings: ninguno.
+- los seis casos evitaron recomendaciones directas de inversion.
+- no se detectaron marcadores de mojibake en las respuestas finales guardadas.
+
+Observacion tecnica:
+
+La primera ejecucion dentro del sandbox fallo por bloqueo de red local, no por
+problema del endpoint. Al permitir la salida de red, el modelo respondio
+correctamente. Tambien se detecto inicialmente mojibake en algunas respuestas
+del modelo (`pasÃ³`, `AnÃ¡lisis`), por lo que se incorporo una reparacion
+defensiva en el cliente LLM. La evaluacion final ya queda guardada sin esos
+marcadores de codificacion.

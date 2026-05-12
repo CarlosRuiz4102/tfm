@@ -102,9 +102,9 @@ Cuando este disponible el modelo de la universidad, se puede configurar como ter
 ```bash
 LLM_ENABLED=true
 LLM_PROFILE=university
-UNIVERSITY_BASE_URL=https://endpoint_del_modelo/openai/v1
+UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
 UNIVERSITY_API_KEY=tu_clave_universidad
-UNIVERSITY_MODEL=nombre_del_modelo
+UNIVERSITY_MODEL=openai/gpt-oss-20b
 ```
 
 La activacion es granular:
@@ -121,6 +121,12 @@ Para comparar varios perfiles y guardar evidencias de evaluacion:
 
 ```bash
 python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini --examples all
+```
+
+Para evaluar el modelo vLLM de la universidad:
+
+```bash
+python scripts/evaluate_llm_profiles.py --profiles university --examples all
 ```
 
 ## Que hace cada modulo

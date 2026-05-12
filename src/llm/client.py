@@ -26,6 +26,21 @@ class LLMClientError(RuntimeError):
     pass
 
 
+def _repair_mojibake(text: str) -> str:
+    """Repara UTF-8 interpretado accidentalmente como latin-1/cp1252."""
+    mojibake_markers = ("Ã", "Â", "â€", "â†", "�")
+    if not any(marker in text for marker in mojibake_markers):
+        return text
+    for encoding in ("latin-1", "cp1252"):
+        try:
+            repaired = text.encode(encoding).decode("utf-8")
+        except UnicodeError:
+            continue
+        if repaired.count("�") <= text.count("�"):
+            return repaired
+    return text
+
+
 class OpenAICompatibleLLMClient:
     """Cliente minimo para APIs compatibles con OpenAI Chat Completions."""
 
@@ -67,7 +82,7 @@ class OpenAICompatibleLLMClient:
         except Exception as exc:  # pragma: no cover - requiere llamada real a API externa
             raise LLMClientError(f"Fallo al llamar al LLM: {exc}") from exc
 
-        content = completion.choices[0].message.content or ""
+        content = _repair_mojibake(completion.choices[0].message.content or "")
         return LLMResponse(content=content, model=self.config.model, raw=completion)
 
     def complete_json(self, messages: list[LLMMessage]) -> LLMResponse:

@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from src.config import LLMConfig
-from src.llm.client import create_llm_client
+from src.llm.client import _repair_mojibake, create_llm_client
 
 
 class LLMConfigTests(unittest.TestCase):
@@ -103,6 +103,13 @@ class LLMConfigTests(unittest.TestCase):
         self.assertEqual(config.base_url, "https://university.example/openai/v1")
         self.assertEqual(config.api_key, "test-university-key")
         self.assertEqual(config.model, "university-model")
+
+    def test_repairs_mojibake_from_llm_response(self) -> None:
+        text = "El precio pasÃ³ de 13.34â€¯USD. AnÃ¡lisis tÃ©cnico."
+
+        repaired = _repair_mojibake(text)
+
+        self.assertEqual(repaired, "El precio pasó de 13.34 USD. Análisis técnico.")
 
 
 if __name__ == "__main__":

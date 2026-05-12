@@ -56,14 +56,14 @@ GEMINI_MODEL=gemini-2.5-flash
 ## Modo con API de la universidad
 
 El perfil `university` queda preparado para un proveedor compatible con OpenAI.
-Cuando se reciba la clave, solo hay que rellenar:
+El endpoint disponible actualmente expone un servidor vLLM:
 
 ```env
 LLM_ENABLED=true
 LLM_PROFILE=university
-UNIVERSITY_BASE_URL=https://endpoint_del_modelo/openai/v1
+UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
 UNIVERSITY_API_KEY=...
-UNIVERSITY_MODEL=...
+UNIVERSITY_MODEL=openai/gpt-oss-20b
 ```
 
 ## Activacion por fases
@@ -92,4 +92,11 @@ Para incluir el modelo universitario cuando este disponible:
 
 ```bash
 python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini university --examples all
+```
+
+En la validacion inicial se recomienda ejecutar primero solo dos casos para confirmar
+conectividad, latencia y formato de respuesta:
+
+```bash
+python scripts/evaluate_llm_profiles.py --profiles university --examples growth_nvda technical_aapl
 ```
