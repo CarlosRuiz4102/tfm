@@ -1,0 +1,43 @@
+\chapter{Material y metodos}
+
+\section{Datos de entrada}
+
+El MVP trabaja con datos financieros historicos almacenados en ficheros CSV. Cada ejecucion recibe una consulta ya estructurada con los siguientes campos principales: texto original de la consulta, intencion analitica, lista de tickers, periodo o fechas de inicio y fin, intervalo temporal y rutas a los CSV correspondientes.
+
+\section{Workflow propuesto}
+
+El flujo del sistema se organiza en seis fases principales:
+
+\begin{enumerate}
+    \item \textbf{Ingesta}: valida la entrada minima y comprueba que los ficheros existen.
+    \item \textbf{Enrutado}: decide si la intencion esta soportada y selecciona la familia analitica.
+    \item \textbf{Analisis especializado}: transforma la intencion en un plan estructurado.
+    \item \textbf{Generacion de codigo}: construye un script Python adaptado al plan.
+    \item \textbf{Ejecucion}: ejecuta el codigo mediante un proceso controlado y captura salidas.
+    \item \textbf{Interpretacion}: convierte los resultados numericos en una respuesta legible.
+\end{enumerate}
+
+\section{Intenciones analiticas}
+
+La version actual del MVP soporta seis intenciones:
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Intencion} & \textbf{Objetivo} \\
+\midrule
+\texttt{price\_growth} & Calcular crecimiento o caida de un activo en un periodo. \\
+\texttt{compare\_assets} & Comparar la evolucion relativa de varios activos. \\
+\texttt{asset\_overview} & Generar una vision descriptiva general de un activo. \\
+\texttt{return\_analysis} & Analizar retornos historicos y estadisticos basicos. \\
+\texttt{historical\_risk\_analysis} & Estimar riesgo historico mediante volatilidad y drawdown. \\
+\texttt{technical\_analysis} & Calcular indicadores tecnicos como medias moviles y RSI. \\
+\bottomrule
+\end{tabularx}
+\caption{Intenciones analiticas soportadas por el MVP.}
+\end{table}
+
+\section{Estrategia de desarrollo incremental}
+
+El desarrollo se ha organizado por iteraciones. Primero se valido un flujo minimo con pocas intenciones. Despues se ampliaron las capacidades descriptivas, de retornos y riesgo. Finalmente se incorporo analisis tecnico, mayor cobertura de tests y una modularizacion por familias de agentes. Esta estrategia reduce el riesgo tecnico antes de incorporar modelos de lenguaje reales.

@@ -86,6 +86,24 @@ class LLMConfigTests(unittest.TestCase):
         self.assertEqual(config.api_key, "test-gemini-key")
         self.assertEqual(config.model, "gemini-test-model")
 
+    def test_llm_config_reads_university_profile(self) -> None:
+        env = {
+            "LLM_ENABLED": "true",
+            "LLM_PROFILE": "university",
+            "UNIVERSITY_BASE_URL": "https://university.example/openai/v1",
+            "UNIVERSITY_API_KEY": "test-university-key",
+            "UNIVERSITY_MODEL": "university-model",
+        }
+        with patch.dict("os.environ", env, clear=True):
+            config = LLMConfig.from_env()
+
+        self.assertTrue(config.enabled)
+        self.assertTrue(config.is_configured)
+        self.assertEqual(config.profile, "university")
+        self.assertEqual(config.base_url, "https://university.example/openai/v1")
+        self.assertEqual(config.api_key, "test-university-key")
+        self.assertEqual(config.model, "university-model")
+
 
 if __name__ == "__main__":
     unittest.main()

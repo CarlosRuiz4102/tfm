@@ -1,0 +1,143 @@
+MEJORAS PARA EVALUACION LLM Y FUTURA API DE LA UNIVERSIDAD
+==========================================================
+
+Fecha: 12/05/2026
+
+
+1. PERFIL PARA API DE LA UNIVERSIDAD
+------------------------------------
+
+Se ha preparado un tercer perfil LLM llamado `university`. Este perfil permite
+conectar un modelo de la universidad siempre que exponga una API compatible con
+OpenAI.
+
+Cuando se reciba la clave, la configuracion esperada sera:
+
+LLM_ENABLED=true
+LLM_PROFILE=university
+UNIVERSITY_BASE_URL=https://endpoint_del_modelo/openai/v1
+UNIVERSITY_API_KEY=clave_recibida
+UNIVERSITY_MODEL=nombre_del_modelo
+
+La ventaja de este cambio es que no sera necesario modificar el codigo cuando
+llegue la API. Bastara con rellenar las variables anteriores en `.env`.
+
+
+2. SCRIPT DE EVALUACION AUTOMATICA
+----------------------------------
+
+Se ha creado el script:
+
+scripts/evaluate_llm_profiles.py
+
+Su objetivo es ejecutar una misma bateria de ejemplos contra distintos perfiles:
+
+- deterministic
+- groq
+- gemini
+- university
+
+Ejemplo de uso:
+
+python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini --examples all
+
+Cuando este disponible el modelo universitario:
+
+python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini university --examples all
+
+El script guarda un JSON por evaluacion en:
+
+results/evaluations/
+
+Esta carpeta queda ignorada por Git porque contiene resultados generados, no
+codigo fuente.
+
+
+3. INFORMACION GUARDADA POR EJECUCION
+-------------------------------------
+
+Cada ejecucion registra:
+
+- perfil usado;
+- ejemplo ejecutado;
+- intencion analitica;
+- estado final;
+- returncode del script generado;
+- warnings;
+- respuesta final;
+- agente seleccionado;
+- plan analitico;
+- salida estructurada de ejecucion;
+- tiempo aproximado de ejecucion;
+- comprobaciones cualitativas simples.
+
+Las comprobaciones cualitativas actuales incluyen:
+
+- si la ejecucion termino correctamente;
+- si se uso fallback;
+- si hubo warnings;
+- longitud de la respuesta;
+- si evita terminos asociados a recomendacion directa de inversion.
+
+Esto no sustituye una evaluacion humana, pero genera una base objetiva para
+comparar proveedores en la memoria.
+
+
+4. CORRECCION DE ENCODING
+-------------------------
+
+Se ha ajustado la salida de `run_mvp.py` y del nuevo script de evaluacion para
+usar UTF-8. Esto busca evitar que las respuestas de Groq o Gemini aparezcan con
+caracteres raros al contener tildes o signos propios del espanol.
+
+
+5. ACTUALIZACION DOCUMENTAL
+---------------------------
+
+Se han actualizado:
+
+- `.env.example`, con variables para `UNIVERSITY_API_KEY`, `UNIVERSITY_BASE_URL`
+  y `UNIVERSITY_MODEL`;
+- `README.md`, con instrucciones para usar el perfil universitario y el script
+  de evaluacion;
+- `docs/llm_api_setup.md`, con una seccion especifica para la API de la
+  universidad y ejemplos de evaluacion.
+
+
+6. VALIDACION REALIZADA
+-----------------------
+
+Se ha probado el nuevo script en modo determinista con dos ejemplos:
+
+- growth_nvda
+- technical_aapl
+
+Ambos finalizaron como `completed`.
+
+Tambien se ejecuto la bateria de tests:
+
+venv\Scripts\python.exe -m unittest tests/test_llm_config.py tests/test_mvp.py
+
+Resultado:
+
+Ran 15 tests
+OK
+
+
+7. VALOR PARA EL TFM
+--------------------
+
+Estas mejoras convierten la comparacion de modelos en un proceso repetible. A
+partir de ahora, cuando se quiera probar un proveedor nuevo, incluido el modelo
+de la universidad, no sera necesario hacer ejecuciones manuales una a una. El
+script permitira generar evidencias comparables entre:
+
+- modo sin LLM;
+- Groq;
+- Gemini;
+- modelo universitario.
+
+Esto refuerza la parte experimental de la memoria porque permite documentar no
+solo si una API funciona, sino tambien como se comporta frente a los mismos casos
+de prueba, si necesita fallback, cuanto tarda y si mantiene respuestas alineadas
+con el objetivo historico-descriptivo del sistema.

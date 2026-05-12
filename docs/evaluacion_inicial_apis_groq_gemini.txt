@@ -1,0 +1,343 @@
+EVALUACION INICIAL DE INTEGRACION LLM: GROQ Y GEMINI
+====================================================
+
+Fecha de prueba: 12/05/2026
+Proyecto: TFM Financial Multiagent MVP
+
+
+1. OBJETIVO DE LA PRUEBA
+------------------------
+
+El objetivo de esta prueba ha sido comprobar por primera vez el comportamiento del
+MVP al activar APIs externas de modelos de lenguaje. Hasta este punto, el sistema
+funcionaba de forma determinista: el plan analitico, el codigo Python generado y
+la respuesta final se construian mediante reglas y plantillas internas.
+
+La nueva integracion permite activar modelos LLM de forma opcional mediante un
+cliente compatible con OpenAI. Para esta primera evaluacion se han probado dos
+proveedores:
+
+- Groq, usando el perfil `groq`.
+- Gemini, usando el perfil `gemini`.
+
+La prueba se ha realizado activando solo la fase de interpretacion:
+
+LLM_USE_FOR_PLANNING=false
+LLM_USE_FOR_CODEGEN=false
+LLM_USE_FOR_INTERPRETATION=true
+
+Esto significa que el LLM no decide el analisis, no cambia el plan y no genera el
+codigo. El calculo financiero sigue siendo determinista. El modelo solo recibe la
+salida ya calculada y redacta una respuesta final mas natural.
+
+
+2. PREPARACION DEL ENTORNO
+--------------------------
+
+Al ejecutar por primera vez con APIs, se detecto que el entorno Python activo no
+tenia instalada la dependencia `openai`, necesaria para usar el cliente
+OpenAI-compatible.
+
+Resultado inicial:
+
+- El sistema no se rompio.
+- Todas las ejecuciones terminaron como `completed`.
+- El MVP activo correctamente el fallback determinista.
+- La advertencia fue: "Falta instalar la dependencia openai."
+
+Esto es importante para el TFM porque demuestra que la arquitectura no depende de
+forma fragil de la API externa. Si el cliente LLM no esta disponible, el sistema
+mantiene una respuesta valida.
+
+Despues se instalaron las dependencias del fichero `requirements.txt` dentro del
+entorno `venv` del proyecto. Tras ello, se repitieron las pruebas con llamadas
+reales a Groq y Gemini.
+
+
+3. CASOS DE PRUEBA EJECUTADOS
+-----------------------------
+
+Se han ejecutado los seis ejemplos representativos del MVP, uno por cada
+intencion analitica soportada:
+
+1. growth_nvda
+   - Intencion: price_growth
+   - Objetivo: crecimiento historico de NVDA.
+
+2. compare_nvda_amd
+   - Intencion: compare_assets
+   - Objetivo: comparacion de comportamiento entre NVDA y AMD.
+
+3. overview_aapl
+   - Intencion: asset_overview
+   - Objetivo: vision descriptiva general de AAPL.
+
+4. returns_qqq_spy
+   - Intencion: return_analysis
+   - Objetivo: analisis de retornos de QQQ y SPY.
+
+5. risk_qqq_spy
+   - Intencion: historical_risk_analysis
+   - Objetivo: analisis de riesgo historico de QQQ y SPY.
+
+6. technical_aapl
+   - Intencion: technical_analysis
+   - Objetivo: analisis tecnico de AAPL con medias moviles y RSI.
+
+
+4. RESULTADO EN MODO DETERMINISTA
+---------------------------------
+
+Antes de activar las APIs se ejecuto el MVP en modo determinista. Los seis casos
+finalizaron correctamente:
+
++----------------------+---------------------------+------------+
+| Caso                 | Intencion                 | Resultado  |
++----------------------+---------------------------+------------+
+| growth_nvda          | price_growth              | OK         |
+| compare_nvda_amd     | compare_assets            | OK         |
+| overview_aapl        | asset_overview            | OK         |
+| returns_qqq_spy      | return_analysis           | OK         |
+| risk_qqq_spy         | historical_risk_analysis  | OK         |
+| technical_aapl       | technical_analysis        | OK         |
++----------------------+---------------------------+------------+
+
+No aparecieron warnings y todos los scripts generados devolvieron returncode 0.
+
+Este modo sigue siendo la base estable del proyecto: es reproducible, no depende
+de internet y permite validar la logica analitica sin variabilidad generativa.
+
+
+5. RESULTADO CON GROQ
+---------------------
+
+Tras instalar dependencias y permitir acceso de red, Groq ejecuto correctamente
+los seis casos.
+
++----------------------+---------------------------+------------+----------+
+| Caso                 | Intencion                 | Estado     | Warnings |
++----------------------+---------------------------+------------+----------+
+| growth_nvda          | price_growth              | completed  | No       |
+| compare_nvda_amd     | compare_assets            | completed  | No       |
+| overview_aapl        | asset_overview            | completed  | No       |
+| returns_qqq_spy      | return_analysis           | completed  | No       |
+| risk_qqq_spy         | historical_risk_analysis  | completed  | No       |
+| technical_aapl       | technical_analysis        | completed  | No       |
++----------------------+---------------------------+------------+----------+
+
+Observaciones:
+
+- Groq fue capaz de reformular la respuesta final de forma mas natural.
+- No altero las metricas calculadas por el sistema.
+- Respeto el enfoque descriptivo e historico.
+- No introdujo recomendaciones de inversion.
+- En consola aparecieron algunos caracteres acentuados mal codificados, pero esto
+  parece un problema de visualizacion/encoding de PowerShell, no necesariamente
+  del contenido generado.
+
+Ejemplo de mejora observada:
+
+En modo determinista, la respuesta es directa y muy compacta:
+
+"NVDA paso de 13.34 a 183.22 entre 2021-03-17 y 2026-03-16. La variacion
+absoluta fue 169.88 y la variacion porcentual fue 1273.33%."
+
+Con Groq, la respuesta se vuelve mas explicativa:
+
+"El activo NVDA experimento un crecimiento significativo en el periodo
+comprendido entre el 17 de marzo de 2021 y el 16 de marzo de 2026..."
+
+Conclusion parcial sobre Groq:
+
+Groq funciona bien como primera API para integrar en el MVP. Su mejor uso actual
+es la fase de interpretacion. Mejora la legibilidad de la respuesta final sin
+modificar el calculo financiero. Para el TFM, Groq puede presentarse como el
+primer backend LLM operativo del sistema.
+
+
+6. RESULTADO CON GEMINI
+-----------------------
+
+Gemini tambien funciono, pero su comportamiento inicial mostro una limitacion
+practica importante del free tier: las cuotas por minuto.
+
+Primera ejecucion:
+
++----------------------+---------------------------+-------------------------------+
+| Caso                 | Intencion                 | Resultado                     |
++----------------------+---------------------------+-------------------------------+
+| growth_nvda          | price_growth              | OK                            |
+| compare_nvda_amd     | compare_assets            | OK                            |
+| overview_aapl        | asset_overview            | OK                            |
+| returns_qqq_spy      | return_analysis           | 503: alta demanda temporal    |
+| risk_qqq_spy         | historical_risk_analysis  | 429: cuota por minuto         |
+| technical_aapl       | technical_analysis        | 429: cuota por minuto         |
++----------------------+---------------------------+-------------------------------+
+
+Despues de esperar la ventana indicada por la API y reintentar solo los tres
+casos fallidos, Gemini completo correctamente las ejecuciones pendientes:
+
++----------------------+---------------------------+------------+----------+
+| Caso                 | Intencion                 | Estado     | Warnings |
++----------------------+---------------------------+------------+----------+
+| returns_qqq_spy      | return_analysis           | completed  | No       |
+| risk_qqq_spy         | historical_risk_analysis  | completed  | No       |
+| technical_aapl       | technical_analysis        | completed  | No       |
++----------------------+---------------------------+------------+----------+
+
+Observaciones:
+
+- Gemini genero respuestas claras y bastante ajustadas a los datos.
+- En algunos casos amplio ligeramente la explicacion incluyendo detalles utiles,
+  como mejor dia y peor dia en el analisis de retornos.
+- No cambio el flujo analitico ni las metricas base.
+- La principal limitacion observada fue la cuota del free tier, especialmente al
+  ejecutar varios ejemplos seguidos.
+- El fallback determinista respondio correctamente cuando Gemini devolvio errores
+  503 o 429.
+
+Conclusion parcial sobre Gemini:
+
+Gemini es util como segunda API de comparacion, pero en el free tier puede ser
+menos comodo para baterias seguidas de pruebas. Para el TFM resulta interesante
+porque permite demostrar que el sistema no esta acoplado a un unico proveedor y
+que el fallback protege el flujo cuando hay errores de disponibilidad o cuota.
+
+
+7. QUE CAMBIA RESPECTO A ANTES
+------------------------------
+
+Antes de integrar APIs:
+
+- El MVP era completamente determinista.
+- Todas las fases se resolvian mediante reglas y plantillas.
+- La respuesta final era correcta, pero mas rigida.
+- No habia dependencia de internet ni de proveedores externos.
+
+Despues de integrar APIs:
+
+- El MVP puede seguir funcionando exactamente igual si `LLM_ENABLED=false`.
+- Si `LLM_ENABLED=true`, se puede elegir proveedor con `LLM_PROFILE`.
+- Groq y Gemini se conectan mediante la misma interfaz OpenAI-compatible.
+- El LLM se puede activar por fases.
+- En esta prueba solo se activo la interpretacion.
+- Si la API falla, el sistema conserva el fallback determinista.
+
+La diferencia mas importante no es solo que el texto final sea mas natural. La
+diferencia arquitectonica es que el sistema pasa a ser hibrido:
+
+- calculo financiero controlado y reproducible;
+- redaccion final asistida por LLM;
+- fallback determinista ante fallos externos.
+
+
+8. ANALISIS PARA EL TFM
+-----------------------
+
+Desde el punto de vista del TFM, esta prueba aporta varias conclusiones:
+
+1. La arquitectura incremental esta justificada.
+
+   Haber empezado con un MVP determinista ha permitido integrar APIs externas sin
+   romper el sistema. Si se hubiera dependido del LLM desde el principio, los
+   errores de dependencias, red o cuota habrian bloqueado el flujo completo.
+
+2. La separacion por fases reduce el riesgo.
+
+   El LLM no toca el calculo financiero. Solo redacta a partir de resultados ya
+   obtenidos. Esto permite aprovechar su capacidad linguistica sin delegar en el
+   modelo la parte numerica.
+
+3. El fallback es una pieza central del diseno.
+
+   Durante la prueba aparecieron tres tipos de fallo:
+
+   - dependencia `openai` no instalada;
+   - error de conexion sin permisos de red;
+   - errores 503 y 429 en Gemini.
+
+   En todos los casos, el MVP pudo devolver una respuesta determinista valida.
+
+4. Groq parece el mejor proveedor inicial.
+
+   En esta primera prueba, Groq completo los seis casos sin warnings una vez
+   instaladas las dependencias y habilitada la red. Por tanto, es el candidato
+   mas comodo para seguir desarrollando la integracion LLM.
+
+5. Gemini es util para comparacion, pero hay que considerar cuotas.
+
+   Gemini funciono tras reintentar, pero los limites del free tier aparecieron
+   rapidamente al ejecutar una bateria de casos. Esto debe mencionarse como
+   limitacion practica de evaluacion.
+
+6. La fase mas razonable para empezar es interpretacion.
+
+   Activar primero `LLM_USE_FOR_INTERPRETATION=true` es una decision prudente:
+   mejora la experiencia de usuario sin introducir riesgo en el plan analitico ni
+   en el codigo ejecutado.
+
+
+9. RECOMENDACION TECNICA TRAS LA PRUEBA
+---------------------------------------
+
+Para continuar el proyecto se recomienda:
+
+1. Mantener por defecto:
+
+   LLM_USE_FOR_PLANNING=false
+   LLM_USE_FOR_CODEGEN=false
+   LLM_USE_FOR_INTERPRETATION=true
+
+2. Usar Groq como proveedor principal en las siguientes pruebas.
+
+3. Usar Gemini como proveedor secundario para comparativas puntuales.
+
+4. No activar todavia generacion de codigo con LLM.
+
+5. Registrar en cada ejecucion:
+
+   - proveedor usado;
+   - modelo usado;
+   - si hubo fallback;
+   - warnings;
+   - estado final;
+   - tiempo aproximado;
+   - calidad percibida de la respuesta.
+
+6. Mejorar la captura de encoding en consola para evitar caracteres raros en
+   salidas con tildes.
+
+
+10. ESTADO FINAL DE VALIDACION
+------------------------------
+
+Tras las pruebas con APIs, se ejecuto la bateria automatizada del proyecto:
+
+Comando:
+
+venv\Scripts\python.exe -m unittest tests/test_llm_config.py tests/test_mvp.py
+
+Resultado:
+
+Ran 14 tests in 10.668s
+OK
+
+Esto confirma que la instalacion de dependencias y la integracion LLM no rompen
+el modo determinista ni las pruebas existentes.
+
+
+11. CONCLUSION GENERAL
+----------------------
+
+La primera incorporacion de Groq y Gemini al MVP ha sido positiva. Groq ha
+funcionado de forma completa en los seis casos y Gemini tambien ha funcionado
+tras gestionar los limites temporales del free tier. El resultado mas relevante
+para el TFM es que el sistema ya puede operar como una arquitectura hibrida:
+mantiene calculos deterministas y reproducibles, pero permite mejorar la
+redaccion final con modelos de lenguaje externos.
+
+Ademas, los fallos encontrados no invalidan el enfoque; al contrario, refuerzan
+la decision de diseno de mantener fallbacks. La arquitectura no se bloquea si la
+API no esta disponible, si faltan dependencias o si el proveedor limita la cuota.
+Esto convierte la integracion LLM en una capa opcional y controlada, no en una
+dependencia critica del MVP.

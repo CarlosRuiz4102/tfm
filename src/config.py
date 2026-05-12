@@ -30,6 +30,12 @@ LLM_PROFILES = {
         "model_env": "GEMINI_MODEL",
         "default_model": "gemini-2.5-flash",
     },
+    "university": {
+        "base_url_env": "UNIVERSITY_BASE_URL",
+        "api_key_env": "UNIVERSITY_API_KEY",
+        "model_env": "UNIVERSITY_MODEL",
+        "default_model": "",
+    },
 }
 
 if load_dotenv is not None:
@@ -101,7 +107,10 @@ class LLMConfig:
             enabled=_env_bool("LLM_ENABLED", False),
             provider=os.getenv("LLM_PROVIDER", "openai-compatible"),
             profile=profile,
-            base_url=os.getenv("LLM_BASE_URL") or os.getenv("OPENAI_BASE_URL") or profile_config.get("base_url"),
+            base_url=os.getenv("LLM_BASE_URL")
+            or os.getenv("OPENAI_BASE_URL")
+            or os.getenv(profile_config.get("base_url_env", ""), "")
+            or profile_config.get("base_url"),
             api_key=os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY") or profile_api_key,
             model=os.getenv("LLM_MODEL")
             or os.getenv("MODEL_NAME")

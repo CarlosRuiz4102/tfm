@@ -14,6 +14,12 @@ from src.graph.build_graph import build_workflow
 from src.schemas import FinancialQueryInput
 
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
+
 def load_input(args: argparse.Namespace) -> FinancialQueryInput:
     if args.example:
         return FinancialQueryInput.from_dict(SAMPLE_INPUTS[args.example])

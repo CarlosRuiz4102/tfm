@@ -1,0 +1,30 @@
+\chapter{Resultados y analisis}
+
+\section{Cobertura funcional del MVP}
+
+El resultado principal hasta este punto es un MVP capaz de completar el flujo de analisis para seis intenciones financieras. La arquitectura mantiene una separacion clara entre validacion, seleccion de agente, generacion de plan, generacion de codigo, ejecucion e interpretacion.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Intencion} & \textbf{Caso representativo} & \textbf{Estado} \\
+\midrule
+\texttt{price\_growth} & Crecimiento de NVDA & Superado \\
+\texttt{compare\_assets} & Comparacion NVDA y AMD & Superado \\
+\texttt{asset\_overview} & Vision general de AAPL & Superado \\
+\texttt{return\_analysis} & Retornos de QQQ y SPY & Superado \\
+\texttt{historical\_risk\_analysis} & Riesgo historico de QQQ y SPY & Superado \\
+\texttt{technical\_analysis} & Analisis tecnico de AAPL & Superado \\
+\bottomrule
+\end{tabular}
+\caption{Cobertura funcional validada en el MVP.}
+\end{table}
+
+\section{Robustez ante errores}
+
+Ademas de los casos correctos, el MVP contempla escenarios negativos. Entre ellos se incluyen intenciones no soportadas, rutas CSV inexistentes y cardinalidad incorrecta de tickers para analisis que requieren una unica serie. En estos casos, el sistema no interrumpe el flujo de forma opaca, sino que devuelve un estado de error controlado y una explicacion para el usuario.
+
+\section{Estado de validacion}
+
+La bateria actual de pruebas automatizadas valida tanto ejecuciones correctas como errores esperados. En la ultima ejecucion realizada, los tests del proyecto finalizaron correctamente, lo que confirma que la integracion opcional de APIs LLM no rompe el modo determinista.

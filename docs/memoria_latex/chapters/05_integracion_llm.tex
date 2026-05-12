@@ -1,0 +1,26 @@
+\chapter{Integracion opcional de modelos de lenguaje}
+
+\section{Motivacion de la integracion}
+
+Una vez consolidado el MVP determinista, el siguiente paso consiste en incorporar modelos de lenguaje de forma controlada. La arquitectura no depende de un proveedor concreto: se ha preparado un cliente compatible con APIs tipo OpenAI, lo que permite alternar entre distintos backends sin modificar el workflow principal.
+
+\section{Proveedores preparados}
+
+En esta fase se han preparado dos perfiles de API:
+
+\begin{itemize}
+    \item \textbf{Groq}: seleccionado como primera opcion por su compatibilidad con OpenAI, baja latencia y facilidad de integracion.
+    \item \textbf{Gemini}: incorporado como segunda opcion para comparar calidad y robustez de las respuestas.
+\end{itemize}
+
+\section{Activacion granular}
+
+La integracion LLM se ha disenado para activarse por fases:
+
+\begin{itemize}
+    \item \texttt{LLM\_USE\_FOR\_INTERPRETATION}: el modelo redacta la respuesta final a partir de resultados ya calculados.
+    \item \texttt{LLM\_USE\_FOR\_PLANNING}: el modelo puede ajustar el plan analitico sin cambiar la intencion.
+    \item \texttt{LLM\_USE\_FOR\_CODEGEN}: el modelo puede generar codigo Python bajo un contrato minimo.
+\end{itemize}
+
+La recomendacion actual es comenzar solo por la interpretacion, ya que es la fase con menor riesgo tecnico. El calculo de metricas permanece controlado por codigo determinista y, si la API falla o la respuesta no cumple el contrato esperado, el sistema conserva el fallback programatico.

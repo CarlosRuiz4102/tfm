@@ -53,6 +53,19 @@ GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
+## Modo con API de la universidad
+
+El perfil `university` queda preparado para un proveedor compatible con OpenAI.
+Cuando se reciba la clave, solo hay que rellenar:
+
+```env
+LLM_ENABLED=true
+LLM_PROFILE=university
+UNIVERSITY_BASE_URL=https://endpoint_del_modelo/openai/v1
+UNIVERSITY_API_KEY=...
+UNIVERSITY_MODEL=...
+```
+
 ## Activacion por fases
 
 La integracion esta pensada para ser gradual:
@@ -62,3 +75,21 @@ La integracion esta pensada para ser gradual:
 - `LLM_USE_FOR_CODEGEN=true`: el LLM puede generar codigo Python. Conviene dejarlo para el final porque es la fase con mas riesgo.
 
 Recomendacion actual del TFM: empezar solo por interpretacion.
+
+## Evaluacion automatizada
+
+El script `scripts/evaluate_llm_profiles.py` permite ejecutar una misma bateria
+de ejemplos contra varios perfiles y guardar un JSON por ejecucion en
+`results/evaluations/`.
+
+Ejemplo:
+
+```bash
+python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini --examples all
+```
+
+Para incluir el modelo universitario cuando este disponible:
+
+```bash
+python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini university --examples all
+```

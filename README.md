@@ -97,6 +97,16 @@ GEMINI_API_KEY=tu_clave_gemini
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
+Cuando este disponible el modelo de la universidad, se puede configurar como tercer perfil:
+
+```bash
+LLM_ENABLED=true
+LLM_PROFILE=university
+UNIVERSITY_BASE_URL=https://endpoint_del_modelo/openai/v1
+UNIVERSITY_API_KEY=tu_clave_universidad
+UNIVERSITY_MODEL=nombre_del_modelo
+```
+
 La activacion es granular:
 
 - `LLM_USE_FOR_PLANNING=true`: el LLM puede ajustar el plan analitico.
@@ -106,6 +116,12 @@ La activacion es granular:
 Si la API falla, falta configuracion o la respuesta no cumple el contrato minimo, el sistema mantiene el fallback determinista actual.
 
 Hay una guia corta en `docs/llm_api_setup.md` con la diferencia entre ejecutar el MVP con y sin APIs externas.
+
+Para comparar varios perfiles y guardar evidencias de evaluacion:
+
+```bash
+python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini --examples all
+```
 
 ## Que hace cada modulo
 
