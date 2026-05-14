@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from src.config import LLM_CONFIG
+from src.config import LLMConfig
 from src.llm.client import LLMClientError, create_llm_client
 from src.llm.prompts import build_codegen_messages, build_interpretation_messages, build_planning_messages
 from src.schemas import AnalysisPlan, FinancialQueryInput
@@ -25,13 +25,14 @@ def _json_from_text(text: str) -> dict:
 
 
 def maybe_build_llm_plan(query_input: FinancialQueryInput, fallback_plan: AnalysisPlan) -> tuple[AnalysisPlan, list[str]]:
-    if not LLM_CONFIG.enabled or not LLM_CONFIG.use_for_planning:
+    llm_config = LLMConfig.from_env()
+    if not llm_config.enabled or not llm_config.use_for_planning:
         return fallback_plan, []
-    if not LLM_CONFIG.is_configured:
+    if not llm_config.is_configured:
         return fallback_plan, ["LLM planning activado, pero falta configurar LLM_API_KEY o LLM_MODEL."]
 
     try:
-        client = create_llm_client()
+        client = create_llm_client(llm_config)
         if client is None:
             return fallback_plan, ["No se pudo crear el cliente LLM; se usa plan determinista."]
         response = client.complete_json(build_planning_messages(query_input, fallback_plan))
@@ -55,13 +56,14 @@ def maybe_build_llm_plan(query_input: FinancialQueryInput, fallback_plan: Analys
 
 
 def maybe_build_llm_code(plan: AnalysisPlan, deterministic_code: str) -> tuple[str, list[str]]:
-    if not LLM_CONFIG.enabled or not LLM_CONFIG.use_for_codegen:
+    llm_config = LLMConfig.from_env()
+    if not llm_config.enabled or not llm_config.use_for_codegen:
         return deterministic_code, []
-    if not LLM_CONFIG.is_configured:
+    if not llm_config.is_configured:
         return deterministic_code, ["LLM codegen activado, pero falta configurar LLM_API_KEY o LLM_MODEL."]
 
     try:
-        client = create_llm_client()
+        client = create_llm_client(llm_config)
         if client is None:
             return deterministic_code, ["No se pudo crear el cliente LLM; se usa codigo determinista."]
         response = client.complete_json(build_codegen_messages(plan, deterministic_code))
@@ -75,13 +77,14 @@ def maybe_build_llm_code(plan: AnalysisPlan, deterministic_code: str) -> tuple[s
 
 
 def maybe_build_llm_interpretation(output: dict, fallback_answer: str) -> tuple[str, list[str]]:
-    if not LLM_CONFIG.enabled or not LLM_CONFIG.use_for_interpretation:
+    llm_config = LLMConfig.from_env()
+    if not llm_config.enabled or not llm_config.use_for_interpretation:
         return fallback_answer, []
-    if not LLM_CONFIG.is_configured:
+    if not llm_config.is_configured:
         return fallback_answer, ["LLM interpretation activado, pero falta configurar LLM_API_KEY o LLM_MODEL."]
 
     try:
-        client = create_llm_client()
+        client = create_llm_client(llm_config)
         if client is None:
             return fallback_answer, ["No se pudo crear el cliente LLM; se usa interpretacion determinista."]
         response = client.complete_text(build_interpretation_messages(output, fallback_answer))

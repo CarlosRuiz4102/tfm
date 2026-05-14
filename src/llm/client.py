@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from src.config import LLM_CONFIG, LLMConfig
+from src.config import LLMConfig
 
 
 @dataclass(frozen=True)
@@ -44,7 +44,9 @@ def _repair_mojibake(text: str) -> str:
 class OpenAICompatibleLLMClient:
     """Cliente minimo para APIs compatibles con OpenAI Chat Completions."""
 
-    def __init__(self, config: LLMConfig = LLM_CONFIG) -> None:
+    def __init__(self, config: LLMConfig | None = None) -> None:
+        if config is None:
+            config = LLMConfig.from_env()
         if config.provider != "openai-compatible":
             raise LLMClientError(f"Proveedor LLM no soportado todavia: {config.provider}")
         if not config.is_configured:
@@ -53,6 +55,7 @@ class OpenAICompatibleLLMClient:
 
         try:
             from openai import OpenAI
+            import httpx
         except ImportError as exc:  # pragma: no cover - depende del entorno local
             raise LLMClientError("Falta instalar la dependencia openai.") from exc
 
@@ -62,6 +65,8 @@ class OpenAICompatibleLLMClient:
         }
         if config.base_url:
             kwargs["base_url"] = config.base_url
+        if not config.verify_ssl:
+            kwargs["http_client"] = httpx.Client(verify=False, timeout=config.timeout_seconds)
         self._client = OpenAI(**kwargs)
 
     def complete_text(self, messages: list[LLMMessage], *, response_format: dict[str, str] | None = None) -> LLMResponse:
@@ -89,7 +94,9 @@ class OpenAICompatibleLLMClient:
         return self.complete_text(messages, response_format={"type": "json_object"})
 
 
-def create_llm_client(config: LLMConfig = LLM_CONFIG) -> OpenAICompatibleLLMClient | None:
+def create_llm_client(config: LLMConfig | None = None) -> OpenAICompatibleLLMClient | None:
+    if config is None:
+        config = LLMConfig.from_env()
     if not config.is_configured:
         return None
     return OpenAICompatibleLLMClient(config)

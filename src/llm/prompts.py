@@ -64,7 +64,10 @@ def build_interpretation_messages(output: dict, fallback_answer: str) -> list[LL
         LLMMessage(
             "user",
             "Redacta una respuesta breve en espanol para usuario final. "
-            "Respeta las metricas recibidas, no anadas datos externos y evita recomendaciones de inversion.\n"
+            "Usa fallback_answer solo como referencia, pero no lo copies literalmente. "
+            "Explica el resultado en 2 o 3 frases naturales. "
+            "Respeta las metricas recibidas, no anadas datos externos, no hagas predicciones "
+            "y evita recomendaciones de inversion.\n"
             f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
         ),
     ]

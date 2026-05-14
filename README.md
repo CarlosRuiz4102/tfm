@@ -123,6 +123,12 @@ Para comparar varios perfiles y guardar evidencias de evaluacion:
 python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini --examples all
 ```
 
+Si quieres ver en consola la respuesta final que devuelve cada perfil:
+
+```bash
+python scripts/evaluate_llm_profiles.py --profiles deterministic groq gemini --examples all --show-answers
+```
+
 Para evaluar el modelo vLLM de la universidad:
 
 ```bash

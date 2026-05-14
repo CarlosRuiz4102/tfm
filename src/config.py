@@ -95,6 +95,7 @@ class LLMConfig:
     use_for_planning: bool
     use_for_codegen: bool
     use_for_interpretation: bool
+    verify_ssl: bool = True
 
     @classmethod
     def from_env(cls) -> "LLMConfig":
@@ -119,6 +120,7 @@ class LLMConfig:
             temperature=_env_float("LLM_TEMPERATURE", 0.1),
             max_tokens=_env_int("LLM_MAX_TOKENS", 2048),
             timeout_seconds=_env_int("LLM_TIMEOUT_SECONDS", 60),
+            verify_ssl=_env_bool(f"{profile.upper()}_VERIFY_SSL", _env_bool("LLM_VERIFY_SSL", True)),
             use_for_planning=_env_bool("LLM_USE_FOR_PLANNING", False),
             use_for_codegen=_env_bool("LLM_USE_FOR_CODEGEN", False),
             use_for_interpretation=_env_bool("LLM_USE_FOR_INTERPRETATION", False),
@@ -126,7 +128,17 @@ class LLMConfig:
 
     @property
     def is_configured(self) -> bool:
-        return self.enabled and bool(self.api_key.strip()) and bool(self.model.strip())
+        api_key = self.api_key.strip()
+        model = self.model.strip()
+        placeholder_keys = {
+            "your_groq_key_here",
+            "your_gemini_key_here",
+            "your_university_key_here",
+            "tu_clave_groq",
+            "tu_clave_gemini",
+            "tu_clave_universidad",
+        }
+        return self.enabled and bool(api_key) and api_key not in placeholder_keys and bool(model)
 
 
 EXECUTION_CONFIG = ExecutionConfig()

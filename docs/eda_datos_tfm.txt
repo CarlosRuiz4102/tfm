@@ -1,0 +1,168 @@
+EDA DE DATOS DEL TFM
+======================================================================
+Generado: 2026-05-14 09:36:37
+
+1. Objetivo
+----------------------------------------------------------------------
+Este documento resume el analisis exploratorio de los datos financieros
+usados en el MVP del TFM. El foco esta en comprobar cobertura temporal,
+calidad del dato, variedad de activos, estructura de los CSV y metricas
+basicas de precio, retorno, volatilidad y drawdown.
+
+2. Fuentes y trazabilidad
+----------------------------------------------------------------------
+Fuente primaria: CSV descargados previamente con yfinance y versionados
+en data/raw. Cada CSV dispone de un fichero .metadata.json con query,
+intencion, tickers, intervalo y parametros de descarga.
+
+Catalogo de queries: data\catalog\query_cases.json
+Casos definidos en catalogo: 10
+Tickers definidos en catalogo: AAPL, AMD, BTC-USD, EURUSD=X, GC=F, NVDA, QQQ, SPY, ^GSPC
+CSV analizados: 8
+Series ticker-caso analizadas: 10
+Filas normalizadas en formato largo: 5080
+Rango temporal observado: 2020-01-02 00:00:00+00:00 -> 2026-03-17 10:00:00+00:00
+
+3. Estructura tecnica de los CSV
+----------------------------------------------------------------------
+Los ficheros procedentes de yfinance se guardan con columnas multinivel:
+primer nivel = ticker y segundo nivel = campo OHLCV. Por eso no deben
+leerse como CSV planos con una sola fila de cabecera. El EDA los carga
+con header=[0, 1] e index_col=0 y despues los normaliza a formato largo.
+
+Campos esperados por ticker: Open, High, Low, Close, Adj Close, Volume.
+
+4. Cobertura por fichero
+----------------------------------------------------------------------
+                                       source_file              intent   tickers interval  rows start_observed end_observed  missing_pct  duplicated_dates
+                               aapl_en_3_meses.csv historical_download      AAPL       1d    60     2025-12-17   2026-03-16          0.0                 0
+                 compara_nvidia_y_amd_en_2_aos.csv      compare_assets AMD, NVDA       1d   500     2024-03-18   2026-03-16          0.0                 0
+              cunto_ha_crecido_nvidia_en_5_aos.csv        price_growth      NVDA       1d  1255     2021-03-17   2026-03-16          0.0                 0
+datos_de_bitcoin_desde_20240101_hasta_20241231.csv historical_download   BTC-USD       1d   365     2024-01-01   2024-12-30          0.0                 0
+   descrgame_el_histrico_del_sp_500_desde_2020.csv historical_download     ^GSPC       1d  1558     2020-01-02   2026-03-16          0.0                 0
+                         eurusd_en_10_das_a_1h.csv historical_download  EURUSD=X       1h   224     2026-03-04   2026-03-17          0.0                 0
+       qqq_y_spy_desde_20240101_hasta_20241231.csv historical_download  QQQ, SPY       1d   251     2024-01-02   2024-12-30          0.0                 0
+                quiero_el_oro_en_1_semana_a_1h.csv historical_download      GC=F       1h   116     2026-03-10   2026-03-17          0.0                 0
+
+5. Distribucion de intenciones e intervalos
+----------------------------------------------------------------------
+Intenciones:
+             intent  cases
+historical_download      6
+     compare_assets      1
+       price_growth      1
+
+Intervalos:
+interval  cases
+      1d      6
+      1h      2
+
+6. Calidad del dato
+----------------------------------------------------------------------
+Nulos en Close: 0
+Filas con volumen igual a cero o ausente: 231
+Duplicados por fecha: ver columna duplicated_dates en la tabla de cobertura.
+
+Casos con mayor porcentaje de celdas ausentes:
+                                       source_file   tickers interval  missing_pct  duplicated_dates
+                               aapl_en_3_meses.csv      AAPL       1d          0.0                 0
+                 compara_nvidia_y_amd_en_2_aos.csv AMD, NVDA       1d          0.0                 0
+              cunto_ha_crecido_nvidia_en_5_aos.csv      NVDA       1d          0.0                 0
+datos_de_bitcoin_desde_20240101_hasta_20241231.csv   BTC-USD       1d          0.0                 0
+   descrgame_el_histrico_del_sp_500_desde_2020.csv     ^GSPC       1d          0.0                 0
+                         eurusd_en_10_das_a_1h.csv  EURUSD=X       1h          0.0                 0
+       qqq_y_spy_desde_20240101_hasta_20241231.csv  QQQ, SPY       1d          0.0                 0
+                quiero_el_oro_en_1_semana_a_1h.csv      GC=F       1h          0.0                 0
+
+Lectura metodologica:
+- La ausencia de nulos en Close es clave porque las metricas del MVP
+  dependen de precios de cierre.
+- En divisas y futuros intradia puede aparecer volumen cero o no informado;
+  por tanto el volumen no debe tratarse como variable obligatoria para
+  todos los tipos de activo.
+- La mezcla de intervalos 1d y 1h es intencionada para probar consultas
+  historicas diarias e intradia, pero las metricas de volatilidad deben
+  interpretarse con su frecuencia correspondiente.
+
+7. Resumen por serie
+----------------------------------------------------------------------
+                                       source_file   ticker  observations start_observed end_observed  total_return_pct  volatility_ann_pct  max_drawdown_pct
+                               aapl_en_3_meses.csv     AAPL            60     2025-12-17   2026-03-16           -6.9968             24.1456          -10.0676
+                 compara_nvidia_y_amd_en_2_aos.csv      AMD           500     2024-03-18   2026-03-16            3.1104             55.0980          -58.9772
+                 compara_nvidia_y_amd_en_2_aos.csv     NVDA           500     2024-03-18   2026-03-16          107.1336             49.4164          -36.8868
+              cunto_ha_crecido_nvidia_en_5_aos.csv     NVDA          1255     2021-03-17   2026-03-16         1273.3345             51.3115          -66.3621
+datos_de_bitcoin_desde_20240101_hasta_20241231.csv  BTC-USD           365     2024-01-01   2024-12-30          109.7551             44.1305          -26.1820
+   descrgame_el_histrico_del_sp_500_desde_2020.csv    ^GSPC          1558     2020-01-02   2026-03-16          105.6381             20.7650          -33.9250
+                         eurusd_en_10_das_a_1h.csv EURUSD=X           224     2026-03-04   2026-03-17           -0.7367              9.1182           -2.1012
+       qqq_y_spy_desde_20240101_hasta_20241231.csv      QQQ           251     2024-01-02   2024-12-30           28.0732             17.9893          -13.5577
+       qqq_y_spy_desde_20240101_hasta_20241231.csv      SPY           251     2024-01-02   2024-12-30           24.4515             12.6283           -8.4056
+                quiero_el_oro_en_1_semana_a_1h.csv     GC=F           116     2026-03-10   2026-03-17           -3.5341             23.2157           -4.9370
+
+Mayores rentabilidades totales observadas:
+                                       source_file  ticker  total_return_pct  volatility_ann_pct  max_drawdown_pct
+              cunto_ha_crecido_nvidia_en_5_aos.csv    NVDA         1273.3345             51.3115          -66.3621
+datos_de_bitcoin_desde_20240101_hasta_20241231.csv BTC-USD          109.7551             44.1305          -26.1820
+                 compara_nvidia_y_amd_en_2_aos.csv    NVDA          107.1336             49.4164          -36.8868
+   descrgame_el_histrico_del_sp_500_desde_2020.csv   ^GSPC          105.6381             20.7650          -33.9250
+       qqq_y_spy_desde_20240101_hasta_20241231.csv     QQQ           28.0732             17.9893          -13.5577
+
+Mayores drawdowns observados:
+                                       source_file  ticker  total_return_pct  volatility_ann_pct  max_drawdown_pct
+              cunto_ha_crecido_nvidia_en_5_aos.csv    NVDA         1273.3345             51.3115          -66.3621
+                 compara_nvidia_y_amd_en_2_aos.csv     AMD            3.1104             55.0980          -58.9772
+                 compara_nvidia_y_amd_en_2_aos.csv    NVDA          107.1336             49.4164          -36.8868
+   descrgame_el_histrico_del_sp_500_desde_2020.csv   ^GSPC          105.6381             20.7650          -33.9250
+datos_de_bitcoin_desde_20240101_hasta_20241231.csv BTC-USD          109.7551             44.1305          -26.1820
+
+8. Valor para el TFM
+----------------------------------------------------------------------
+El conjunto de datos cubre acciones individuales, ETFs, indice amplio,
+criptoactivo, divisa y futuro de materia prima. Esto permite probar si el
+sistema entiende consultas con distintos tipos de activo, horizontes
+temporales e intenciones analiticas.
+
+Para la memoria, este EDA justifica:
+- la seleccion de casos de prueba variados;
+- la necesidad de una capa de normalizacion de datos;
+- la separacion entre catalogo de queries, datos raw y datos procesados;
+- el uso de metricas financieras basicas como retorno, volatilidad y
+  drawdown para validar las respuestas del agente.
+
+9. Limitaciones detectadas
+----------------------------------------------------------------------
+- Las descargas relativas por periodo, por ejemplo 3mo o 5y, dependen de la
+  fecha en que se genero el CSV. Para reproducibilidad completa se recomienda
+  fijar fecha de descarga o rango start/end en futuros datasets definitivos.
+- Los datos proceden de Yahoo Finance via yfinance; para un entorno productivo
+  habria que considerar disponibilidad, licencias y estabilidad del proveedor.
+
+10. Notebooks auxiliares conservados
+----------------------------------------------------------------------
+Los notebooks 01_yfinance_eda_avanzado.ipynb y
+02_catalogo_queries_y_csv.ipynb se han reducido para eliminar analisis
+duplicados que ya cubre 03_eda_datos_tfm.ipynb. Permanecen solo por las
+funciones que no pertenecen al EDA formal:
+
+- 01_yfinance_eda_avanzado.ipynb queda como laboratorio complementario.
+  Permite probar en vivo nuevos tickers, periodos e intervalos con
+  yfinance antes de incorporarlos al catalogo. Es util para decidir si
+  un activo devuelve suficientes observaciones y si merece formar parte
+  del dataset congelado.
+
+- 02_catalogo_queries_y_csv.ipynb queda como pieza de trazabilidad del
+  dataset raw. Lee data/catalog/query_cases.json, valida cada caso,
+  genera el manifiesto de CSV esperados y permite regenerar data/raw
+  con sus metadatos cuando se active la descarga real.
+
+Para la memoria y el analisis formal, el notebook recomendado pasa a ser
+03_eda_datos_tfm.ipynb, apoyado por este informe TXT y por las tablas
+procesadas de data/processed. En otras palabras: 01 sirve para explorar
+posibles datos nuevos, 02 sirve para construir o regenerar el dataset,
+y 03 sirve para justificar y analizar el dataset definitivo.
+
+11. Artefactos generados
+----------------------------------------------------------------------
+- Dataset largo: data\processed\eda_dataset_largo.csv
+- Resumen por fichero: data\processed\eda_resumen_ficheros.csv
+- Resumen por serie: data\processed\eda_resumen_series.csv
+- Notebook reproducible: notebooks\03_eda_datos_tfm.ipynb

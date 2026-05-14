@@ -1,5 +1,5 @@
 {
-  "query": "EUR/USD en 10 d?as a 1h",
+  "query": "EUR/USD en 10 días a 1h",
   "intent": "historical_download",
   "tickers": [
     "EURUSD=X"

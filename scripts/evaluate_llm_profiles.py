@@ -54,7 +54,17 @@ def _set_profile_env(profile: str) -> None:
 
 def _quality_checks(answer: str, warnings: list[str], status: str) -> dict[str, Any]:
     normalized = answer.lower()
-    fallback_used = any("fallo en" in warning.lower() for warning in warnings)
+    fallback_markers = (
+        "fallo en",
+        "falta configurar",
+        "no se pudo crear",
+        "se usa",
+        "no cumple el contrato",
+    )
+    fallback_used = any(
+        any(marker in warning.lower() for marker in fallback_markers)
+        for warning in warnings
+    )
     forbidden_terms = sorted(term for term in INVESTMENT_RECOMMENDATION_TERMS if term in normalized)
     return {
         "completed": status == "completed",
@@ -111,6 +121,7 @@ def main() -> int:
     parser.add_argument("--profiles", nargs="+", default=DEFAULT_PROFILES, help="Perfiles: deterministic, groq, gemini, university.")
     parser.add_argument("--examples", nargs="+", default=["all"], help="Ejemplos concretos o 'all'.")
     parser.add_argument("--no-write", action="store_true", help="No guarda JSON en results/evaluations.")
+    parser.add_argument("--show-answers", action="store_true", help="Muestra en consola la respuesta final de cada ejecucion.")
     args = parser.parse_args()
 
     examples = _parse_examples(args.examples)
@@ -131,6 +142,11 @@ def main() -> int:
                 f"{profile:13} {example:18} {result['status']:10} "
                 f"{result['elapsed_seconds']:6.2f}s {execution_mode}"
             )
+            if result["warnings"]:
+                for warning in result["warnings"]:
+                    print(f"Warning: {warning}")
+            if args.show_answers:
+                print(f"Respuesta final:\n{result['final_answer']}\n")
 
     payload = {
         "started_at": started_at,

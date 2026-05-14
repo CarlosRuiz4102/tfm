@@ -1,5 +1,5 @@
 {
-  "query": "Desc?rgame el hist?rico del S&P 500 desde 2020",
+  "query": "Descárgame el histórico del S&P 500 desde 2020",
   "intent": "historical_download",
   "tickers": [
     "^GSPC"

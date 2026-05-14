@@ -1,0 +1,192 @@
+GUIA DE CREDENCIALES PARA USAR LAS APIS LLM EN OTRO ORDENADOR
+==============================================================
+
+Objetivo
+--------
+
+Este documento explica que credenciales necesitas para ejecutar el MVP con APIs
+LLM reales en un ordenador personal. Las claves API son secretas: no deben
+subirse a Git, no deben pegarse en documentos compartidos y no deben enviarse por
+chat.
+
+El fichero donde van las credenciales es:
+
+  .env
+
+Este fichero ya esta incluido en .gitignore, por lo que no se versiona.
+
+
+1. QUE CREDENCIALES NECESITAS
+-----------------------------
+
+Para cada proveedor necesitas una clave API distinta:
+
++----------------------+--------------------------+----------------------------------+
+| Proveedor            | Variable en .env         | Donde se obtiene                 |
++----------------------+--------------------------+----------------------------------+
+| Groq                 | GROQ_API_KEY             | Cuenta/consola de Groq           |
+| Gemini               | GEMINI_API_KEY           | Google AI Studio / Google Cloud  |
+| Universidad vLLM     | UNIVERSITY_API_KEY       | Universidad / profesor / admin   |
++----------------------+--------------------------+----------------------------------+
+
+Ademas, para el modelo universitario necesitas conservar:
+
+  UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
+  UNIVERSITY_MODEL=openai/gpt-oss-20b
+
+
+2. IMPORTANTE: NO EXISTE UNA CLAVE UNIVERSAL DEL PROYECTO
+---------------------------------------------------------
+
+El repositorio no puede "saber" las claves por si mismo. Las APIs solo se usan
+si el ordenador donde ejecutas el proyecto tiene un .env con claves reales.
+
+Si el .env tiene valores de ejemplo como:
+
+  your_groq_key_here
+  your_gemini_key_here
+  your_university_key_here
+
+entonces el sistema no llama a la API y usa fallback determinista.
+
+
+3. COMO PREPARAR EL ORDENADOR PERSONAL
+--------------------------------------
+
+Desde la carpeta del proyecto:
+
+  python -m venv venv
+  venv\Scripts\python.exe -m pip install -r requirements.txt
+  copy .env.example .env
+
+Despues abre .env y rellena las claves reales.
+
+
+4. CONFIGURACION PARA GROQ
+--------------------------
+
+En .env:
+
+  LLM_ENABLED=true
+  LLM_PROFILE=groq
+  LLM_PROVIDER=openai-compatible
+
+  GROQ_API_KEY=pegar_aqui_tu_clave_real_de_groq
+  GROQ_MODEL=llama-3.3-70b-versatile
+
+  LLM_USE_FOR_PLANNING=false
+  LLM_USE_FOR_CODEGEN=false
+  LLM_USE_FOR_INTERPRETATION=true
+
+Comando de prueba:
+
+  venv\Scripts\python.exe scripts\evaluate_llm_profiles.py --profiles groq --examples growth_nvda --show-answers
+
+Si funciona, debe aparecer:
+
+  llm/directo
+
+Si aparece:
+
+  fallback
+
+significa que no se ha podido usar la API.
+
+
+5. CONFIGURACION PARA GEMINI
+----------------------------
+
+En .env:
+
+  LLM_ENABLED=true
+  LLM_PROFILE=gemini
+  LLM_PROVIDER=openai-compatible
+
+  GEMINI_API_KEY=pegar_aqui_tu_clave_real_de_gemini
+  GEMINI_MODEL=gemini-2.5-flash
+
+  LLM_USE_FOR_PLANNING=false
+  LLM_USE_FOR_CODEGEN=false
+  LLM_USE_FOR_INTERPRETATION=true
+
+Comando de prueba:
+
+  venv\Scripts\python.exe scripts\evaluate_llm_profiles.py --profiles gemini --examples growth_nvda --show-answers
+
+
+6. CONFIGURACION PARA MODELO UNIVERSITARIO VLLM
+-----------------------------------------------
+
+En .env:
+
+  LLM_ENABLED=true
+  LLM_PROFILE=university
+  LLM_PROVIDER=openai-compatible
+
+  UNIVERSITY_API_KEY=pegar_aqui_tu_clave_real_de_la_universidad
+  UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
+  UNIVERSITY_MODEL=openai/gpt-oss-20b
+  UNIVERSITY_VERIFY_SSL=false
+
+  LLM_USE_FOR_PLANNING=false
+  LLM_USE_FOR_CODEGEN=false
+  LLM_USE_FOR_INTERPRETATION=true
+
+Nota: UNIVERSITY_VERIFY_SSL=false solo es necesario si el endpoint universitario
+falla con un error de certificado SSL. En las pruebas del equipo de trabajo fue
+necesario para que el perfil university funcionase como llm/directo.
+
+Comando de prueba:
+
+  venv\Scripts\python.exe scripts\evaluate_llm_profiles.py --profiles university --examples growth_nvda --show-answers
+
+
+7. COMO COMPROBAR SIN MOSTRAR LA CLAVE
+--------------------------------------
+
+Puedes comprobar si el proyecto detecta una clave real sin imprimirla:
+
+  venv\Scripts\python.exe -c "from src.config import LLMConfig; c=LLMConfig.from_env(); print(c.enabled, c.profile, c.is_configured, c.model, c.use_for_interpretation)"
+
+Lectura esperada:
+
+  True groq True llama-3.3-70b-versatile True
+
+o, para universidad:
+
+  True university True openai/gpt-oss-20b True
+
+El tercer valor debe ser True. Si es False, falta clave real, modelo o activacion.
+
+
+8. COMO TRASLADAR LAS CLAVES DE FORMA SEGURA
+--------------------------------------------
+
+Opciones recomendadas:
+
+  - Usar un gestor de contrasenas corporativo o personal.
+  - Crear claves nuevas desde las consolas de cada proveedor.
+  - Pedir de nuevo la clave universitaria al profesor o administrador.
+  - Transferir el .env solo por un canal seguro y privado.
+
+Evitar:
+
+  - Pegar claves en ChatGPT u otros chats.
+  - Enviarlas por correo sin cifrar.
+  - Subir .env a GitHub.
+  - Guardarlas en documentos Word, TXT compartidos o capturas de pantalla.
+
+
+9. COMANDO FINAL PARA OBTENER RESULTADOS REALES
+-----------------------------------------------
+
+Cuando el .env tenga claves reales:
+
+  venv\Scripts\python.exe scripts\evaluate_llm_profiles.py --profiles deterministic groq gemini university --examples all --show-answers
+
+La lectura correcta es:
+
+  - deterministic: sin_llm
+  - groq/gemini/university: llm/directo
+
+Si groq, gemini o university aparecen como fallback, la API no se ha usado.
