@@ -21,20 +21,29 @@
 \onehalfspacing
 \addbibresource{references.bib}
 
-\title{
-    Sistema multiagente para analisis financiero historico mediante generacion y ejecucion de codigo
-}
-\author{Nombre del alumno}
-\date{2026}
+\newcommand{\University}{Universidad Polit\'ecnica de Madrid}
+\newcommand{\UNIVERSITY}{UNIVERSIDAD POLIT\'ECNICA DE MADRID}
+\newcommand{\UPMCentre}{Escuela T\'ecnica Superior de Ingenier\'ia de Sistemas Inform\'aticos}
+\newcommand{\thesisTitle}{Sistema multiagente para an\'alisis financiero hist\'orico mediante generaci\'on autom\'atica de c\'odigo}
+\newcommand{\thesisAuthor}{Carlos Ruiz Oyarzun}
+\newcommand{\thesisDate}{2026}
+\newcommand{\supervisor}{Dr. Adri\'an Gir\'on Jim\'enez}
+\newcommand{\cosupervisor}{Dr. Alejandro Delgado Perib\'a\~nez}
 
 \begin{document}
 
+\hypersetup{pageanchor=false}
+\pagestyle{empty}
+\input{frontmatter/cover}
+\clearpage
+\hypersetup{pageanchor=true}
 \pagenumbering{roman}
-\maketitle
+\pagestyle{plain}
 
-\begin{abstract}
-Este Trabajo Fin de Master propone el desarrollo incremental de un sistema multiagente orientado al analisis financiero historico. El sistema parte de consultas ya normalizadas, datos de mercado almacenados en CSV y un conjunto cerrado de intenciones analiticas. A partir de esa entrada, el prototipo valida la solicitud, selecciona una familia de agente, genera un plan de analisis, construye codigo Python ejecutable, lanza dicho codigo en un proceso controlado y transforma la salida en una respuesta interpretable. La arquitectura se ha construido de forma gradual, manteniendo una base determinista y trazable antes de incorporar llamadas opcionales a modelos de lenguaje mediante APIs compatibles con OpenAI.
-\end{abstract}
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+Este Trabajo Fin de M\'aster propone el desarrollo incremental de un sistema multiagente orientado al an\'alisis financiero hist\'orico. El sistema parte de consultas ya normalizadas, datos de mercado almacenados en CSV y un conjunto cerrado de intenciones anal\'iticas. A partir de esa entrada, el prototipo valida la solicitud, selecciona una familia de agente, genera un plan de an\'alisis, construye c\'odigo Python ejecutable, lanza dicho c\'odigo en un proceso controlado y transforma la salida en una respuesta interpretable. La arquitectura se ha construido de forma gradual, manteniendo una base determinista y trazable antes de incorporar llamadas opcionales a modelos de lenguaje mediante APIs compatibles con OpenAI.
+\clearpage
 
 \tableofcontents
 \listoftables
@@ -46,6 +55,7 @@ Este Trabajo Fin de Master propone el desarrollo incremental de un sistema multi
 \include{chapters/01_introduccion}
 \include{chapters/02_estado_cuestion}
 \include{chapters/03_material_metodos}
+\include{chapters/04_diseno_implementacion}
 \include{chapters/04_resultados}
 \include{chapters/05_integracion_llm}
 \include{chapters/06_conclusiones}
