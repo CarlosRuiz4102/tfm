@@ -1,0 +1,72 @@
+\chapter{Metodología}
+
+\section{Enfoque incremental del desarrollo}
+
+El desarrollo del trabajo se ha planteado como una sucesión de iteraciones controladas. En lugar de construir desde el inicio un sistema completamente dependiente de modelos de lenguaje, se ha partido de un MVP determinista capaz de completar el flujo de extremo a extremo. Esta decisión permite validar primero la arquitectura, la trazabilidad y la ejecución del código generado antes de introducir componentes generativos más variables.
+
+La primera iteración validó el flujo mínimo con dos intenciones analíticas: crecimiento histórico y comparación de activos. La segunda iteración amplió el alcance con análisis descriptivo y análisis de retornos. La tercera incorporó análisis de riesgo histórico, análisis técnico, pruebas de error y una reorganización interna basada en familias de agentes. La Tabla~\ref{tab:iteraciones_mvp} resume la progresión seguida.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Iteración} & \textbf{Objetivo principal} & \textbf{Evidencia obtenida} \\
+\midrule
+MVP 1 & Validar el flujo extremo a extremo con \texttt{price\_growth} y \texttt{compare\_assets}. & El sistema procesa un caso de activo único y un caso multi-activo, genera código ejecutable y produce una respuesta interpretable. \\
+MVP 2 & Comprobar que la arquitectura crece sin rediseñarse, incorporando \texttt{asset\_overview} y \texttt{return\_analysis}. & Se pasa de dos a cuatro intenciones y se valida que las nuevas métricas se integran sobre las mismas interfaces. \\
+MVP 3 & Aumentar madurez funcional y robustez mediante \texttt{historical\_risk\_analysis}, \texttt{technical\_analysis} y pruebas negativas. & Se consolidan seis intenciones, tres escenarios de error controlado y una modularización por familias de agentes. \\
+\bottomrule
+\end{tabularx}
+\caption{Evolución incremental del MVP.}
+\label{tab:iteraciones_mvp}
+\end{table}
+
+\section{Definición de intenciones analíticas}
+
+El MVP trabaja con un conjunto cerrado de intenciones. Esta restricción hace que el problema sea evaluable y reduce la ambigüedad del sistema. Cada intención se asocia con una familia de agente, un plan analítico, un bloque de código y una forma de interpretar la salida.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Intención} & \textbf{Objetivo} \\
+\midrule
+\texttt{price\_growth} & Calcular crecimiento o caída de un activo en un periodo. \\
+\texttt{compare\_assets} & Comparar la evolución relativa de varios activos. \\
+\texttt{asset\_overview} & Generar una visión descriptiva general de un activo. \\
+\texttt{return\_analysis} & Analizar retornos históricos y estadísticos básicos. \\
+\texttt{historical\_risk\_analysis} & Estimar riesgo histórico mediante volatilidad y drawdown. \\
+\texttt{technical\_analysis} & Calcular indicadores técnicos como medias móviles y RSI. \\
+\bottomrule
+\end{tabularx}
+\caption{Intenciones analíticas soportadas por el MVP.}
+\end{table}
+
+\section{Diseño experimental}
+
+La evaluación se apoya en seis casos representativos, uno por cada intención implementada. Estos casos permiten comprobar que el sistema valida la entrada, selecciona la familia analítica correcta, genera un plan, construye código ejecutable, ejecuta el script y devuelve una respuesta final interpretable.
+
+Además de los casos correctos, se incorporan escenarios negativos para comprobar la robustez del flujo. Entre ellos se incluyen intenciones no soportadas, rutas CSV inexistentes y cardinalidad incorrecta de tickers para análisis que requieren una única serie.
+
+\section{Métricas de validación}
+
+La validación del MVP no se plantea como entrenamiento de un modelo supervisado, sino como evaluación funcional de un pipeline software. Por tanto, las métricas principales son:
+
+\begin{itemize}
+    \item Éxito de ejecución del flujo completo.
+    \item Código de retorno del script generado.
+    \item Presencia o ausencia de errores controlados.
+    \item Cobertura de intenciones analíticas.
+    \item Uso de fallback determinista cuando falla una API externa.
+    \item Tiempo de respuesta en las pruebas con proveedores LLM.
+\end{itemize}
+
+\section{Justificación de no entrenar un modelo propio}
+
+El objetivo del TFM no es entrenar desde cero un modelo financiero, sino estudiar una arquitectura multiagente trazable para automatizar análisis históricos. Por ello, el trabajo utiliza modelos de lenguaje preentrenados a través de APIs compatibles con OpenAI y limita su papel, en la configuración actual, a la fase de interpretación final.
+
+Esta decisión reduce el coste computacional, evita depender de hardware GPU propio y permite centrar la evaluación en la robustez del workflow. La planificación, el cálculo financiero y la ejecución permanecen bajo control programático.
+
+\section{Gestión de riesgos técnicos}
+
+Los principales riesgos identificados son la fragilidad del código generado, la disponibilidad de APIs externas, los problemas de codificación en respuestas LLM, las cuotas de proveedores gratuitos y la posible confusión entre análisis histórico y recomendación financiera. Para mitigarlos, el sistema conserva una base determinista, valida entradas, captura salidas de ejecución, registra artefactos y activa la capa LLM de forma controlada, empezando por la interpretación final.

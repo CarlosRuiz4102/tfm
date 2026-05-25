@@ -1,0 +1,228 @@
+PRIMERA EJECUCION COMPARATIVA DEL SISTEMA CON Y SIN APIS LLM
+
+Fecha de ejecucion: 15/05/2026
+
+1. OBJETIVO DE LA EJECUCION
+
+Esta prueba recoge la primera ejecucion comparativa del proyecto antes de realizar
+modificaciones posteriores sobre la integracion LLM. El objetivo es observar el
+comportamiento inicial del sistema en cuatro variantes:
+
+- modo determinista, sin llamada a ningun modelo externo;
+- perfil Groq, mediante API compatible con OpenAI;
+- perfil Gemini, mediante API compatible con OpenAI;
+- perfil universitario vLLM, mediante endpoint compatible con OpenAI.
+
+La finalidad de esta ejecucion no es modificar el calculo financiero, sino
+comparar como cambia la respuesta final cuando se activa una capa LLM para la
+fase de interpretacion. El pipeline mantiene los calculos, metricas y ejecucion
+de codigo bajo control determinista. Las APIs se utilizan unicamente para
+mejorar la redaccion final de los resultados.
+
+
+2. CONFIGURACION USADA
+
+La integracion LLM se ejecuto de forma controlada. La configuracion activa
+permite llamadas a API solo en la fase de interpretacion:
+
+LLM_ENABLED=true
+LLM_PROVIDER=openai-compatible
+LLM_USE_FOR_PLANNING=false
+LLM_USE_FOR_CODEGEN=false
+LLM_USE_FOR_INTERPRETATION=true
+
+Esto significa que:
+
+- la seleccion del agente no depende del LLM;
+- el plan analitico no depende del LLM;
+- el codigo ejecutado no es generado por el LLM;
+- la respuesta textual final si puede ser redactada por el LLM;
+- si la API falla, el sistema conserva el fallback determinista.
+
+Las claves de API se mantuvieron exclusivamente en el fichero local .env, que
+esta ignorado por Git. No se incluyeron claves reales en la documentacion ni en
+el repositorio.
+
+
+3. COMANDO DE EVALUACION
+
+La bateria se ejecuto con los cuatro perfiles disponibles y todos los ejemplos
+del MVP:
+
+venv\Scripts\python.exe scripts\evaluate_llm_profiles.py --profiles deterministic groq gemini university --examples all --no-write --show-answers
+
+Los ejemplos evaluados fueron:
+
+- compare_nvda_amd
+- growth_nvda
+- overview_aapl
+- returns_qqq_spy
+- risk_qqq_spy
+- technical_aapl
+
+
+4. RESULTADO GLOBAL
+
+La ejecucion completo correctamente los 24 casos evaluados: 6 casos por cada una
+de las 4 variantes.
+
+Resumen:
+
+| Variante      | Casos completados | Modo de ejecucion |
+|---------------|-------------------|-------------------|
+| deterministic | 6/6               | sin_llm           |
+| groq          | 6/6               | llm/directo       |
+| gemini        | 6/6               | llm/directo       |
+| university    | 6/6               | llm/directo       |
+
+El resultado mas importante es que las tres variantes con API funcionaron en
+modo directo. No se observo fallback determinista en Groq, Gemini ni en el
+perfil universitario durante esta primera bateria completa.
+
+
+5. TIEMPOS DE EJECUCION OBSERVADOS
+
+Los tiempos fueron razonables en todas las variantes. El modo determinista fue,
+como era esperable, el mas rapido en la mayoria de los casos porque no realiza
+llamadas externas. Entre los perfiles LLM, Groq fue el mas rapido de forma
+general, mientras que Gemini y el endpoint universitario presentaron tiempos
+algo superiores pero estables.
+
+Resultados aproximados de la ejecucion:
+
+| Variante      | Rango aproximado por caso |
+|---------------|----------------------------|
+| deterministic | 1.9 s - 3.4 s              |
+| groq          | 3.5 s - 8.1 s              |
+| gemini        | 6.4 s - 10.0 s             |
+| university    | 6.7 s - 10.8 s             |
+
+La diferencia de tiempo se debe principalmente a la latencia de cada proveedor
+externo. No se detectaron errores de conectividad ni problemas de configuracion
+en esta ejecucion.
+
+
+6. COMPARACION CUALITATIVA DE LAS RESPUESTAS
+
+El modo determinista genera respuestas correctas, compactas y trazables. Su
+principal ventaja es que resulta rapido, reproducible y no depende de servicios
+externos. Sin embargo, su estilo es mas rigido y menos explicativo.
+
+Ejemplo determinista para el caso growth_nvda:
+
+NVDA paso de 13.34 a 183.22 entre 2021-03-17 y 2026-03-16. La variacion absoluta
+fue 169.88 y la variacion porcentual fue 1273.33%.
+
+Las variantes con API conservan los mismos datos, pero generan una explicacion
+mas natural. Por ejemplo, el perfil universitario produjo:
+
+El precio de cierre de NVDA paso de 13,34 USD el 17 de marzo de 2021 a
+183,22 USD el 16 de marzo de 2026. En ese intervalo el activo aumento
+169,88 USD, lo que representa un crecimiento porcentual de 1.273,33 %. Este
+incremento muestra una expansion significativa del valor del activo durante los
+cinco anos analizados.
+
+La mejora principal no esta en el calculo, sino en la comunicacion del resultado.
+El LLM transforma una salida numerica correcta en una respuesta mas cercana a un
+informe, manteniendo los valores calculados por el pipeline determinista.
+
+
+7. RESULTADOS POR TIPO DE CONSULTA
+
+Comparacion NVDA frente a AMD:
+
+- El modo determinista identifica correctamente que NVDA tuvo mejor
+  comportamiento.
+- Las APIs expresan la comparativa de forma mas fluida y contextualizan mejor la
+  diferencia entre ambos activos.
+- Groq y Gemini fueron especialmente concisos; el perfil universitario ofrecio
+  una respuesta clara y estructurada.
+
+Crecimiento historico de NVDA:
+
+- Todas las variantes mantienen el mismo resultado numerico: crecimiento del
+  1273.33 % en el periodo analizado.
+- El modo determinista presenta el dato de forma directa.
+- Las APIs explican el cambio como una expansion significativa del valor del
+  activo durante el periodo.
+
+Vision general de AAPL:
+
+- El sistema detecta una caida aproximada del 7 % en el periodo analizado.
+- Las APIs explican mejor el rango de precios, el minimo, el maximo y la media.
+- No se observaron contradicciones relevantes entre los perfiles.
+
+Retornos de QQQ y SPY:
+
+- Todas las variantes indican que QQQ obtuvo mayor retorno acumulado.
+- Las APIs redactan mejor la comparacion entre retorno, media diaria y
+  volatilidad.
+- El perfil universitario anade una interpretacion algo mas amplia del
+  rendimiento relativo.
+
+Riesgo historico de QQQ y SPY:
+
+- Todas las variantes identifican QQQ como el activo con mayor riesgo historico
+  observado.
+- Las respuestas LLM son mas interpretables porque explican conjuntamente
+  volatilidad, drawdown maximo y peor dia.
+
+Analisis tecnico de AAPL:
+
+- Todas las variantes detectan una senal tecnica de sobreventa.
+- Las APIs presentan de forma mas clara la relacion entre cierre, medias moviles
+  y RSI.
+- En esta consulta es especialmente visible la mejora de legibilidad frente a la
+  salida determinista.
+
+
+8. VALOR DE CADA VARIANTE
+
+Modo determinista:
+
+Es la referencia base del sistema. Aporta estabilidad, trazabilidad y bajo coste
+de ejecucion. Resulta adecuado para validar que el flujo completo funciona sin
+dependencias externas.
+
+Groq:
+
+Fue el perfil LLM mas equilibrado en esta primera prueba. Ofrecio respuestas
+naturales, correctas y con baja latencia relativa. Es una buena opcion como API
+principal para iterar durante el desarrollo.
+
+Gemini:
+
+Genero respuestas claras y alineadas con los datos calculados. Su principal
+limitacion practica es que suele presentar mayor latencia y puede estar mas
+condicionado por cuotas, aunque en esta ejecucion concreta completo todos los
+casos sin fallback.
+
+Perfil universitario vLLM:
+
+Completo todos los casos correctamente y resulta especialmente valioso para la
+memoria del TFM, porque demuestra que el sistema puede conectarse tambien a un
+backend academico compatible con OpenAI. Aunque su latencia fue superior a Groq,
+su integracion funciono correctamente y sin modificar el flujo principal.
+
+
+9. CONCLUSION DE LA PRIMERA EJECUCION
+
+La primera ejecucion comparativa confirma que el proyecto funciona correctamente
+en las cuatro variantes evaluadas. El modo determinista sigue siendo una base
+solida y reproducible, mientras que las APIs LLM aportan una mejora clara en la
+calidad comunicativa de la respuesta final.
+
+No se observo que las APIs sustituyeran el razonamiento financiero ni los
+calculos del sistema. Su papel fue mejorar la interpretacion textual de unos
+resultados ya calculados por el pipeline. Esta separacion es importante porque
+mantiene la trazabilidad del MVP y reduce el riesgo de respuestas no controladas.
+
+La conclusion principal es que la arquitectura preparada permite incorporar
+modelos externos de forma gradual y segura. Groq, Gemini y el endpoint
+universitario funcionaron en modo directo, sin fallback, y ofrecieron respuestas
+mas naturales que el modo determinista. Por tanto, las APIs no mejoran la
+precision numerica del sistema, pero si mejoran la presentacion, claridad y
+utilidad explicativa de los resultados para el usuario final.
+
+Esta ejecucion constituye una referencia inicial valida para documentar el estado
+del sistema antes de futuras modificaciones, ampliaciones o ajustes de prompts.

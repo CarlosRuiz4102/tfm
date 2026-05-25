@@ -1,0 +1,37 @@
+\chapter{Aspectos éticos, seguridad y uso responsable}
+
+\section{Delimitación financiera del sistema}
+
+El sistema se orienta exclusivamente al análisis financiero histórico y descriptivo. Sus respuestas deben interpretarse como explicaciones basadas en datos pasados, no como predicciones ni como recomendaciones de inversión. Esta delimitación forma parte del diseño del MVP y debe mantenerse visible tanto en la memoria como en cualquier interfaz futura.
+
+El prototipo calcula métricas como crecimiento, retornos, volatilidad, drawdown e indicadores técnicos básicos. No realiza forecasting, no recomienda comprar o vender activos y no adapta decisiones a perfiles personales de riesgo.
+
+\section{Riesgos de interpretación}
+
+Un riesgo relevante es que el usuario confunda una explicación descriptiva con asesoramiento financiero. Para reducirlo, el sistema debe utilizar formulaciones prudentes, explicitar el periodo analizado y recordar que los resultados históricos no garantizan comportamientos futuros.
+
+La capa LLM aumenta este riesgo si redacta respuestas demasiado persuasivas. Por ello, la configuración actual solo permite al modelo interpretar resultados ya calculados y conserva mecanismos de fallback programático.
+
+\section{Seguridad en la generación y ejecución de código}
+
+La generación automática de código introduce riesgos específicos. Un script mal generado podría fallar, calcular una métrica incorrecta o acceder a recursos no previstos. En este proyecto, el riesgo se reduce mediante plantillas deterministas, entradas estructuradas, ejecución controlada y captura explícita de salidas.
+
+El código generado se ejecuta como proceso externo, con registro de salida estándar, salida de error y código de retorno. Esta estrategia permite revisar errores y evita que la respuesta final oculte fallos de ejecución.
+
+\section{Privacidad y datos}
+
+Los datos utilizados son series históricas de mercado y no contienen datos personales. Aun así, las claves de API de proveedores LLM se consideran información sensible y se almacenan exclusivamente en el fichero local \texttt{.env}, excluido del control de versiones.
+
+En una versión productiva, sería necesario revisar las condiciones de uso de los proveedores de datos y de modelos, así como las políticas de retención de información enviada a APIs externas.
+
+\section{Sostenibilidad, costes y recursos}
+
+El enfoque incremental reduce costes computacionales. El MVP no entrena modelos desde cero y puede ejecutarse en CPU sobre datos ya descargados. La capa LLM se activa solo cuando aporta valor, principalmente en interpretación, y el modo determinista permite trabajar sin consumo de APIs externas.
+
+Esta estrategia también mejora la sostenibilidad del desarrollo: evita ejecuciones innecesarias de modelos grandes, reduce dependencia de infraestructura GPU y permite comparar proveedores antes de elegir una configuración de uso continuado.
+
+\section{Limitaciones de uso}
+
+El sistema no debe utilizarse como herramienta profesional de decisión financiera sin validaciones adicionales. Su valor actual es académico y experimental: demostrar una arquitectura modular, trazable y robusta para automatizar análisis históricos.
+
+Entre las limitaciones principales se encuentran el uso de un conjunto de datos acotado, la dependencia de datos obtenidos desde Yahoo Finance mediante \texttt{yfinance}~\cite{yfinance,yahoofinancehistorical}, la ausencia de validación financiera profesional y la no incorporación de información fundamental, noticias o variables macroeconómicas.

@@ -1,0 +1,72 @@
+\chapter{Implementación}
+
+\section{Estructura del repositorio}
+
+El código del proyecto se organiza en una estructura separada por responsabilidades. La carpeta \texttt{src/} contiene la implementación principal, \texttt{data/} conserva los datos y catálogos, \texttt{notebooks/} incluye el análisis exploratorio y \texttt{tests/} agrupa las pruebas automatizadas.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Ruta} & \textbf{Función} \\
+\midrule
+\texttt{src/schemas.py} & Define modelos de entrada, salida y estado. \\
+\texttt{src/graph/} & Contiene nodos, routing y construcción del workflow. \\
+\texttt{src/agents/} & Agrupa las familias analíticas del MVP. \\
+\texttt{src/execution/} & Gestiona persistencia y ejecución de scripts. \\
+\texttt{src/io/} & Lee y normaliza los CSV financieros. \\
+\texttt{src/llm/} & Prepara la integración controlada con APIs LLM. \\
+\texttt{tests/} & Valida casos funcionales y escenarios de error. \\
+\bottomrule
+\end{tabularx}
+\caption{Principales módulos del repositorio.}
+\end{table}
+
+\section{Módulos principales}
+
+El fichero \texttt{schemas.py} define los contratos de datos que atraviesan el sistema. Los módulos de \texttt{src/graph/} implementan los nodos del pipeline y las reglas de transición. Las familias de agentes se concentran en \texttt{src/agents/}, donde cada intención se asocia con una lógica analítica concreta.
+
+La ejecución de código se encapsula en \texttt{src/execution/code\_runner.py}. Este módulo guarda el script generado, lo lanza como proceso externo y devuelve salidas estructuradas. Esta separación evita mezclar el cálculo financiero con la orquestación del workflow.
+
+\section{Ejecución, despliegue local y reproducibilidad}
+
+El MVP se ejecuta de forma local mediante \texttt{run\_mvp.py}. La memoria considera este despliegue local como suficiente para la fase académica del trabajo, ya que el objetivo principal es validar el pipeline y no publicar un servicio productivo.
+
+\begin{verbatim}
+python run_mvp.py --example growth_nvda
+python run_mvp.py --example compare_nvda_amd
+python run_mvp.py --example overview_aapl
+python run_mvp.py --example returns_qqq_spy
+python run_mvp.py --example risk_qqq_spy
+python run_mvp.py --example technical_aapl
+\end{verbatim}
+
+La reproducibilidad se apoya en tres elementos: datos CSV versionados, ejemplos de entrada controlados y pruebas automatizadas. Las claves de API se almacenan en un fichero local \texttt{.env}, excluido del control de versiones.
+
+\section{Tests automatizados}
+
+El proyecto incorpora pruebas unitarias para validar tanto el modo determinista como la configuración LLM. La batería principal comprueba las seis intenciones soportadas y varios errores previsibles.
+
+\begin{verbatim}
+python -m unittest tests/test_mvp.py
+python -m unittest tests/test_llm_config.py tests/test_mvp.py
+\end{verbatim}
+
+En las ejecuciones documentadas, el MVP supera nueve pruebas sobre nueve en la batería funcional principal. Al incluir las pruebas de configuración LLM, se documenta una ejecución de catorce pruebas superadas, lo que confirma que la incorporación de dependencias LLM no rompe el funcionamiento determinista.
+
+\section{Evaluación automática de perfiles LLM}
+
+Para comparar el modo determinista con los distintos proveedores LLM se incorporó el script \texttt{scripts/evaluate\_llm\_profiles.py}. Este script ejecuta una misma batería de ejemplos contra varios perfiles: \texttt{deterministic}, \texttt{groq}, \texttt{gemini} y \texttt{university}. Su objetivo es evitar evaluaciones manuales aisladas y generar evidencias comparables entre configuraciones.
+
+Cada ejecución registra el perfil utilizado, el ejemplo, la intención analítica, el estado final, el código de retorno del script generado, posibles avisos, la respuesta final, el agente seleccionado, el plan analítico, la salida estructurada de ejecución y el tiempo aproximado. También se incorporan comprobaciones cualitativas simples, como detectar si se ha usado fallback o si la respuesta evita formulaciones propias de una recomendación directa de inversión.
+
+\begin{verbatim}
+python scripts/evaluate_llm_profiles.py \
+  --profiles deterministic groq gemini university --examples all
+\end{verbatim}
+
+Los resultados generados se consideran artefactos de evaluación y no código fuente. Por ello, las salidas completas pueden almacenarse en una carpeta de resultados ignorada por el control de versiones, mientras que la memoria recoge los indicadores agregados más relevantes.
+
+\section{Artefactos generados}
+
+Cada ejecución puede producir scripts, logs y payloads de resultado. Estos artefactos permiten revisar el comportamiento del sistema después de la ejecución y aportan evidencia para la memoria. La existencia de scripts generados también facilita detectar errores en la fase de cálculo, en lugar de confiar únicamente en la respuesta final.

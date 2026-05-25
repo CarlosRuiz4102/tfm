@@ -1,0 +1,51 @@
+\chapter{Integración controlada de modelos de lenguaje}
+
+\section{Motivación de la capa LLM}
+
+Una vez consolidado el MVP determinista, el trabajo incorpora una capa de modelos de lenguaje. El objetivo no es sustituir el cálculo financiero, sino mejorar la redacción final y estudiar la portabilidad del sistema entre distintos proveedores.
+
+La configuración recomendada activa inicialmente el LLM solo para interpretación. De este modo, el modelo recibe resultados ya calculados y redacta una explicación más natural, pero no modifica la selección del agente, el plan analítico ni el código ejecutado.
+
+\section{Cliente compatible con OpenAI}
+
+La integración se ha preparado mediante un cliente compatible con APIs tipo OpenAI. Esta decisión permite alternar entre proveedores sin modificar el workflow principal. El sistema utiliza variables de entorno para seleccionar perfil, modelo, URL base y clave de API.
+
+En esta memoria se denomina \textbf{servidor vLLM} a la configuración desplegada en el entorno universitario que expone una API compatible con OpenAI Chat Completions mediante vLLM. Esta denominación se utiliza únicamente para identificar la configuración de ejecución; el modelo servido en las pruebas es \nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}. Por tanto, vLLM no se presenta como proveedor ni como modelo, sino como la infraestructura que permite servir el modelo con una interfaz compatible.
+
+\section{Activación granular}
+
+La capa LLM puede activarse por fases mediante variables de configuración:
+
+\begin{itemize}
+    \item \texttt{LLM\_USE\_FOR\_INTERPRETATION}: el modelo redacta la respuesta final.
+    \item \texttt{LLM\_USE\_FOR\_PLANNING}: el modelo puede ajustar el plan analítico.
+    \item \texttt{LLM\_USE\_FOR\_CODEGEN}: el modelo puede generar código Python.
+\end{itemize}
+
+La activación de planificación y generación de código se mantiene deshabilitada en la evaluación principal, porque son fases con mayor riesgo de introducir errores no trazables.
+
+\section{Configuraciones evaluadas}
+
+Se han preparado y evaluado tres configuraciones principales:
+
+\begin{itemize}
+    \item \textbf{Groq}: proveedor externo compatible con OpenAI, utilizado como primera API operativa con el modelo \nolinkurl{llama-3.3-70b-versatile}. Este identificador corresponde al despliegue en Groq de Meta Llama 3.3 70B Instruct~\cite{groqllama33docs,meta2024llama33modelcard,meta2024llama3herd}.
+    \item \textbf{Gemini}: proveedor secundario para estudiar portabilidad y calidad comparativa, usando el modelo \nolinkurl{gemini-2.5-flash}~\cite{google2025gemini25flashdocs,google2025gemini25report}.
+    \item \textbf{Servidor vLLM}: servidor compatible con OpenAI Chat Completions habilitado en el entorno universitario, usando el modelo \nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}.
+\end{itemize}
+
+\section{Estrategia de fallback}
+
+El diseño conserva siempre el modo determinista como fallback. Si una API falla por red, cuota, indisponibilidad o error de formato, el sistema puede devolver una respuesta programática válida. Esta propiedad es esencial para evitar que el MVP quede bloqueado por dependencias externas.
+
+Durante las pruebas se observaron errores de cuota y disponibilidad en Gemini, así como un problema inicial de red en el entorno de ejecución. También se comprobó que, si falta la dependencia \texttt{openai}, el sistema no queda inutilizado: registra el aviso correspondiente y mantiene una respuesta determinista. En todos estos casos, el enfoque con fallback permitió mantener el sistema operativo.
+
+\section{Observaciones técnicas de la integración}
+
+La primera integración real con APIs externas puso de manifiesto varias cuestiones prácticas. Groq completó la batería de seis casos con \nolinkurl{llama-3.3-70b-versatile} sin warnings una vez instaladas las dependencias y habilitada la conectividad, por lo que se consideró el proveedor externo más cómodo para iterar inicialmente. Gemini también produjo respuestas alineadas con los datos mediante \nolinkurl{gemini-2.5-flash}, pero mostró limitaciones operativas del \textit{free tier}: errores 429 por cuota y 503 por alta demanda temporal, resueltos mediante espera, reintento y fallback determinista.
+
+El servidor vLLM resultó especialmente relevante para el TFM porque confirma que la arquitectura puede conectarse a un modelo servido localmente mediante una API compatible con OpenAI Chat Completions sin cambiar el workflow principal. En la validación técnica se utilizó el modelo \nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}, que pertenece a la familia de modelos abiertos de razonamiento descrita en el estado del arte. Al servirse mediante vLLM, el servidor puede devolver un campo adicional \texttt{reasoning}, separado del campo \texttt{content}, con información interna o intermedia asociada a la generación de la respuesta. En este TFM, dicho campo se conserva únicamente en la respuesta cruda con fines de depuración y auditoría, pero no se utiliza para calcular métricas, seleccionar agentes ni construir la respuesta final al usuario. La aplicación emplea exclusivamente el contenido final del mensaje, manteniendo el cálculo financiero dentro del flujo programático. También se incorporó una reparación defensiva de codificación para evitar mojibake en respuestas con tildes o símbolos especiales.
+
+\section{Gestión de credenciales}
+
+Las claves de Groq, Gemini y del servidor vLLM se gestionan mediante variables de entorno en el fichero local \texttt{.env}. Este archivo no se versiona y no debe compartirse. El repositorio incluye configuraciones de ejemplo, pero una ejecución real con API solo es posible cuando el entorno local contiene una clave válida. Si la clave falta, es un marcador de ejemplo o el perfil no está configurado, el sistema debe continuar en modo determinista o activar fallback.

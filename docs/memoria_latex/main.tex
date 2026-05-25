@@ -10,6 +10,7 @@
 \usepackage{longtable}
 \usepackage{tabularx}
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage{csquotes}
 \usepackage[
     backend=biber,
@@ -27,8 +28,8 @@
 \newcommand{\thesisTitle}{Sistema multiagente para an\'alisis financiero hist\'orico mediante generaci\'on autom\'atica de c\'odigo}
 \newcommand{\thesisAuthor}{Carlos Ruiz Oyarzun}
 \newcommand{\thesisDate}{2026}
-\newcommand{\supervisor}{Dr. Adri\'an Gir\'on Jim\'enez}
-\newcommand{\cosupervisor}{Dr. Alejandro Delgado Perib\'a\~nez}
+\newcommand{\supervisor}{Adri\'an Gir\'on Jim\'enez}
+\newcommand{\cosupervisor}{Alejandro Delgado Perib\'a\~nez}
 
 \begin{document}
 
@@ -42,7 +43,22 @@
 
 \chapter*{Resumen}
 \addcontentsline{toc}{chapter}{Resumen}
-Este Trabajo Fin de M\'aster propone el desarrollo incremental de un sistema multiagente orientado al an\'alisis financiero hist\'orico. El sistema parte de consultas ya normalizadas, datos de mercado almacenados en CSV y un conjunto cerrado de intenciones anal\'iticas. A partir de esa entrada, el prototipo valida la solicitud, selecciona una familia de agente, genera un plan de an\'alisis, construye c\'odigo Python ejecutable, lanza dicho c\'odigo en un proceso controlado y transforma la salida en una respuesta interpretable. La arquitectura se ha construido de forma gradual, manteniendo una base determinista y trazable antes de incorporar llamadas opcionales a modelos de lenguaje mediante APIs compatibles con OpenAI.
+Este Trabajo Fin de M\'aster propone el desarrollo incremental de un sistema multiagente orientado al an\'alisis financiero hist\'orico. El sistema parte de consultas ya normalizadas, datos de mercado almacenados en CSV y un conjunto cerrado de intenciones anal\'iticas. A partir de esa entrada, el prototipo valida la solicitud, selecciona una familia de agente, genera un plan de an\'alisis, construye c\'odigo Python ejecutable, lanza dicho c\'odigo en un proceso controlado y transforma la salida en una respuesta interpretable. La arquitectura se ha construido de forma gradual, manteniendo una base determinista y trazable antes de incorporar de forma controlada modelos de lenguaje mediante APIs compatibles con OpenAI.
+
+El MVP actual soporta seis intenciones anal\'iticas: crecimiento de precio, comparaci\'on de activos, visi\'on descriptiva de un activo, an\'alisis de retornos, an\'alisis de riesgo hist\'orico y an\'alisis t\'ecnico. La evaluaci\'on combina pruebas funcionales, escenarios de error controlado y una comparativa entre el modo determinista y varios proveedores LLM. Los resultados muestran que el sistema puede mantener el c\'alculo financiero bajo control program\'atico y utilizar modelos de lenguaje como una capa de interpretaci\'on final para mejorar la redacci\'on sin alterar las m\'etricas calculadas.
+
+\vspace{0.5cm}
+\noindent\textbf{Palabras clave:} sistema multiagente, an\'alisis financiero, modelos de lenguaje, generaci\'on de c\'odigo, reproducibilidad, fallback determinista.
+\clearpage
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+This Master's Thesis proposes the incremental development of a multi-agent system for historical financial analysis. The system starts from already normalized queries, market data stored in CSV files and a closed set of analytical intents. From this input, the prototype validates the request, selects an agent family, generates an analysis plan, builds executable Python code, runs that code in a controlled process and transforms the output into an interpretable response. The architecture has been built gradually, preserving a deterministic and traceable base before incorporating optional calls to language models through APIs compatible with OpenAI.
+
+The current MVP supports six analytical intents: price growth, asset comparison, descriptive view of an asset, returns analysis, historical risk analysis and technical analysis. The evaluation combines functional tests, controlled error scenarios and a comparison between the deterministic mode and several LLM providers. The results show that the system can keep financial computation under programmatic control while using language models only as an optional layer to improve the final wording of the response.
+
+\vspace{0.5cm}
+\noindent\textbf{Keywords:} multi-agent system, financial analysis, language models, code generation, reproducibility, deterministic fallback.
 \clearpage
 
 \tableofcontents
@@ -54,11 +70,14 @@ Este Trabajo Fin de M\'aster propone el desarrollo incremental de un sistema mul
 
 \include{chapters/01_introduccion}
 \include{chapters/02_estado_cuestion}
-\include{chapters/03_material_metodos}
-\include{chapters/04_diseno_implementacion}
-\include{chapters/04_resultados}
-\include{chapters/05_integracion_llm}
-\include{chapters/06_conclusiones}
+\include{chapters/03_datos_material}
+\include{chapters/04_metodologia}
+\include{chapters/05_diseno_sistema}
+\include{chapters/06_implementacion}
+\include{chapters/07_integracion_llm}
+\include{chapters/08_resultados_evaluacion}
+\include{chapters/09_etica_seguridad}
+\include{chapters/10_conclusiones}
 
 \nocite{*}
 \printbibliography[heading=bibintoc,title={Referencias}]

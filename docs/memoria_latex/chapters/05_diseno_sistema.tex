@@ -1,0 +1,61 @@
+\chapter{Diseño del sistema}
+
+\section{Arquitectura general}
+
+El sistema se ha diseñado como un workflow modular que transforma una consulta financiera estructurada en una respuesta analítica basada en cálculos ejecutados sobre datos históricos. La arquitectura separa de forma explícita las fases de ingesta, enrutado, planificación, generación de código, ejecución e interpretación.
+
+Esta separación evita que una única llamada generativa concentre todo el razonamiento del sistema. Cada fase tiene una responsabilidad concreta y produce artefactos intermedios que pueden revisarse, probarse y sustituirse de forma independiente.
+
+\section{Entrada estructurada y estado compartido}
+
+El flujo parte de una entrada normalizada que incluye consulta original, intención analítica, símbolos financieros, periodo o fechas, intervalo y datos históricos asociados. A partir de esa entrada se construye un estado compartido que viaja por los nodos del flujo.
+
+El estado contiene, entre otros campos, la intención detectada, el agente seleccionado, el plan analítico, el código generado, la salida estándar, la salida de error, el código de retorno, los avisos y la respuesta final. Esta estructura permite mantener trazabilidad entre la entrada inicial y el resultado entregado al usuario.
+
+\section{Nodos del flujo y comunicación entre componentes}
+
+La Figura~\ref{fig:arquitectura_nodos_workflow} muestra la estructura del flujo multiagente y las comunicaciones entre nodos. Las flechas continuas representan la ruta principal de ejecución; las flechas rojas recogen las salidas de error controladas; y las flechas discontinuas indican puntos donde puede intervenir una capa LLM opcional, siempre con fallback determinista. La comunicación entre componentes no se realiza mediante texto libre entre agentes, sino a través de un estado compartido, lo que permite auditar qué información lee y actualiza cada fase.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/arquitectura_nodos_workflow.pdf}
+\caption{Arquitectura de nodos del flujo multiagente y comunicación mediante estado compartido.}
+\label{fig:arquitectura_nodos_workflow}
+\end{figure}
+
+El flujo se organiza en seis nodos principales:
+
+\begin{enumerate}
+    \item \textbf{Ingesta}: valida la entrada mínima y comprueba la existencia de los ficheros.
+    \item \textbf{Router}: valida la coherencia de la solicitud y selecciona la familia analítica.
+    \item \textbf{Análisis especializado}: transforma la intención en un plan estructurado.
+    \item \textbf{Generación de código}: construye un script Python adaptado al plan.
+    \item \textbf{Ejecución}: ejecuta el script en un proceso controlado.
+    \item \textbf{Interpretación}: convierte los resultados en una respuesta legible.
+\end{enumerate}
+
+Esta organización separa las decisiones de control del cálculo financiero. El router no ejecuta análisis, sino que valida la solicitud y selecciona la familia adecuada. El nodo especialista no calcula directamente sobre los datos, sino que produce un plan analítico estructurado. La generación de código transforma ese plan en un script reproducible y la ejecución se realiza fuera del proceso principal, capturando salida estándar, errores y artefactos. Finalmente, el nodo de interpretación redacta la respuesta a partir de resultados ya calculados, evitando que el modelo invente métricas o sustituya el cálculo programático.
+
+\section{Familias de agentes analíticos}
+
+La lógica específica de cada intención se agrupa en familias de agentes. En esta versión, la idea de agente no se interpreta como una entidad autónoma sin restricciones, sino como un componente especializado con un contrato claro. Cada agente sabe qué métricas calcular, qué salidas esperar y cómo construir una interpretación inicial.
+
+Esta organización facilita la extensión del sistema. Si se desea incorporar una nueva intención, se puede añadir una nueva familia analítica sin reescribir el workflow completo.
+
+\section{Generación controlada de código}
+
+La generación de código se sitúa entre el plan analítico y la ejecución. En el modo determinista, el sistema utiliza plantillas programáticas que producen scripts Python ajustados al contrato esperado. Esta decisión permite controlar imports, rutas, formato de salida y gestión de errores.
+
+En futuras iteraciones, la generación de código podría delegarse parcialmente en un modelo de lenguaje. Sin embargo, esta activación se considera más arriesgada que la interpretación final, por lo que el MVP actual mantiene esta fase bajo control determinista.
+
+\section{Ejecución segura y artefactos}
+
+El código se guarda como un script independiente y se ejecuta mediante un proceso externo controlado. La ejecución captura \texttt{stdout}, \texttt{stderr}, \texttt{returncode} y un payload estructurado con los resultados del análisis.
+
+Los scripts generados y los logs de ejecución se almacenan como artefactos revisables. Esto permite auditar qué cálculos se realizaron y qué salida se utilizó para construir la respuesta final.
+
+\section{Gestión de errores y fallback determinista}
+
+El sistema incorpora validaciones para errores previsibles, como intenciones no soportadas, CSV inexistentes o número incorrecto de tickers. Cuando se activa la capa LLM, el flujo conserva un fallback determinista. Si la API falla, no está configurada o devuelve una respuesta no válida, el sistema puede continuar con la lógica programática.
+
+Esta estrategia es clave para que el MVP no dependa críticamente de proveedores externos ni de disponibilidad de red.

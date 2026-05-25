@@ -1,0 +1,29 @@
+\chapter{Conclusiones y trabajo futuro}
+
+\section{Cumplimiento de objetivos}
+
+El trabajo desarrollado demuestra la viabilidad de un sistema multiagente para análisis financiero histórico basado en una arquitectura modular, trazable y extensible. El MVP actual completa el flujo de extremo a extremo para seis intenciones analíticas, gestiona errores básicos de entrada y conserva una base determinista reproducible.
+
+Los objetivos planteados se cumplen en una primera versión funcional: se ha definido un workflow modular, se han implementado familias de agentes, se ha generado y ejecutado código Python de forma controlada, se han incorporado pruebas automatizadas y se ha preparado una integración controlada con modelos de lenguaje.
+
+\section{Aportaciones principales}
+
+La primera aportación del trabajo es la separación clara entre cálculo financiero e interpretación textual. El sistema no delega las métricas en un LLM, sino que ejecuta código controlado y utiliza el modelo, cuando está activo, para mejorar la explicación final.
+
+La segunda aportación es la estrategia de fallback determinista. Gracias a ella, el MVP puede seguir funcionando aunque fallen las APIs externas, existan límites de cuota o se produzcan errores de red.
+
+La tercera aportación es la validación comparativa de distintas configuraciones LLM. La memoria distingue proveedores e infraestructura: Groq se evalúa con \nolinkurl{llama-3.3-70b-versatile}~\cite{groqllama33docs,meta2024llama33modelcard,meta2024llama3herd}; Gemini, con \nolinkurl{gemini-2.5-flash}~\cite{google2025gemini25flashdocs,google2025gemini25report}; y el servidor vLLM, con \nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}. Esta separación demuestra que la arquitectura no está acoplada a un proveedor concreto.
+
+\section{Limitaciones actuales}
+
+El prototipo trabaja con un conjunto acotado de intenciones y con datos históricos ya descargados. No aborda predicción futura, recomendación de inversión, análisis fundamental ni incorporación de noticias. Tampoco se ha activado todavía la generación de código mediante LLM en la evaluación principal, por considerarse una fase de mayor riesgo.
+
+Otra limitación es que la evaluación se basa en casos representativos y pruebas automatizadas, pero aún no incluye una evaluación extensa con usuarios ni una comparación cuantitativa frente a plataformas financieras profesionales.
+
+\section{Líneas de trabajo futuro}
+
+Como trabajo futuro se plantea ampliar el catálogo de consultas, incorporar más activos y fijar rangos temporales completamente reproducibles. También sería interesante añadir visualizaciones al informe final, mejorar la capa de logging y extender las pruebas de robustez.
+
+En la parte LLM, el siguiente paso razonable es mantener la interpretación asistida y estudiar de forma controlada la activación de la planificación. La generación de código mediante modelo debería evaluarse solo después de definir contratos estrictos, validadores automáticos y restricciones de seguridad adicionales.
+
+Finalmente, una evolución natural del proyecto sería construir una interfaz de usuario o API local que permita ejecutar el sistema de forma interactiva, manteniendo siempre visibles las limitaciones del análisis histórico y la ausencia de recomendación de inversión.

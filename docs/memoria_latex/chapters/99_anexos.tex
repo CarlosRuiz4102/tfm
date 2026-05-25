@@ -1,6 +1,6 @@
 \chapter{Anexos}
 
-\section{Ejecucion del MVP}
+\section{Ejecución del MVP}
 
 El proyecto puede ejecutarse en modo determinista mediante los ejemplos incluidos en el repositorio:
 
@@ -13,7 +13,7 @@ python run_mvp.py --example risk_qqq_spy
 python run_mvp.py --example technical_aapl
 \end{verbatim}
 
-\section{Configuracion de APIs}
+\section{Configuración de APIs}
 
 Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe subirse al repositorio. Para trabajar sin APIs externas:
 
@@ -21,16 +21,43 @@ Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe
 LLM_ENABLED=false
 \end{verbatim}
 
-Para activar Groq:
+Para activar Groq, el modelo configurado es:
+
+\begin{center}
+\nolinkurl{llama-3.3-70b-versatile}~\cite{groqllama33docs,meta2024llama33modelcard,meta2024llama3herd}
+\end{center}
 
 \begin{verbatim}
 LLM_ENABLED=true
 LLM_PROFILE=groq
+GROQ_MODEL=llama-3.3-70b-versatile
 \end{verbatim}
 
-Para activar Gemini:
+Para activar Gemini, el modelo configurado es:
+
+\begin{center}
+\nolinkurl{gemini-2.5-flash}~\cite{google2025gemini25flashdocs,google2025gemini25report}
+\end{center}
 
 \begin{verbatim}
 LLM_ENABLED=true
 LLM_PROFILE=gemini
+GEMINI_MODEL=gemini-2.5-flash
 \end{verbatim}
+
+Para activar el perfil del servidor vLLM, el modelo configurado es:
+
+\begin{center}
+\nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}
+\end{center}
+
+\begin{verbatim}
+LLM_ENABLED=true
+LLM_PROFILE=university
+UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
+UNIVERSITY_MODEL=openai/gpt-oss-20b
+\end{verbatim}
+
+\section{Documentación interna de apoyo}
+
+Durante el desarrollo se conservaron notas técnicas, informes de EDA y fichas de evaluación en formato TXT. Estos documentos no sustituyen a la memoria, pero sirvieron como evidencias auxiliares para reconstruir decisiones de diseño y resultados experimentales. En particular, se utilizaron las notas de iteración del MVP, el informe de EDA, las fichas de evaluación determinista y LLM, la primera ejecución comparativa completa y la guía de credenciales para reforzar las secciones de metodología, datos, implementación, integración LLM y resultados.

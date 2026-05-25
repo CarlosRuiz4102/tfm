@@ -1,0 +1,111 @@
+\chapter{Datos y material de trabajo}
+
+\section{Fuente de datos y trazabilidad}
+
+El sistema trabaja con datos financieros históricos descargados previamente mediante \texttt{yfinance}~\cite{yfinance} y almacenados en ficheros CSV. Esta librería permite acceder de forma programática a datos disponibles en Yahoo Finance~\cite{yahoofinancehistorical}. Cada fichero de datos dispone de un fichero de metadatos asociado en formato JSON, donde se conserva información sobre la consulta original, la intención analítica, los símbolos financieros implicados, el intervalo temporal y los parámetros utilizados para la descarga.
+
+Esta decisión permite separar la fase de obtención de datos de la fase de análisis. El MVP no depende de que la API externa esté disponible durante cada ejecución, sino que opera sobre un conjunto de datos congelado y versionado. De este modo, los resultados obtenidos son más reproducibles y pueden revisarse posteriormente a partir de los mismos ficheros de entrada.
+
+\section{Catálogo de consultas, activos y formato de entrada}
+
+En la versión actual se han definido diez consultas de referencia y se han analizado ocho CSV, que contienen diez series normalizadas por símbolo financiero y caso de uso. Los activos incluidos cubren acciones, ETFs, un índice amplio, un criptoactivo, una divisa y un futuro de materia prima.
+
+Cada consulta se transforma en una representación estructurada antes de entrar en el flujo multiagente. Esta representación no expone detalles internos del proyecto, sino los elementos semánticos necesarios para que el sistema pueda seleccionar el análisis adecuado y recuperar los datos correspondientes. La Tabla~\ref{tab:formato_consulta} resume el formato utilizado.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Elemento} & \textbf{Descripción} & \textbf{Ejemplo} \\
+\midrule
+Consulta original & Texto introducido o definido como caso de prueba. & Comparar Nvidia y AMD en dos años. \\
+Intención analítica & Tipo de análisis que debe ejecutarse. & Comparación de activos. \\
+Símbolos financieros & Activos sobre los que se realiza el análisis. & NVDA, AMD. \\
+Rango temporal & Periodo relativo o fechas de inicio y fin. & Dos años. \\
+Intervalo de observación & Frecuencia de los datos históricos. & Diario. \\
+Estado de aclaración & Indica si faltan datos para ejecutar la consulta. & No requiere aclaración. \\
+Avisos & Observaciones detectadas durante la preparación de la entrada. & Sin avisos. \\
+\bottomrule
+\end{tabularx}
+\caption{Estructura semántica de una consulta financiera antes de su procesamiento.}
+\label{tab:formato_consulta}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Categoría} & \textbf{Activos incluidos} \\
+\midrule
+Acciones & AAPL, AMD, NVDA \\
+ETFs & QQQ, SPY \\
+Índice & S\&P 500 (\texttt{\^{}GSPC}) \\
+Criptoactivo & BTC-USD \\
+Divisa & EURUSD=X \\
+Materia prima / futuro & GC=F \\
+\bottomrule
+\end{tabularx}
+\caption{Tipos de activos representados en el conjunto de datos.}
+\end{table}
+
+La variedad de activos permite comprobar que el sistema no está limitado a un único instrumento financiero y que puede trabajar con diferentes horizontes temporales e intervalos de observación.
+
+\section{Estructura de los CSV}
+
+Los ficheros generados por \texttt{yfinance} contienen columnas de tipo OHLCV: apertura, máximo, mínimo, cierre, cierre ajustado y volumen. En algunos casos se almacenan con cabeceras multinivel, por lo que el proyecto incorpora una capa de lectura y normalización antes de ejecutar los cálculos financieros.
+
+La variable más importante para el MVP es el precio de cierre, ya que sobre ella se calculan crecimiento, rentabilidades, volatilidad, máxima caída acumulada e indicadores técnicos básicos. El volumen se conserva como información complementaria, aunque no se trata como obligatorio para todos los activos, especialmente en divisas o futuros intradía.
+
+\section{Análisis exploratorio de datos}
+
+El análisis exploratorio confirma que el conjunto de datos contiene 5.080 filas normalizadas en formato largo, con un rango temporal observado entre el 2 de enero de 2020 y el 17 de marzo de 2026. Los intervalos considerados son diario (\texttt{1d}) e intradía horario (\texttt{1h}).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Indicador} & \textbf{Resultado} \\
+\midrule
+Casos definidos en catálogo & 10 \\
+CSV analizados & 8 \\
+Series por símbolo y caso & 10 \\
+Filas normalizadas & 5.080 \\
+Intervalos & \texttt{1d}, \texttt{1h} \\
+Nulos en precios de cierre & 0 \\
+Duplicados por fecha & 0 en los ficheros analizados \\
+\bottomrule
+\end{tabular}
+\caption{Resumen de cobertura y calidad del conjunto de datos.}
+\end{table}
+
+Además del resumen agregado, se calcularon métricas descriptivas por serie para comprobar que los casos de prueba cubrían situaciones financieras diversas. La Tabla~\ref{tab:resumen_series_eda} muestra una selección de las series analizadas. Se observan activos con crecimientos muy elevados, como NVDA en cinco años, series con caídas acumuladas significativas, como AMD en la comparativa con NVDA, y activos de menor volatilidad relativa, como SPY. Esta diversidad es útil porque obliga al sistema a redactar respuestas para escenarios con magnitudes y niveles de riesgo distintos.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Serie} & \textbf{Retorno total} & \textbf{Volatilidad anual} & \textbf{Máx. caída} \\
+\midrule
+NVDA, 5 años & 1273.33 \% & 51.31 \% & -66.36 \% \\
+BTC-USD, 2024 & 109.76 \% & 44.13 \% & -26.18 \% \\
+NVDA, 2 años & 107.13 \% & 49.42 \% & -36.89 \% \\
+S\&P 500, desde 2020 & 105.64 \% & 20.77 \% & -33.93 \% \\
+QQQ, 2024 & 28.07 \% & 17.99 \% & -13.56 \% \\
+SPY, 2024 & 24.45 \% & 12.63 \% & -8.41 \% \\
+AMD, 2 años & 3.11 \% & 55.10 \% & -58.98 \% \\
+AAPL, 3 meses & -7.00 \% & 24.15 \% & -10.07 \% \\
+\bottomrule
+\end{tabular}
+\caption{Métricas exploratorias por serie utilizadas para contextualizar los casos de prueba.}
+\label{tab:resumen_series_eda}
+\end{table}
+
+\section{Calidad, cobertura y limitaciones}
+
+La ausencia de nulos en el precio de cierre es relevante porque las métricas principales del MVP dependen directamente de esta columna. También se comprobó la ausencia de duplicados por fecha en los ficheros analizados. Estas condiciones permiten ejecutar las seis intenciones actuales sin introducir imputaciones adicionales.
+
+Como limitación, las descargas basadas en periodos relativos, por ejemplo tres meses o cinco años, dependen de la fecha en la que se generó el CSV. Para una versión final completamente cerrada sería recomendable fijar fechas explícitas de inicio y fin en todos los casos. También debe considerarse que los datos proceden de Yahoo Finance mediante \texttt{yfinance}. Al tratarse de una herramienta abierta no afiliada ni avalada por Yahoo, su uso se considera adecuado para un contexto académico y experimental, pero en un entorno productivo habría que estudiar licencias, disponibilidad, estabilidad del proveedor y derechos de uso de los datos descargados~\cite{yfinance}.
+
+\section{Papel de los cuadernos auxiliares}
+
+Durante el desarrollo se conservaron tres cuadernos auxiliares con funciones diferenciadas. El primero se utilizó como laboratorio para probar nuevos símbolos financieros, periodos e intervalos antes de incorporarlos al conjunto de datos definitivo. El segundo sirvió para documentar la relación entre las consultas de referencia y los CSV esperados. El tercero quedó como referencia principal del análisis exploratorio formal y de las tablas agregadas utilizadas en esta memoria.
