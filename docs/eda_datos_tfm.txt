@@ -126,7 +126,7 @@ Para la memoria, este EDA justifica:
 - la necesidad de una capa de normalizacion de datos;
 - la separacion entre catalogo de queries, datos raw y datos procesados;
 - el uso de metricas financieras basicas como retorno, volatilidad y
-  drawdown para validar las respuestas del agente.
+  drawdown para validar las respuestas del flujo LLM.
 
 9. Limitaciones detectadas
 ----------------------------------------------------------------------

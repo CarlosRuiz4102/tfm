@@ -1,56 +1,36 @@
-\chapter{Estado de la cuestión}
+﻿\chapter{Estado de la cuestión}
 
 \section{Enfoque de la revisión}
 
-El objetivo de este capítulo es situar el TFM dentro de tres líneas de trabajo relacionadas: el uso de modelos de lenguaje en finanzas, las arquitecturas de agentes con herramientas externas y la generación controlada de código para análisis de datos. La revisión no pretende cubrir todo el campo de la inteligencia artificial financiera, sino identificar trabajos representativos que permitan comparar la propuesta desarrollada.
+El objetivo de este capítulo es situar el TFM dentro de tres líneas de trabajo relacionadas: modelos de lenguaje aplicados a finanzas, sistemas LLM con herramientas externas y generación controlada de código para análisis de datos. La revisión no pretende cubrir todo el campo de la inteligencia artificial financiera, sino identificar referencias que permitan comparar la propuesta desarrollada.
 
-El sistema de este TFM se diferencia de una aplicación puramente generativa porque mantiene el cálculo financiero en un flujo programático y utiliza los modelos de lenguaje como una capa auxiliar de interpretación. Por ello, resultan especialmente relevantes los trabajos que combinan lenguaje natural, datos financieros, agentes, uso de herramientas y mecanismos de control.
+El sistema de este TFM no entrega directamente la primera respuesta generativa del modelo. El LLM interpreta la consulta y genera código, pero el sistema valida el script, lo ejecuta en un entorno controlado y vuelve a usar el modelo para explicar resultados ya calculados. Por ello, resultan especialmente relevantes los trabajos que combinan lenguaje natural, datos financieros, herramientas, generación de código y mecanismos de control.
 
-\section{Modelos de lenguaje aplicados al dominio financiero}
+\section{Modelos de lenguaje en finanzas}
 
-La aplicación de técnicas de procesamiento del lenguaje natural al dominio financiero cuenta con antecedentes previos a los modelos generativos actuales. Un ejemplo representativo es FinBERT, que adapta modelos tipo BERT al análisis de sentimiento financiero y muestra la utilidad de especializar modelos lingüísticos en textos de mercado~\cite{araci2019finbert}. Este tipo de trabajo es relevante porque evidencia que el lenguaje financiero tiene vocabulario, polaridad y contexto propios, por lo que no siempre basta con aplicar modelos generales sin adaptación.
+La aplicación de procesamiento del lenguaje natural al dominio financiero cuenta con antecedentes previos a los modelos generativos actuales. FinBERT adapta modelos tipo BERT al análisis de sentimiento financiero y muestra la utilidad de especializar modelos lingüísticos en textos de mercado~\cite{araci2019finbert}. Con los modelos de lenguaje de gran escala, trabajos como BloombergGPT y FinGPT amplían el foco hacia modelos entrenados o adaptados con datos financieros~\cite{wu2023bloomberggpt,yang2023fingpt}.
 
-Con la aparición de los modelos de lenguaje de gran escala, la investigación se ha desplazado hacia sistemas capaces de operar sobre tareas financieras más amplias. BloombergGPT propone un modelo de 50.000 millones de parámetros entrenado con una mezcla de datos financieros y generales, y evalúa su rendimiento tanto en tareas financieras como en bancos de prueba generales~\cite{wu2023bloomberggpt}. FinGPT, por su parte, plantea una alternativa abierta y centrada en la construcción de recursos reutilizables para modelos financieros, destacando la importancia de los flujos de datos y de la adaptación ligera de modelos~\cite{yang2023fingpt}.
+Estos trabajos se sitúan en una escala distinta a la de este TFM. Su foco principal es entrenar o adaptar modelos para finanzas, mientras que este proyecto no entrena un modelo propio. La aportación aquí es arquitectónica y metodológica: usar modelos disponibles para interpretar consultas, generar código y explicar resultados dentro de un flujo verificable.
 
-Estos trabajos se sitúan en una escala distinta a la de este TFM: su foco principal es el entrenamiento o adaptación de modelos para finanzas, mientras que este proyecto no entrena un modelo financiero propio. La aportación aquí es arquitectónica y metodológica: usar modelos ya disponibles como una capa de redacción sobre cálculos financieros trazables, evitando que el modelo sea responsable directo de las métricas.
+\section{LLM con herramientas y ejecución}
 
-\section{Agentes y sistemas multiagente en finanzas}
+En el plano técnico, el diseño del sistema se relaciona con la literatura sobre modelos capaces de razonar y actuar con herramientas externas. ReAct introdujo la combinación de razonamiento y actuación~\cite{yao2022react}. Toolformer mostró que los modelos pueden aprender a decidir cuándo llamar a herramientas externas~\cite{schick2023toolformer}. Las revisiones sobre agentes autónomos basados en LLM describen esta tendencia como un paso desde modelos conversacionales hacia sistemas capaces de planificar, actuar y observar resultados en entornos externos~\cite{wang2023agentsurvey}.
 
-Los sistemas recientes basados en agentes intentan ir más allá de una única llamada a un modelo de lenguaje. FinRobot propone un marco de agentes para análisis de compañías y valoración, combinando razonamiento cuantitativo y cualitativo mediante agentes especializados~\cite{zhou2024finrobot}. TradingAgents plantea una arquitectura multiagente inspirada en mesas de negociación, con perfiles diferenciados para análisis fundamental, sentimiento, análisis técnico, debate entre posiciones alcistas y bajistas, gestión de riesgo y toma de decisiones de compraventa~\cite{xiao2024tradingagents}.
+El TFM se inspira en esta separación entre razonamiento y uso de herramientas, pero fija de antemano los nodos del flujo: validación de entrada, análisis LLM, generación de código, control de seguridad, ejecución e interpretación. Esta decisión reduce flexibilidad frente a un agente autónomo, pero aumenta control, depuración y reproducibilidad.
 
-Estos sistemas son cercanos al presente trabajo porque dividen tareas complejas en componentes especializados. Sin embargo, su objetivo es más ambicioso y también más arriesgado desde el punto de vista financiero: aproximarse a informes de inversión, valoración o decisiones de compraventa. Este TFM adopta una posición más conservadora. El sistema no genera tesis de inversión, no recomienda comprar o vender activos y no incorpora juicio discrecional sobre una compañía. Su alcance se limita al análisis histórico-descriptivo de datos ya descargados.
+\section{Generación de código}
 
-La comparación permite delimitar mejor la contribución del proyecto. Frente a agentes financieros orientados a asesoramiento o compraventa, aquí se priorizan reproducibilidad, trazabilidad y control del flujo: entrada estructurada, selección de intención, cálculo determinista, ejecución controlada y redacción final asistida.
+La generación automática de código es una de las capacidades más relevantes de los LLM. El trabajo sobre Codex y HumanEval mostró que los modelos entrenados con código pueden sintetizar programas a partir de descripciones en lenguaje natural~\cite{chen2021codex}. En ciencia de datos, DS-1000 propuso un banco de prueba específico para generación de código en tareas realistas con librerías habituales de análisis de datos~\cite{lai2022ds1000}.
 
-\section{Agentes con herramientas, planificación y ejecución}
+Estos trabajos justifican que la generación de código sea una línea natural para sistemas de análisis financiero asistidos por modelos de lenguaje. También muestran un riesgo importante: el código generado debe validarse antes de ejecutarse. En el presente TFM, la generación de código mediante LLM forma parte del flujo principal, pero se somete a un control de seguridad que comprueba contrato del script, imports permitidos y salida JSON.
 
-En el plano técnico, el diseño del sistema se relaciona con la literatura sobre agentes basados en modelos de lenguaje. ReAct introdujo la combinación de razonamiento y actuación, permitiendo que un modelo alterne entre pasos de razonamiento y acciones sobre herramientas externas~\cite{yao2022react}. Toolformer mostró que los modelos pueden aprender a decidir cuándo llamar a herramientas externas, como calculadoras, buscadores o sistemas de preguntas y respuestas~\cite{schick2023toolformer}. Las revisiones sobre agentes autónomos basados en LLM describen esta tendencia como un paso desde modelos conversacionales hacia sistemas capaces de planificar, actuar y observar resultados en entornos externos~\cite{wang2023agentsurvey}.
+\section{Fiabilidad y trazabilidad}
 
-Una línea reciente dentro de los LLM son los denominados modelos de razonamiento, diseñados para dedicar más cómputo de inferencia a descomponer problemas, generar pasos intermedios y revisar la respuesta antes de emitir la salida final. La familia OpenAI o1 popularizó este enfoque en tareas complejas de ciencia, programación y matemáticas~\cite{openai2024o1systemcard}; DeepSeek-R1 mostró que el razonamiento puede incentivarse mediante aprendizaje por refuerzo y destilarse posteriormente a modelos más pequeños~\cite{deepseek2025r1}; y la familia \nolinkurl{gpt-oss} se presenta como un conjunto de modelos abiertos de razonamiento con capacidades de uso de herramientas y trazas intermedias~\cite{openai2025gptossmodelcard}. Esta línea es relevante para el TFM porque el modelo \nolinkurl{openai/gpt-oss-20b} pertenece a dicha familia, aunque el trabajo no evalúa el razonamiento como capacidad principal ni delega en él el cálculo financiero.
+Una limitación conocida de los modelos generativos es la posibilidad de producir respuestas plausibles pero no fieles a los datos~\cite{ji2022hallucination}. En tareas de conocimiento, la generación aumentada con recuperación propuso reducir este problema mediante apoyo explícito en fuentes externas~\cite{lewis2020rag}. Aunque este TFM no implementa un sistema RAG documental, adopta una lógica de anclaje similar: el modelo trabaja con una entrada estructurada, CSV locales y resultados producidos por ejecución controlada.
 
-El TFM se inspira en esta idea general de separación entre razonamiento y uso de herramientas, pero no delega todo el control en el modelo. La arquitectura fija de antemano los nodos del flujo de trabajo: ingesta, enrutado, planificación, generación de código, ejecución e interpretación. Esta decisión reduce flexibilidad frente a un agente autónomo, pero aumenta control, depuración y reproducibilidad. En un dominio como el financiero, esta restricción es deseable porque evita que el modelo improvise cálculos, columnas o fuentes de datos.
-
-Desde esta perspectiva, LangGraph se utiliza como referencia práctica para construir flujos de trabajo con estado compartido y nodos diferenciados~\cite{langgraph}. No obstante, la contribución del TFM no depende de una herramienta concreta, sino del patrón de diseño: dividir una tarea analítica en etapas verificables y limitar la intervención generativa a las fases donde aporta valor sin comprometer el cálculo.
-
-\section{Generación de código y análisis de datos}
-
-La generación automática de código es una de las capacidades más relevantes de los LLM. El trabajo sobre Codex y HumanEval mostró que los modelos entrenados con código pueden sintetizar programas a partir de descripciones en lenguaje natural, aunque la evaluación debe centrarse en la corrección funcional y no solo en la apariencia del código~\cite{chen2021codex}. En ciencia de datos, DS-1000 propuso un banco de prueba específico para generación de código en tareas realistas con librerías habituales de análisis de datos~\cite{lai2022ds1000}.
-
-Estos trabajos justifican que la generación de código sea una línea natural para sistemas de análisis financiero asistidos por modelos de lenguaje. Sin embargo, también muestran un riesgo importante: el código generado debe ejecutarse, validarse y compararse con el resultado esperado. En el presente TFM, la generación libre mediante LLM se deja como extensión futura. La evaluación principal utiliza plantillas deterministas y programas controlados para evitar errores silenciosos en métricas financieras.
-
-La decisión es deliberada. En un prototipo académico cuyo objetivo es demostrar arquitectura y trazabilidad, resulta más valioso garantizar que el cálculo de rentabilidades, volatilidad, caída máxima o indicadores técnicos procede de código auditable que maximizar la autonomía generativa del sistema desde la primera versión.
-
-\section{Fiabilidad, alucinaciones y trazabilidad}
-
-Una limitación conocida de los modelos generativos es la posibilidad de producir respuestas plausibles pero no fieles a los datos. Las revisiones sobre alucinaciones en generación de lenguaje natural describen este fenómeno como una falta de correspondencia entre la salida generada y la fuente de información o el conocimiento verificable~\cite{ji2022hallucination}. En tareas de conocimiento, la generación aumentada con recuperación propuso una forma de reducir este problema mediante el apoyo explícito en fuentes externas recuperadas durante la generación~\cite{lewis2020rag}.
-
-Aunque este TFM no implementa un sistema RAG documental, adopta una lógica de anclaje similar: el modelo no inventa datos financieros, sino que recibe resultados calculados previamente por el flujo de análisis. La fuente de verdad son los CSV descargados mediante \texttt{yfinance} y los cálculos programáticos realizados sobre ellos~\cite{yfinance,yahoofinancehistorical}. De esta forma, la capa LLM se utiliza para mejorar la explicación, no para decidir las cifras.
-
-Este planteamiento también responde a una exigencia metodológica. En análisis financiero, una respuesta natural pero no trazable tiene poco valor académico. El sistema debe poder explicar qué datos se han usado, qué cálculo se ha realizado y qué limitaciones tiene la interpretación. Por ello, la memoria insiste en separar datos, cálculo, ejecución e interpretación.
+En análisis financiero, una respuesta natural pero no trazable tiene poco valor académico. El sistema debe poder explicar qué datos se han usado, qué código se ha ejecutado y qué limitaciones tiene la interpretación. Por ello, la memoria separa datos, interpretación de intención, generación de código, validación, ejecución e interpretación final.
 
 \section{Comparativa con trabajos relacionados}
-
-La Tabla~\ref{tab:comparativa_estado_arte} resume la relación entre trabajos existentes y la propuesta desarrollada. La comparación se centra en el objetivo, el tipo de solución y la diferencia principal con este TFM.
 
 \begin{table}[h]
 \centering
@@ -59,14 +39,11 @@ La Tabla~\ref{tab:comparativa_estado_arte} resume la relación entre trabajos ex
 \toprule
 \textbf{Trabajo} & \textbf{Dominio} & \textbf{Enfoque} & \textbf{Relación con este TFM} \\
 \midrule
-FinBERT~\cite{araci2019finbert} & PLN financiero & Modelo especializado para sentimiento financiero. & Muestra la utilidad de adaptar lenguaje al dominio financiero, pero no aborda flujos multiagente ni cálculo histórico trazable. \\
+FinBERT~\cite{araci2019finbert} & PLN financiero & Modelo especializado para sentimiento financiero. & Muestra la utilidad de adaptar lenguaje al dominio financiero, pero no aborda generación controlada de código. \\
 BloombergGPT~\cite{wu2023bloomberggpt} & LLM financiero & Modelo grande entrenado con datos financieros y generales. & Se centra en entrenamiento y evaluación de un modelo financiero; este TFM integra modelos existentes sin entrenarlos. \\
-FinGPT~\cite{yang2023fingpt} & LLM financiero abierto & Recursos abiertos y flujo de datos para modelos financieros. & Comparte la preocupación por datos y apertura, pero el TFM se enfoca en una arquitectura de análisis histórico con cálculo determinista. \\
-FinRobot~\cite{zhou2024finrobot} & Agentes financieros & Sistema multiagente para análisis de compañías y valoración. & Es más ambicioso en análisis fundamental; este TFM evita valoración y recomendación de inversión. \\
-TradingAgents~\cite{xiao2024tradingagents} & Compraventa multiagente & Agentes especializados para debate, riesgo y decisión de mercado. & Usa agentes para decisiones de mercado; este TFM se limita a análisis descriptivo y no produce señales de compra o venta. \\
-ReAct y Toolformer~\cite{yao2022react,schick2023toolformer} & Agentes con herramientas & Razonamiento combinado con acciones y llamadas a herramientas. & Inspiran la separación entre razonamiento y herramientas, pero aquí el flujo está restringido y validado de forma programática. \\
-OpenAI o1, DeepSeek-R1 y gpt-oss~\cite{openai2024o1systemcard,deepseek2025r1,openai2025gptossmodelcard} & Modelos de razonamiento & Uso de pasos intermedios, aprendizaje por refuerzo o mayor cómputo de inferencia para resolver tareas complejas. & Contextualizan el campo \texttt{reasoning} observado en el servidor vLLM, pero el TFM no usa esas trazas para calcular métricas financieras. \\
-Codex y DS-1000~\cite{chen2021codex,lai2022ds1000} & Generación de código & Síntesis y evaluación de código funcional o de ciencia de datos. & Justifican la línea futura de código generado, aunque el MVP usa plantillas deterministas para preservar trazabilidad. \\
+FinGPT~\cite{yang2023fingpt} & LLM financiero abierto & Recursos abiertos y flujo de datos para modelos financieros. & Comparte la preocupación por datos y apertura, pero el TFM se enfoca en una arquitectura de análisis histórico con código generado. \\
+ReAct y Toolformer~\cite{yao2022react,schick2023toolformer} & LLM con herramientas & Razonamiento combinado con acciones y llamadas a herramientas. & Inspiran la separación entre razonamiento, herramientas y observación de resultados. \\
+Codex y DS-1000~\cite{chen2021codex,lai2022ds1000} & Generación de código & Síntesis y evaluación de código funcional o de ciencia de datos. & Justifican la generación de código del MVP y la necesidad de validaciones estrictas. \\
 \bottomrule
 \end{tabularx}
 \caption{Comparativa entre trabajos relacionados y la propuesta del TFM.}
@@ -75,6 +52,7 @@ Codex y DS-1000~\cite{chen2021codex,lai2022ds1000} & Generación de código & S�
 
 \section{Posicionamiento de la propuesta}
 
-La revisión muestra que existen tres familias de trabajos cercanos: modelos financieros especializados, agentes financieros orientados a análisis o compraventa, y arquitecturas generales de LLM con herramientas y generación de código. El TFM se sitúa en la intersección de estas líneas, pero adopta una estrategia más acotada.
+La aportación principal no es entrenar un nuevo modelo financiero ni construir un asesor de inversión. La propuesta consiste en diseñar y validar un flujo LLM para análisis financiero histórico en el que el modelo interpreta la consulta, genera código y redacta la respuesta final, mientras el sistema mantiene validación, ejecución controlada y trazabilidad sobre los artefactos.
 
-La aportación principal no es entrenar un nuevo modelo financiero ni construir un asesor de inversión. La propuesta consiste en diseñar y validar un flujo multiagente para análisis financiero histórico en el que el cálculo permanece controlado por código y el LLM se incorpora de forma gradual para mejorar la interpretación textual. Esta posición permite aprovechar la expresividad de los modelos de lenguaje sin perder trazabilidad, reproducibilidad ni control sobre las métricas financieras.
+
+

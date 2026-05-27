@@ -1,0 +1,27 @@
+flowchart TD
+    A["Usuario<br/>consulta financiera"] --> B["Entrada estructurada<br/>query, tickers, fechas, CSV"]
+    B --> C["Validacion minima<br/>formato, fechas, rutas CSV"]
+    
+    C --> D["LLM de analisis<br/>interpreta intencion<br/>define metricas y plan"]
+    D --> E["LLM generador de codigo<br/>crea script Python"]
+    
+    E --> F["Control de seguridad<br/>AST, imports permitidos,<br/>contrato main/json"]
+    F --> G{"Codigo valido?"}
+    
+    G -- "No" --> H["Reparacion con LLM<br/>corrige codigo rechazado"]
+    H --> F
+    
+    G -- "Si" --> I["Ejecucion controlada<br/>script aislado + payload JSON"]
+    
+    I --> J{"Ejecucion OK?"}
+    J -- "No" --> K["Reparacion con LLM<br/>usa stderr como contexto"]
+    K --> F
+    
+    J -- "Si" --> L["Salida estructurada<br/>metricas JSON + artefactos"]
+    L --> M["LLM de interpretacion<br/>explica resultados"]
+    M --> N["Respuesta final<br/>clara, trazable, sin recomendacion"]
+
+    C --> X["Error de entrada"]
+    D --> Y["Error LLM"]
+    E --> Y
+    M --> Y

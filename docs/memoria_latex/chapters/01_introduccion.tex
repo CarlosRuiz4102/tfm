@@ -1,12 +1,12 @@
-\chapter{Introducción}
+﻿\chapter{Introducción}
 
 \section{Contexto y definición del problema}
 
-El análisis financiero histórico suele combinar varias tareas que, aunque son conceptualmente distintas, aparecen juntas en el trabajo práctico: carga de datos, validación de entradas, selección del tipo de análisis, cálculo de métricas, generación de gráficos, interpretación de resultados y comunicación final al usuario. En muchos prototipos basados en modelos de lenguaje, estas fases se mezclan dentro de una única llamada generativa, lo que dificulta la trazabilidad del resultado y aumenta el riesgo de errores silenciosos.
+El análisis financiero histórico combina carga de datos, validación de entradas, selección del tipo de análisis, cálculo de métricas, generación de código, interpretación de resultados y comunicación final al usuario. En muchos prototipos basados en modelos de lenguaje estas fases se mezclan dentro de una única llamada generativa, lo que dificulta la trazabilidad del resultado y aumenta el riesgo de errores silenciosos.
 
-Este trabajo plantea una aproximación diferente. En lugar de delegar todo el proceso en un modelo generativo, se diseña un flujo multiagente en el que cada fase tiene una responsabilidad delimitada. El sistema no intenta resolver desde cero el problema completo de comprensión del lenguaje natural, sino que parte de una consulta financiera ya estructurada: intención analítica, símbolos financieros, rango temporal, intervalo y datos históricos asociados. A partir de esta entrada, el objetivo es orquestar un análisis reproducible y controlado.
+Este trabajo plantea una aproximación controlada: el sistema parte de una entrada estructurada con consulta, tickers, fechas y rutas CSV; valida los datos mínimos; utiliza un LLM central para interpretar la intención; genera código Python; valida el contrato de seguridad del script; ejecuta el código en un entorno controlado; y finalmente usa el LLM para explicar las métricas obtenidas.
 
-Para situar el alcance tecnológico del trabajo, la Figura~\ref{fig:alcance_ia_tfm} resume la relación entre inteligencia artificial, aprendizaje automático, aprendizaje profundo e inteligencia artificial generativa. El TFM no se centra en entrenar modelos ni en desarrollar nuevas arquitecturas neuronales, sino en integrar modelos de lenguaje como capa auxiliar dentro de un sistema trazable de análisis financiero histórico.
+Para situar el alcance tecnológico del trabajo, la Figura~\ref{fig:alcance_ia_tfm} resume la relación entre inteligencia artificial, aprendizaje automático, aprendizaje profundo e inteligencia artificial generativa. El TFM no se centra en entrenar modelos ni en desarrollar nuevas arquitecturas neuronales, sino en integrar modelos de lenguaje dentro de un sistema trazable de análisis financiero histórico.
 
 \begin{figure}[H]
 \centering
@@ -17,30 +17,35 @@ Para situar el alcance tecnológico del trabajo, la Figura~\ref{fig:alcance_ia_t
 
 \section{Motivación}
 
-La motivación principal del proyecto es explorar cómo una arquitectura multiagente puede aportar orden, modularidad y robustez a un sistema de análisis financiero asistido por inteligencia artificial. La aplicación de modelos de lenguaje al dominio financiero resulta atractiva por su capacidad de generar explicaciones y adaptar el lenguaje al usuario, pero también exige mecanismos de control. En un contexto financiero, incluso cuando el objetivo es puramente descriptivo, resulta esencial separar los cálculos verificables de la redacción final.
+La motivación principal del proyecto es explorar cómo un flujo LLM con ejecución controlada puede aportar orden, modularidad y robustez a un sistema de análisis financiero asistido por inteligencia artificial. La aplicación de modelos de lenguaje al dominio financiero resulta atractiva por su capacidad para interpretar peticiones, generar código y adaptar el lenguaje al usuario, pero también exige mecanismos de control.
 
-Por esta razón, el MVP se ha construido inicialmente con plantillas deterministas. Esta decisión permite validar el flujo completo antes de introducir APIs externas o modelos servidos localmente. Una vez estabilizada la arquitectura, la integración de modelos de lenguaje se realiza de forma gradual: primero se prueban APIs externas como Groq, con el modelo \nolinkurl{llama-3.3-70b-versatile}~\cite{groqllama33docs,meta2024llama33modelcard,meta2024llama3herd}, y Gemini, con el modelo \nolinkurl{gemini-2.5-flash}~\cite{google2025gemini25flashdocs,google2025gemini25report}; después se habilita un servidor vLLM compatible con OpenAI Chat Completions usando el modelo \nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}. En todos los casos, la activación empieza por la fase de interpretación y conserva fallbacks programáticos.
+Por esta razón, el MVP separa las responsabilidades principales. El LLM interpreta la intencionalidad de la consulta y genera código, pero el sistema valida dicho código antes de ejecutarlo y captura los resultados en formato estructurado. Después, el LLM redacta la respuesta final a partir de las métricas calculadas. Si el proveedor no está configurado o falla, el sistema informa el error y no genera una respuesta alternativa sin modelo.
 
 \section{Objetivos}
 
-El objetivo general del trabajo es desarrollar y validar un prototipo multiagente capaz de ejecutar análisis financieros históricos a partir de entradas estructuradas y datos en CSV.
+El objetivo general del trabajo es desarrollar y validar un prototipo basado en LLM capaz de ejecutar análisis financieros históricos a partir de entradas estructuradas y datos en CSV.
 
 Los objetivos específicos son:
 
 \begin{itemize}
-    \item Definir un flujo modular que separe ingesta, enrutado, planificación, generación de código, ejecución e interpretación.
-    \item Implementar familias de agentes especializadas para distintas intenciones analíticas.
-    \item Mantener una base determinista que permita pruebas reproducibles y control de errores.
-    \item Preparar la arquitectura para integrar modelos de lenguaje mediante APIs compatibles con OpenAI.
+    \item Definir un flujo que separe validación, interpretación de intención, generación de código, control de seguridad, ejecución e interpretación final.
+    \item Utilizar un LLM central para comprender la consulta e identificar la intencionalidad financiera.
+    \item Generar código Python a partir de la intención interpretada y del mensaje original del usuario.
+    \item Validar el código generado mediante contrato de script, imports permitidos y salida JSON.
+    \item Ejecutar el código en un entorno controlado y conservar artefactos auditables.
+    \item Redactar la respuesta final mediante LLM a partir de las métricas obtenidas.
     \item Evaluar el MVP mediante casos funcionales y escenarios de error controlado.
 \end{itemize}
 
 \section{Alcance}
 
-El sistema se limita al análisis histórico-descriptivo de activos financieros a partir de datos ya descargados. No realiza predicción futura, recomendación de inversión ni análisis fundamental complejo. Esta restricción es deliberada: el foco del TFM no es construir un asesor financiero, sino estudiar la arquitectura de un flujo multiagente trazable para análisis histórico.
+El sistema se limita al análisis histórico-descriptivo de activos financieros a partir de datos ya descargados. No realiza predicción futura, recomendación de inversión ni análisis fundamental complejo. Esta restricción es deliberada: el foco del TFM no es construir un asesor financiero, sino estudiar una arquitectura LLM trazable para análisis histórico con generación y ejecución controlada de código.
 
 \section{Estructura de la memoria}
 
-La memoria se organiza siguiendo la lógica de desarrollo del proyecto. En primer lugar se presenta el estado de la cuestión, con especial atención a modelos de lenguaje, arquitecturas multiagente y limitaciones de enfoques monolíticos. A continuación se describen los datos utilizados, su trazabilidad y su calidad. Después se expone la metodología incremental seguida durante el desarrollo.
+La memoria se organiza siguiendo la lógica de desarrollo del proyecto. En primer lugar se presenta el estado de la cuestión, con especial atención a modelos de lenguaje, uso de herramientas externas y generación controlada de código. A continuación se describen los datos utilizados, su trazabilidad y su calidad. Después se expone la metodología seguida durante el desarrollo.
 
-Los capítulos centrales describen el diseño del sistema, la implementación del MVP y la integración controlada de modelos de lenguaje. Posteriormente se presentan los resultados de evaluación, incluyendo el modo determinista y la comparativa con proveedores LLM. Finalmente se discuten los aspectos éticos y de seguridad, se resumen las conclusiones y se plantean líneas de trabajo futuro.
+Los capítulos centrales describen el diseño del sistema, la implementación del MVP y la integración de modelos de lenguaje. Posteriormente se presentan los resultados de evaluación comparando proveedores LLM. Finalmente se discuten los aspectos éticos y de seguridad, se resumen las conclusiones y se plantean líneas de trabajo futuro.
+
+
+

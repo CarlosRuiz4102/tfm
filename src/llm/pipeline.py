@@ -4,91 +4,196 @@ import json
 
 from src.config import LLMConfig
 from src.llm.client import LLMClientError, create_llm_client
-from src.llm.prompts import build_codegen_messages, build_interpretation_messages, build_planning_messages
+from src.llm.prompts import (
+    build_analysis_messages,
+    build_codegen_messages,
+    build_code_repair_messages,
+    build_interpretation_messages,
+)
 from src.schemas import AnalysisPlan, FinancialQueryInput
 
 
-def _as_str_list(value: object, fallback: list[str]) -> list[str]:
+MAX_LLM_ATTEMPTS = 3
+
+
+def _as_str_list(value: object, default: list[str]) -> list[str]:
     if not isinstance(value, list):
-        return fallback
+        return default
     items = [str(item) for item in value if str(item).strip()]
-    return items or fallback
+    return items or default
 
 
 def _json_from_text(text: str) -> dict:
     cleaned = text.strip()
     if cleaned.startswith("```"):
-        cleaned = cleaned.strip("`")
+        lines = cleaned.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        cleaned = "\n".join(lines).strip()
         if cleaned.lower().startswith("json"):
             cleaned = cleaned[4:].strip()
-    return json.loads(cleaned)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            return json.loads(cleaned[start : end + 1])
+        raise
 
 
-def maybe_build_llm_plan(query_input: FinancialQueryInput, fallback_plan: AnalysisPlan) -> tuple[AnalysisPlan, list[str]]:
+def _code_from_text(text: str) -> str:
+    try:
+        payload = _json_from_text(text)
+        return str(payload.get("code") or "").strip()
+    except json.JSONDecodeError:
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            lines = cleaned.splitlines()
+            if lines and lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            cleaned = "\n".join(lines).strip()
+        if "def main(" in cleaned and "json.dumps" in cleaned:
+            return cleaned
+        raise
+
+
+def build_llm_analysis(query_input: FinancialQueryInput) -> tuple[AnalysisPlan, list[str]]:
     llm_config = LLMConfig.from_env()
-    if not llm_config.enabled or not llm_config.use_for_planning:
-        return fallback_plan, []
     if not llm_config.is_configured:
-        return fallback_plan, ["LLM planning activado, pero falta configurar LLM_API_KEY o LLM_MODEL."]
+        raise LLMClientError("Falta configurar LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
 
     try:
         client = create_llm_client(llm_config)
         if client is None:
-            return fallback_plan, ["No se pudo crear el cliente LLM; se usa plan determinista."]
-        response = client.complete_json(build_planning_messages(query_input, fallback_plan))
-        payload = _json_from_text(response.content)
-        intent = str(payload.get("intent") or fallback_plan.intent)
-        if intent != fallback_plan.intent:
-            return fallback_plan, ["El LLM intento cambiar la intent; se usa plan determinista."]
+            raise LLMClientError("No se pudo crear el cliente LLM para analisis.")
+        messages = build_analysis_messages(query_input)
+        last_error: Exception | None = None
+        payload = None
+        for attempt in range(MAX_LLM_ATTEMPTS):
+            try:
+                response = client.complete_json(messages)
+                payload = _json_from_text(response.content)
+                break
+            except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                last_error = exc
+                messages = messages + [
+                    messages[-1].__class__(
+                        "user",
+                        "La respuesta anterior no fue JSON valido. Reintenta y devuelve exclusivamente un objeto JSON valido.",
+                    )
+                ]
+        if payload is None:
+            raise LLMClientError(str(last_error))
         return (
             AnalysisPlan(
-                intent=intent,
-                metrics=_as_str_list(payload.get("metrics"), fallback_plan.metrics),
-                plots=_as_str_list(payload.get("plots"), fallback_plan.plots),
-                required_columns=_as_str_list(payload.get("required_columns"), fallback_plan.required_columns),
-                textual_focus=str(payload.get("textual_focus") or fallback_plan.textual_focus),
-                agent_name=str(payload.get("agent_name") or fallback_plan.agent_name),
+                interpreted_intent=str(payload.get("interpreted_intent") or "").strip(),
+                analysis_type=str(payload.get("analysis_type") or "").strip(),
+                metrics=_as_str_list(payload.get("metrics"), []),
+                required_columns=_as_str_list(payload.get("required_columns"), []),
+                data_requirements=_as_str_list(payload.get("data_requirements"), []),
+                output_requirements=_as_str_list(payload.get("output_requirements"), []),
+                presentation_preferences=_as_str_list(payload.get("presentation_preferences"), []),
+                reasoning=str(payload.get("reasoning") or "").strip(),
             ),
             [],
         )
     except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
-        return fallback_plan, [f"Fallo en planning LLM; se usa plan determinista: {exc}"]
+        raise LLMClientError(f"No se pudo interpretar la consulta con LLM: {exc}") from exc
 
 
-def maybe_build_llm_code(plan: AnalysisPlan, deterministic_code: str) -> tuple[str, list[str]]:
+def build_llm_code(query_input: FinancialQueryInput, plan: AnalysisPlan) -> tuple[str, list[str]]:
     llm_config = LLMConfig.from_env()
-    if not llm_config.enabled or not llm_config.use_for_codegen:
-        return deterministic_code, []
     if not llm_config.is_configured:
-        return deterministic_code, ["LLM codegen activado, pero falta configurar LLM_API_KEY o LLM_MODEL."]
+        raise LLMClientError("Falta configurar LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
 
     try:
         client = create_llm_client(llm_config)
         if client is None:
-            return deterministic_code, ["No se pudo crear el cliente LLM; se usa codigo determinista."]
-        response = client.complete_json(build_codegen_messages(plan, deterministic_code))
-        payload = _json_from_text(response.content)
-        code = str(payload.get("code") or "").strip()
+            raise LLMClientError("No se pudo crear el cliente LLM para generacion de codigo.")
+        messages = build_codegen_messages(query_input, plan)
+        last_error: Exception | None = None
+        code = ""
+        for attempt in range(MAX_LLM_ATTEMPTS):
+            try:
+                response = client.complete_json(messages)
+                code = _code_from_text(response.content)
+                break
+            except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                last_error = exc
+                messages = messages + [
+                    messages[-1].__class__(
+                        "user",
+                        "La respuesta anterior no fue JSON valido. Reintenta con un objeto JSON estricto "
+                        "con un unico campo code. No uses markdown. No expliques nada.",
+                    )
+                ]
+        if not code:
+            raise LLMClientError(str(last_error))
         if "def main(" not in code or "json.dumps" not in code:
-            return deterministic_code, ["El codigo LLM no cumple el contrato minimo; se usa codigo determinista."]
+            raise LLMClientError("El codigo LLM no cumple el contrato minimo.")
         return code, []
     except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
-        return deterministic_code, [f"Fallo en codegen LLM; se usa codigo determinista: {exc}"]
+        raise LLMClientError(f"No se pudo generar codigo con LLM: {exc}") from exc
 
 
-def maybe_build_llm_interpretation(output: dict, fallback_answer: str) -> tuple[str, list[str]]:
+def repair_llm_code(
+    query_input: FinancialQueryInput,
+    plan: AnalysisPlan,
+    previous_code: str,
+    error_detail: str,
+) -> tuple[str, list[str]]:
     llm_config = LLMConfig.from_env()
-    if not llm_config.enabled or not llm_config.use_for_interpretation:
-        return fallback_answer, []
     if not llm_config.is_configured:
-        return fallback_answer, ["LLM interpretation activado, pero falta configurar LLM_API_KEY o LLM_MODEL."]
+        raise LLMClientError("Falta configurar LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
 
     try:
         client = create_llm_client(llm_config)
         if client is None:
-            return fallback_answer, ["No se pudo crear el cliente LLM; se usa interpretacion determinista."]
-        response = client.complete_text(build_interpretation_messages(output, fallback_answer))
+            raise LLMClientError("No se pudo crear el cliente LLM para reparar codigo.")
+        messages = build_code_repair_messages(query_input, plan, previous_code, error_detail)
+        last_error: Exception | None = None
+        code = ""
+        for attempt in range(MAX_LLM_ATTEMPTS):
+            try:
+                response = client.complete_json(messages)
+                code = _code_from_text(response.content)
+                break
+            except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                last_error = exc
+                messages = messages + [
+                    messages[-1].__class__(
+                        "user",
+                        "La reparacion anterior no fue JSON valido. Reintenta con un objeto JSON estricto "
+                        "con un unico campo code.",
+                    )
+                ]
+        if not code:
+            raise LLMClientError(str(last_error))
+        if "def main(" not in code or "json.dumps" not in code:
+            raise LLMClientError("El codigo reparado no cumple el contrato minimo.")
+        return code, ["Se reparo codigo generado tras un error previo."]
+    except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise LLMClientError(f"No se pudo reparar codigo con LLM: {exc}") from exc
+
+
+def build_llm_interpretation(output: dict, plan: AnalysisPlan) -> tuple[str, list[str]]:
+    llm_config = LLMConfig.from_env()
+    if not llm_config.is_configured:
+        raise LLMClientError("Falta configurar LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
+
+    try:
+        client = create_llm_client(llm_config)
+        if client is None:
+            raise LLMClientError("No se pudo crear el cliente LLM para interpretacion.")
+        response = client.complete_text(build_interpretation_messages(output, plan))
         answer = response.content.strip()
-        return answer or fallback_answer, []
+        if not answer:
+            raise LLMClientError("El LLM devolvio una respuesta vacia.")
+        return answer, []
     except LLMClientError as exc:
-        return fallback_answer, [f"Fallo en interpretacion LLM; se usa respuesta determinista: {exc}"]
+        raise LLMClientError(f"No se pudo obtener interpretacion LLM: {exc}") from exc

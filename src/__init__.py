@@ -1,1 +1,1 @@
-"""TFM financial multiagent MVP."""
+"""TFM financial LLM code-generation MVP."""

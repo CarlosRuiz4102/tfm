@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from src.config import EXECUTION_CONFIG, RESULTS_CODE_DIR, RESULTS_LOGS_DIR
+from src.config import EXECUTION_CONFIG, RESULTS_CODE_DIR, RESULTS_LOGS_DIR, ROOT_DIR
 from src.schemas import ExecutionArtifacts, ExecutionResult
 
 
@@ -27,9 +28,15 @@ def run_generated_code(code: str, payload: dict[str, Any]) -> ExecutionResult:
     script_path.write_text(code, encoding="utf-8")
     payload_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    env = os.environ.copy()
+    existing_pythonpath = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = str(ROOT_DIR) if not existing_pythonpath else f"{ROOT_DIR}{os.pathsep}{existing_pythonpath}"
+
     completed = subprocess.run(
         [EXECUTION_CONFIG.python_executable, str(script_path), str(payload_path)],
         capture_output=True,
+        cwd=ROOT_DIR,
+        env=env,
         text=True,
         timeout=EXECUTION_CONFIG.timeout_seconds,
         check=False,

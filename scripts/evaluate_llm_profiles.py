@@ -26,7 +26,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 
 EVALUATION_DIR = RESULTS_DIR / "evaluations"
-DEFAULT_PROFILES = ["deterministic", "groq", "gemini"]
+DEFAULT_PROFILES = ["groq", "gemini", "university"]
 INVESTMENT_RECOMMENDATION_TERMS = {
     "compra",
     "comprar",
@@ -39,36 +39,24 @@ INVESTMENT_RECOMMENDATION_TERMS = {
 
 
 def _set_profile_env(profile: str) -> None:
-    os.environ["LLM_USE_FOR_PLANNING"] = "false"
-    os.environ["LLM_USE_FOR_CODEGEN"] = "false"
-    os.environ["LLM_USE_FOR_INTERPRETATION"] = "true"
-
-    if profile == "deterministic":
-        os.environ["LLM_ENABLED"] = "false"
-        os.environ.pop("LLM_PROFILE", None)
-        return
-
-    os.environ["LLM_ENABLED"] = "true"
     os.environ["LLM_PROFILE"] = profile
 
 
 def _quality_checks(answer: str, warnings: list[str], status: str) -> dict[str, Any]:
     normalized = answer.lower()
-    fallback_markers = (
-        "fallo en",
+    llm_error_markers = (
+        "no se pudo",
         "falta configurar",
-        "no se pudo crear",
-        "se usa",
         "no cumple el contrato",
     )
-    fallback_used = any(
-        any(marker in warning.lower() for marker in fallback_markers)
+    llm_error = status != "completed" or any(
+        any(marker in warning.lower() for marker in llm_error_markers)
         for warning in warnings
     )
     forbidden_terms = sorted(term for term in INVESTMENT_RECOMMENDATION_TERMS if term in normalized)
     return {
         "completed": status == "completed",
-        "fallback_used": fallback_used,
+        "llm_error": llm_error,
         "has_warnings": bool(warnings),
         "avoids_investment_recommendation": not forbidden_terms,
         "forbidden_terms": forbidden_terms,
@@ -86,12 +74,11 @@ def _run_case(profile: str, example_name: str) -> dict[str, Any]:
     return {
         "profile": profile,
         "example": example_name,
-        "intent": SAMPLE_INPUTS[example_name]["intent"],
+        "input_intent_hint": SAMPLE_INPUTS[example_name].get("intent"),
         "status": state.status,
         "execution_returncode": state.execution_returncode,
         "warnings": warnings,
         "final_answer": state.final_answer,
-        "selected_agent": state.selected_agent,
         "analysis_plan": state.analysis_plan,
         "execution_output": state.execution_output,
         "elapsed_seconds": round(elapsed, 3),
@@ -118,7 +105,15 @@ def _write_results(payload: dict[str, Any]) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evalua perfiles LLM sobre los ejemplos del MVP.")
-    parser.add_argument("--profiles", nargs="+", default=DEFAULT_PROFILES, help="Perfiles: deterministic, groq, gemini, university.")
+    parser.add_argument(
+        "--profiles",
+        nargs="+",
+        default=DEFAULT_PROFILES,
+        help=(
+            "Perfiles LLM: groq=llama-3.3-70b-versatile, "
+            "gemini=gemini-2.5-flash, university=openai/gpt-oss-20b sobre vLLM."
+        ),
+    )
     parser.add_argument("--examples", nargs="+", default=["all"], help="Ejemplos concretos o 'all'.")
     parser.add_argument("--no-write", action="store_true", help="No guarda JSON en results/evaluations.")
     parser.add_argument("--show-answers", action="store_true", help="Muestra en consola la respuesta final de cada ejecucion.")
@@ -132,12 +127,7 @@ def main() -> int:
         for example in examples:
             result = _run_case(profile, example)
             results.append(result)
-            if profile == "deterministic":
-                execution_mode = "sin_llm"
-            elif result["quality_checks"]["fallback_used"]:
-                execution_mode = "fallback"
-            else:
-                execution_mode = "llm/directo"
+            execution_mode = "llm/error" if result["quality_checks"]["llm_error"] else "llm/directo"
             print(
                 f"{profile:13} {example:18} {result['status']:10} "
                 f"{result['elapsed_seconds']:6.2f}s {execution_mode}"

@@ -27,8 +27,8 @@ class LLMClientError(RuntimeError):
 
 
 def _repair_mojibake(text: str) -> str:
-    """Repara UTF-8 interpretado accidentalmente como latin-1/cp1252."""
-    mojibake_markers = ("Ã", "Â", "â€", "â†", "�")
+    """Repair UTF-8 text that was decoded as latin-1/cp1252."""
+    mojibake_markers = ("\u00c3", "\u00c2", "\u00e2", "\ufffd")
     if not any(marker in text for marker in mojibake_markers):
         return text
     for encoding in ("latin-1", "cp1252"):
@@ -36,7 +36,7 @@ def _repair_mojibake(text: str) -> str:
             repaired = text.encode(encoding).decode("utf-8")
         except UnicodeError:
             continue
-        if repaired.count("�") <= text.count("�"):
+        if repaired.count("\ufffd") <= text.count("\ufffd"):
             return repaired
     return text
 
@@ -50,7 +50,7 @@ class OpenAICompatibleLLMClient:
         if config.provider != "openai-compatible":
             raise LLMClientError(f"Proveedor LLM no soportado todavia: {config.provider}")
         if not config.is_configured:
-            raise LLMClientError("LLM activado pero faltan LLM_API_KEY/LLM_MODEL.")
+            raise LLMClientError("Faltan LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
         self.config = config
 
         try:

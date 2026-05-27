@@ -1,181 +1,211 @@
 \chapter{Resultados y evaluación}
 
-Este capítulo recoge la evaluación del prototipo desarrollado. A diferencia de una validación basada únicamente en ejemplos correctos, se han utilizado tres niveles de prueba: casos funcionales, escenarios de error controlado y comparación entre el modo determinista y varias configuraciones con modelos de lenguaje. El objetivo no es demostrar que el sistema prediga el mercado, sino comprobar si la arquitectura ejecuta análisis históricos de forma trazable, si falla de manera controlada y si el uso de LLM aporta valor frente a una salida puramente programática.
+Este capítulo recoge la evaluación del prototipo desarrollado con foco en resultados generados mediante LLM y código Python ejecutado de forma controlada. El objetivo no es demostrar que el sistema prediga el mercado, sino comprobar si la arquitectura interpreta consultas, genera código, valida su seguridad, ejecuta métricas históricas y redacta conclusiones comprensibles.
 
 \section{Protocolo de evaluación}
 
-La evaluación se ha diseñado alrededor de las seis intenciones analíticas soportadas por el MVP: crecimiento de precio, comparación de activos, visión descriptiva de un activo, análisis de retornos, análisis de riesgo histórico y análisis técnico. Para cada ejecución se registran el estado final del flujo, el agente seleccionado, el código de retorno del proceso de análisis, el tiempo de ejecución, los avisos generados, la respuesta final y una comprobación básica de seguridad para detectar recomendaciones directas de inversión.
+La evaluación se ha diseñado alrededor de consultas representativas de análisis financiero histórico: crecimiento de precio, comparación de activos, visión descriptiva, análisis de retornos, análisis de riesgo histórico y análisis técnico. Para cada ejecución se registran el estado final, la interpretación estructurada, el código de retorno del script, el tiempo de ejecución, los avisos, la salida JSON y la respuesta final.
 
-Se han considerado dos modos principales. El primero es el modo determinista, donde la selección de agente, el plan de análisis, el código ejecutado y la respuesta textual proceden de reglas y plantillas del propio sistema. En esta memoria se utiliza como \textit{baseline}: una referencia inicial reproducible contra la que comparar las variantes con LLM. Esta decisión responde a la estrategia seguida al comienzo del proyecto: antes de incorporar modelos generativos, se necesitaba una versión controlada que permitiera comprobar que el flujo funcionaba, que las métricas financieras eran correctas y que los errores podían gestionarse sin depender de servicios externos.
+La lectura de resultados debe interpretarse teniendo en cuenta la evolución del MVP. Las primeras pruebas se centraron en comprobar dos intencionalidades básicas, crecimiento y comparación. Después se amplió la batería a seis intencionalidades para validar una cobertura funcional más amplia. La fase actual incorpora comparación entre modelos, niveles cualitativos de profundidad y queries de estrés visual que obligan al sistema a producir tablas, datos para gráficas y conclusiones explicativas.
 
-El segundo modo mantiene el cálculo financiero igual de determinista, pero activa un LLM únicamente en la fase de interpretación final. Por tanto, los modelos de lenguaje no calculan precios, retornos, volatilidades ni señales técnicas; reciben una salida estructurada ya calculada y la convierten en una explicación más natural. La comparación entre ambos modos permite distinguir qué mejora realmente al usar LLMs: no la precisión numérica, sino la claridad, la naturalidad y la capacidad de relacionar varias métricas en una respuesta más útil para el usuario.
+El proyecto contempla tres perfiles de ejecución: Groq con \nolinkurl{llama-3.3-70b-versatile}, Gemini con \nolinkurl{gemini-2.5-flash} y el perfil técnico \texttt{university}, que corresponde a \nolinkurl{openai/gpt-oss-20b} servido mediante vLLM en el entorno universitario. En todos los casos el workflow usa el modelo configurado para interpretación de consulta, generación de código e interpretación final. Si falta una clave, el modelo no está disponible, el código se rechaza o la ejecución falla, el caso queda marcado como error controlado.
 
-Las métricas utilizadas son las siguientes:
+\section{Métricas y criterios de evaluación}
+
+Las métricas técnicas utilizadas son:
 
 \begin{itemize}
-    \item \textbf{Tasa de comportamiento esperado}: proporción de casos cuyo estado final coincide con el esperado.
     \item \textbf{Casos funcionales completados}: número de consultas válidas que terminan con estado \texttt{completed}.
-    \item \textbf{Errores controlados}: número de consultas inválidas que terminan en un estado de error esperado y con una explicación para el usuario.
-    \item \textbf{Warnings}: avisos producidos durante la ejecución.
-    \item \textbf{Violaciones de recomendación de inversión}: presencia de expresiones como comprar, vender o recomendar invertir en la respuesta final.
-    \item \textbf{Tiempo medio}: duración media observada por grupo de casos.
+    \item \textbf{Errores controlados}: número de consultas inválidas o fallidas que terminan con explicación.
+    \item \textbf{Errores LLM}: problemas de configuración, red, cuota, disponibilidad, contexto o formato.
+    \item \textbf{Código rechazado}: scripts que no superan el contrato de seguridad.
+    \item \textbf{Violaciones de recomendación de inversión}: presencia de expresiones como comprar, vender o recomendar invertir.
+    \item \textbf{Tiempo de ejecución}: duración observada por caso y proveedor.
 \end{itemize}
 
-\section{Resultados cuantitativos del modo determinista}
+A estas métricas se añade una revisión cualitativa, porque la completitud técnica no garantiza por sí sola que el análisis sea útil. La revisión humana valora comprensión de la consulta, selección de métricas, suficiencia del código generado, adecuación de tablas o gráficas, exactitud respecto a los datos ejecutados, claridad del texto final, reconocimiento de limitaciones y ausencia de recomendaciones de inversión. Esta decisión es coherente con la necesidad de explicar cómo se calcula y presenta el rendimiento histórico \cite{investorgov2022performanceclaims}, y con la separación entre retorno, riesgo, volatilidad y correlación como conceptos de análisis histórico \cite{investorgov2026risk,cfainstitute2026portfolioriskreturn}.
 
-Para reforzar la evaluación se amplió la batería inicial de seis ejemplos hasta 24 casos. La mitad corresponde a consultas funcionales y la otra mitad a casos de estrés diseñados para forzar errores de entrada, cardinalidades incorrectas, ficheros inexistentes, tickers no presentes en los datos y series temporales insuficientes. La Tabla~\ref{tab:evaluacion_robustez} resume los resultados agregados.
+\section{Niveles cualitativos de salida}
+
+La evaluación cualitativa se estructura en tres niveles:
+
+\begin{itemize}
+    \item \textbf{Nivel A}: consultas simples sin requisitos de presentación. La respuesta esperada es breve y debe incluir métricas básicas suficientes.
+    \item \textbf{Nivel B}: consultas que piden un análisis más completo. La respuesta esperada incluye texto, tabla de métricas y una gráfica principal o datos estructurados para generarla.
+    \item \textbf{Nivel C}: consultas profesionales o detalladas. La respuesta esperada incluye varias salidas estructuradas, por ejemplo tabla, evolución normalizada, drawdown, ranking mensual, desglose de riesgo o conclusión ejecutiva.
+\end{itemize}
+
+El uso de visualizaciones depende de la intención de la consulta. Para series temporales se priorizan gráficos de línea y, cuando se comparan activos con escalas distintas, una evolución normalizada permite comparar la tendencia sin confundir niveles de precio absolutos. También se evita abusar de demasiadas series o ejes dobles, porque pueden dificultar la lectura \cite{atlassianlinecharts}. En consultas de riesgo se considera especialmente útil el drawdown, ya que resume caídas históricas desde máximos previos y se entiende con facilidad \cite{cfainstitute2018drawdown}.
 
 \begin{table}[htbp]
 \centering
-\footnotesize
-\begin{tabularx}{\textwidth}{p{2.6cm}p{1.1cm}X p{2.0cm}p{1.5cm}p{1.8cm}}
+\small
+\begin{tabularx}{\textwidth}{l X X}
 \toprule
-\textbf{Batería} & \textbf{Casos} & \textbf{Resultado esperado} & \textbf{Cumplidos} & \textbf{Avisos} & \textbf{Tiempo medio} \\
+\textbf{Nivel} & \textbf{Uso previsto} & \textbf{Salida esperada} \\
 \midrule
-Funcional ampliada & 12 & \texttt{completed} & 12/12 & 0 & 1.39 s \\
-Estrés y errores & 12 & Error controlado & 12/12 & 0 & 0.46 s \\
-\textbf{Total} & \textbf{24} & Comportamiento esperado & \textbf{24/24} & \textbf{0} & \textbf{0.92 s} \\
+A & Query simple sin formato específico & Texto breve y métricas básicas en tabla o bloque estructurado. \\
+B & Análisis más completo o comparativa clara & Texto, tabla de métricas y una gráfica principal o datos para representarla. \\
+C & Petición profesional, detallada o con varias salidas & Texto, tablas, varias visualizaciones o datos estructurados, conclusión y limitaciones. \\
 \bottomrule
 \end{tabularx}
-\caption{Evaluación cuantitativa del flujo determinista ampliado.}
-\label{tab:evaluacion_robustez}
+\caption{Niveles cualitativos de profundidad del análisis.}
+\label{tab:niveles_cualitativos_analisis}
 \end{table}
 
-Además, no se detectaron recomendaciones directas de inversión en ninguna de las 24 respuestas generadas. Este resultado es relevante porque el sistema está orientado a análisis histórico y no a asesoramiento financiero. La comprobación automática no sustituye a una auditoría lingüística completa, pero permite detectar de forma sistemática expresiones claramente problemáticas.
+\section{Batería progresiva de evaluación}
 
-Los 12 casos funcionales incluyen los seis ejemplos base del MVP y seis variantes adicionales con otros activos y horizontes temporales: Bitcoin, S\&P 500, EUR/USD y oro. Esto permite comprobar que el sistema no se limita a una única familia de activos ni a un único formato temporal. Los 12 casos de estrés cubren consultas vacías, intenciones no soportadas, ausencia de tickers, ausencia de CSV, ficheros inexistentes, cardinalidades incompatibles con la intención, tickers que no aparecen en el fichero y series demasiado cortas para calcular retornos o indicadores técnicos.
+Para comprobar la amplitud del TFM se utilizaron queries de dificultad creciente. La batería completa documentada incluye doce queries A/B/C; para la comparación multi-modelo se seleccionó una muestra progresiva de cinco casos:
 
-\section{Evaluación por familias de agentes}
+\begin{itemize}
+    \item \texttt{level\_a\_nvda\_growth}: crecimiento simple de NVDA.
+    \item \texttt{level\_a\_qqq\_spy\_returns}: retornos históricos de QQQ y SPY.
+    \item \texttt{level\_b\_qqq\_spy\_clear\_compare}: comparativa con tabla y gráfica normalizada.
+    \item \texttt{level\_c\_qqq\_spy\_professional}: análisis profesional con tabla, normalización, drawdown y conclusión.
+    \item \texttt{stress\_visual\_qqq\_spy\_monthly}: query de estrés visual con cuatro bloques obligatorios: tabla resumen, ranking mensual, gráfica normalizada y gráfica de drawdown.
+\end{itemize}
 
-La Tabla~\ref{tab:evaluacion_agentes} resume el papel de cada familia de agente. En el estado actual del MVP, los agentes no son LLM autónomos que razonen libremente, sino componentes especializados que construyen un plan de análisis, seleccionan métricas y generan una respuesta determinista o una entrada controlada para la capa de interpretación con LLM.
+La query de estrés visual es especialmente relevante porque obliga al primer agente a generar datos de forma concreta y al segundo agente a respetar una estructura de comunicación para cliente no técnico. El texto usado fue:
 
-\begin{table}[htbp]
+\begin{quote}
+Compara QQQ y SPY durante 2024 como si fuera un informe para un cliente no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: 1) una tabla resumen con rentabilidad total, volatilidad anualizada, máximo drawdown, mejor mes y peor mes; 2) una tabla ranking mensual indicando que activo ganó cada mes; 3) datos para una gráfica normalizada base 100 de ambos activos; 4) datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
+\end{quote}
+
+\section{Ejemplos de resultados obtenidos}
+
+La Tabla~\ref{tab:ejemplos_metricas_ejecutadas} resume algunos resultados calculados desde los CSV históricos. Estos datos sirven para ilustrar que el sistema no solo produce texto, sino que genera métricas auditables.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l X r r r}
+\toprule
+\textbf{Caso} & \textbf{Activos} & \textbf{Rentabilidad} & \textbf{Volatilidad} & \textbf{Max. drawdown} \\
+\midrule
+NVDA 5 años & NVDA & 1273.33\% & 51.73\% & -66.36\% \\
+QQQ/SPY 2024 & QQQ & 28.07\% & 17.96\% & -13.56\% \\
+QQQ/SPY 2024 & SPY & 24.45\% & 12.61\% & -8.41\% \\
+AAPL 3 meses & AAPL & -7.00\% & 24.07\% & -10.07\% \\
+S\&P 500 desde 2020 & \texttt{\string^GSPC} & 105.64\% & 20.71\% & -33.92\% \\
+\bottomrule
+\end{tabularx}
+\caption{Ejemplos de métricas históricas calculadas durante la evaluación.}
+\label{tab:ejemplos_metricas_ejecutadas}
+\end{table}
+
+En el caso QQQ/SPY 2024, la salida para cliente se resume así: QQQ obtuvo mayor rentabilidad histórica que SPY, 28.07\% frente a 24.45\%, pero también presentó mayor volatilidad y una caída máxima más profunda. La interpretación correcta no consiste en recomendar uno u otro, sino en explicar el intercambio observado entre retorno y riesgo.
+
+\section{Visualizaciones generadas}
+
+Las Figuras~\ref{fig:qqq_spy_normalizada_2024} y~\ref{fig:qqq_spy_drawdown_2024} muestran dos visualizaciones base generadas desde los CSV reales. La primera normaliza ambos activos a base 100 para comparar su evolución relativa; la segunda muestra el drawdown histórico, útil para entender las caídas desde máximos previos.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{../figures/evaluacion_amplitud_llm/qqq_spy_normalizada_2024.png}
+\caption{Evolución normalizada de QQQ y SPY en 2024.}
+\label{fig:qqq_spy_normalizada_2024}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{../figures/evaluacion_amplitud_llm/qqq_spy_drawdown_2024.png}
+\caption{Drawdown histórico de QQQ y SPY en 2024.}
+\label{fig:qqq_spy_drawdown_2024}
+\end{figure}
+
+\section{Ejemplo de salida para usuario}
+
+Para mostrar con más claridad qué recibe el usuario final, se recoge un caso real de Nivel C ejecutado con el perfil universitario. La consulta exigía una salida con estructura concreta:
+
+\begin{quote}
+\small
+Compara QQQ y SPY durante 2024 como si fuera un informe para un usuario no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: tabla resumen, ranking mensual, datos para una gráfica normalizada base 100 y datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
+\end{quote}
+
+El primer agente generó el plan y el código necesario para calcular los bloques solicitados. La ejecución produjo una tabla resumen con métricas de retorno y riesgo, además de series para las visualizaciones. Una versión compacta de la tabla mostrada al usuario se presenta en la Tabla~\ref{tab:ejemplo_salida_cliente}.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+\textbf{Indicador} & \textbf{QQQ} & \textbf{SPY} \\
+\midrule
+Rentabilidad total anual & 28.07\% & 24.45\% \\
+Volatilidad anualizada & 17.93\% & 12.59\% \\
+Máximo drawdown & -13.56\% & -8.41\% \\
+Mejor mes & 2024-05 & 2024-11 \\
+Peor mes & 2024-04 & 2024-04 \\
+\bottomrule
+\end{tabular}
+\caption{Fragmento de salida cliente para la consulta exigente QQQ/SPY 2024.}
+\label{tab:ejemplo_salida_cliente}
+\end{table}
+
+La respuesta final no se limitó a listar números. El segundo agente interpretó que QQQ obtuvo mayor rentabilidad en 2024, pero con más volatilidad y una caída máxima más profunda; SPY mostró un perfil más estable. La conclusión se mantuvo dentro del alcance del sistema: explicar el comportamiento histórico observado sin recomendar comprar ni vender. Las visualizaciones asociadas son las Figuras~\ref{fig:qqq_spy_normalizada_2024} y~\ref{fig:qqq_spy_drawdown_2024}, generadas desde los datos usados por el análisis.
+
+\section{Comparación progresiva entre proveedores}
+
+La Tabla~\ref{tab:matriz_amplitud_llm} resume la pasada progresiva ejecutada con los tres perfiles. La ejecución se realizó con cinco queries de dificultad creciente. El resultado debe interpretarse teniendo en cuenta limitaciones de cuota y disponibilidad: Groq había completado muestras A/B/C en ejecuciones previas, pero en esta pasada concreta no pudo evaluarse por límite diario de cuota.
+
+\begin{table}[H]
 \centering
 \scriptsize
-\begin{tabularx}{\textwidth}{p{2.7cm}p{2.4cm}p{3.0cm}X}
+\begin{tabularx}{\textwidth}{l c c X}
 \toprule
-\textbf{Agente} & \textbf{Intención} & \textbf{Métricas principales} & \textbf{Flujo y contrato de prompt} \\
+\textbf{Perfil} & \textbf{Completadas} & \textbf{Fallos principales} & \textbf{Lectura} \\
 \midrule
-\texttt{growth\_agent} & \texttt{price\_growth} & Precio inicial, precio final, crecimiento absoluto y porcentual & Valida un único ticker y una serie con cierre. El foco textual pide explicar el crecimiento absoluto y porcentual del activo en el rango disponible. \\
-\texttt{compare\_agent} & \texttt{compare\_assets} & Crecimiento por activo, rendimiento normalizado y ganador por crecimiento & Valida al menos dos tickers. El flujo compara cada activo sobre el periodo común y la respuesta debe destacar el comportamiento relativo sin convertirlo en recomendación. \\
-\texttt{overview\_agent} & \texttt{asset\_overview} & Primer cierre, último cierre, cambio porcentual, mínimo, máximo y media & Valida un único ticker y resume el comportamiento general. El foco textual prioriza una descripción compacta de niveles representativos del precio. \\
-\texttt{returns\_agent} & \texttt{return\_analysis} & Retorno acumulado, media diaria, volatilidad, mejor día y peor día & Calcula retornos diarios y compara activos. El contrato textual obliga a explicar retorno y variabilidad observada con datos históricos. \\
-\texttt{risk\_agent} & Riesgo histórico & Volatilidad, drawdown máximo, peor día y mejor día & Evalúa riesgo histórico observado. La salida debe hablar de riesgo empírico del periodo, no de riesgo futuro ni de idoneidad de inversión. \\
-\texttt{technical\_agent} & Análisis técnico & Último cierre, medias móviles, RSI y señal técnica & Calcula indicadores técnicos sobre un único activo. La respuesta interpreta la señal calculada como lectura histórica, sin traducirla en orden de compra o venta. \\
+Groq / \nolinkurl{llama-3.3-70b-versatile} & 0/5 & Cuota diaria & No medible en esta pasada por cuota agotada; se conservan muestras previas A/B/C completadas. \\
+Gemini / \nolinkurl{gemini-2.5-flash} & 2/5 & Codegen y cuota & Competente en Nivel A/B, con dificultades al subir a Nivel C o a peticiones visuales extensas. \\
+\nolinkurl{openai/gpt-oss-20b} / vLLM universitario & 4/5 & Contexto en un caso B & Mejor cobertura observada en esta pasada, incluyendo Nivel C profesional y estrés visual. \\
 \bottomrule
 \end{tabularx}
-\caption{Resumen de agentes, métricas y flujo de interpretación.}
-\label{tab:evaluacion_agentes}
+\caption{Matriz de amplitud progresiva por proveedor LLM.}
+\label{tab:matriz_amplitud_llm}
 \end{table}
 
-Cuando se activa un proveedor LLM, el prompt de interpretación recibe dos elementos: la salida estructurada de ejecución y una respuesta determinista de respaldo. La instrucción exige redactar en español, usar las métricas recibidas, no añadir datos externos, no hacer predicciones y evitar recomendaciones de inversión. Esta separación es importante: el LLM mejora la forma del texto final, pero no altera el cálculo ni decide qué agente se ejecuta en las pruebas principales.
+La Figura~\ref{fig:completitud_modelo_nivel} resume visualmente la completitud por perfil y nivel.
 
-\section{Comparación entre enfoque determinista y uso de LLM}
-
-La Tabla~\ref{tab:comparativa_llm_resultados} compara el modo determinista con tres perfiles LLM: Groq con el modelo \nolinkurl{llama-3.3-70b-versatile}~\cite{groqllama33docs,meta2024llama33modelcard,meta2024llama3herd}, Gemini con \nolinkurl{gemini-2.5-flash}~\cite{google2025gemini25flashdocs,google2025gemini25report} y el servidor vLLM con \nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}. La comparación se realizó sobre los seis casos representativos iniciales, manteniendo desactivadas la planificación y la generación de código mediante LLM.
-
-\begin{table}[htbp]
+\begin{figure}[H]
 \centering
-\small
-\begin{tabularx}{\textwidth}{lccX}
-\toprule
-\textbf{Configuración} & \textbf{Casos OK} & \textbf{Rango temporal} & \textbf{Lectura del resultado} \\
-\midrule
-Determinista & 6/6 & 1.9--3.4 s & Opción más rápida, reproducible y sin dependencias externas. La respuesta es correcta, aunque más rígida. \\
-Groq / \nolinkurl{llama-3.3-70b-versatile} & 6/6 & 3.5--8.1 s & Respuestas naturales y concisas, con baja latencia relativa entre los perfiles LLM evaluados. \\
-Gemini / \nolinkurl{gemini-2.5-flash} & 6/6 & 6.4--10.0 s & Buena calidad textual, pero con mayor sensibilidad operativa a cuotas y disponibilidad del proveedor. \\
-Servidor vLLM / \nolinkurl{openai/gpt-oss-20b} & 6/6 & 4.71--9.87 s & Valida un backend universitario compatible con OpenAI. Completa los seis casos sin fallback ni warnings. \\
-\bottomrule
-\end{tabularx}
-\caption{Comparación entre modo determinista y perfiles LLM en la fase de interpretación.}
-\label{tab:comparativa_llm_resultados}
-\end{table}
+\includegraphics[width=0.85\textwidth]{../figures/evaluacion_amplitud_llm/completitud_por_modelo_nivel.png}
+\caption{Casos completados por perfil LLM y nivel de dificultad.}
+\label{fig:completitud_modelo_nivel}
+\end{figure}
 
-La conclusión principal es que los LLM no mejoran la precisión numérica, porque las métricas proceden del mismo pipeline determinista. Su aportación se concentra en la comunicación: hacen que la respuesta sea más cercana a un informe breve, conectan mejor varias métricas en una explicación y reducen la rigidez de las plantillas. A cambio, introducen latencia, dependencia de proveedor y posibles problemas de cuota o disponibilidad.
+\section{Análisis de la query de estrés visual}
 
-Un ejemplo representativo se observa en la consulta de crecimiento histórico de NVDA. La respuesta determinista indica que el activo pasa de 13.34 a 183.22 entre 2021-03-17 y 2026-03-16, con una variación del 1273.33\%. El perfil del servidor vLLM expresa los mismos valores con una redacción más narrativa, explicando el aumento absoluto y porcentual en lenguaje natural. El dato no cambia; cambia la capacidad de comunicación del sistema.
+La query de estrés visual permitió comprobar si el sistema podía respetar una salida impuesta por el usuario. Con el perfil universitario, el workflow completo llegó a estado \texttt{completed}. La salida estructurada incluyó rentabilidad total, volatilidad anualizada, drawdown, ranking mensual y datos para representaciones normalizadas y de drawdown. El resultado principal fue que QQQ obtuvo mayor rentabilidad histórica en 2024, mientras que SPY presentó un perfil más estable.
 
-\section{Análisis cualitativo de las propuestas}
+El ranking mensual calculado mostró una alternancia razonable: QQQ destacó en varios meses alcistas, mientras que SPY se comportó mejor en meses donde su menor volatilidad favoreció la comparación. Este tipo de caso muestra por qué la evaluación cualitativa es necesaria: no basta con que el modelo devuelva un número, sino que debe organizar datos de forma comprensible para el cliente.
 
-Además de medir si cada ejecución termina correctamente, se revisó qué tipo de análisis produce cada propuesta. Esta revisión se hizo con una rúbrica cualitativa sencilla: fidelidad a las métricas calculadas, completitud de la explicación, claridad para un usuario no técnico, ausencia de datos externos inventados y ausencia de recomendaciones de inversión. La Tabla~\ref{tab:analisis_cualitativo_propuestas} resume la lectura obtenida.
+\section{Fallos observados y mejoras derivadas}
 
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabularx}{\textwidth}{p{3.1cm}X X}
-\toprule
-\textbf{Propuesta} & \textbf{Fortalezas observadas} & \textbf{Debilidades o riesgos} \\
-\midrule
-Determinista & Máxima trazabilidad, baja latencia y correspondencia directa entre métrica calculada y frase generada. Es la mejor base para depurar y auditar el sistema. & La respuesta tiende a ser rígida y poco explicativa cuando hay varias métricas relacionadas, por ejemplo en riesgo histórico o análisis técnico. \\
-Groq / \nolinkurl{llama-3.3-70b-versatile} & Buen equilibrio entre naturalidad, concisión y tiempo de respuesta. Las explicaciones conectan mejor las métricas sin alterar los valores calculados. & Depende de un proveedor externo y, como todo LLM, requiere mantener restricciones explícitas para evitar extrapolaciones no deseadas. \\
-Gemini / \nolinkurl{gemini-2.5-flash} & Redacción clara y útil para convertir salidas numéricas en explicaciones más comprensibles. Aporta una segunda referencia para comprobar portabilidad entre proveedores. & Presentó mayor sensibilidad operativa a cuotas y disponibilidad. Esto lo hace menos cómodo como perfil principal de evaluación repetida. \\
-Servidor vLLM / \nolinkurl{openai/gpt-oss-20b} & Demuestra que el sistema puede utilizar un backend universitario compatible con OpenAI sin modificar el flujo. La respuesta final es más narrativa que la plantilla determinista y mantiene las métricas. & La latencia es mayor que en el modo determinista y su calidad depende del modelo desplegado y de la estabilidad del servidor. \\
-\bottomrule
-\end{tabularx}
-\caption{Análisis cualitativo de las propuestas evaluadas.}
-\label{tab:analisis_cualitativo_propuestas}
-\end{table}
+Los errores observados durante la evaluación fueron técnicamente útiles:
 
-La Tabla~\ref{tab:analisis_por_consulta} muestra la lectura por tipo de consulta. Este análisis es importante porque el valor del LLM no aparece igual en todos los agentes. En consultas simples de crecimiento, la plantilla determinista ya es suficiente; en consultas con varias métricas, la capa LLM resulta más útil porque puede ordenar la explicación y relacionar retorno, volatilidad, drawdown o señales técnicas.
+\begin{itemize}
+    \item \textbf{Cuotas de proveedor}: Groq y Gemini devolvieron errores \texttt{429} al superar límites de uso. Estos fallos no invalidan la arquitectura, pero condicionan la comparación experimental.
+    \item \textbf{Contexto excesivo}: algunas salidas visuales incluían series demasiado largas. Esto provocaba errores de contexto en el segundo agente.
+    \item \textbf{Formato JSON}: en algunos casos el modelo entendía bien la query, pero fallaba al devolver código dentro de JSON válido.
+    \item \textbf{Reparación de código}: algunas ejecuciones requirieron reparación automática antes de producir una salida válida.
+\end{itemize}
 
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabularx}{\textwidth}{p{3.0cm}X X}
-\toprule
-\textbf{Consulta} & \textbf{Salida determinista} & \textbf{Aportación observada del LLM} \\
-\midrule
-Crecimiento histórico & Resume correctamente precio inicial, precio final y variación porcentual. & Mejora la legibilidad, pero aporta poco valor analítico adicional porque la consulta es directa. \\
-Comparación de activos & Identifica el activo con mayor crecimiento y muestra porcentajes. & Explica mejor la diferencia relativa entre activos y evita que la respuesta parezca solo una enumeración de cifras. \\
-Visión descriptiva & Incluye cierre inicial, cierre final, mínimo, máximo y media. & Convierte el conjunto de estadísticos en una descripción más natural del comportamiento del activo. \\
-Retornos & Calcula retorno acumulado, media diaria y volatilidad. & Ayuda a interpretar conjuntamente retorno y variabilidad, que es difícil de comunicar con una frase rígida. \\
-Riesgo histórico & Presenta volatilidad, drawdown y extremos diarios. & Es donde más se aprecia la mejora, porque relaciona varias señales de riesgo sin convertirlas en recomendación. \\
-Análisis técnico & Muestra medias móviles, RSI y señal calculada. & Ordena la lectura técnica y explica la señal como observación histórica, no como instrucción de inversión. \\
-\bottomrule
-\end{tabularx}
-\caption{Análisis cualitativo por tipo de consulta evaluada.}
-\label{tab:analisis_por_consulta}
-\end{table}
+A partir de estos problemas se incorporó compactación de salidas antes de la interpretación final. La salida completa permanece guardada en artefactos, pero el segundo agente recibe una versión resumida de listas y textos largos. Esta decisión mantiene trazabilidad y reduce errores por límite de contexto.
 
-De esta revisión se desprende que el modo determinista es suficiente para validar el cálculo, pero no siempre para comunicar bien el resultado. La capa LLM tiene más sentido cuando la respuesta debe integrar varias métricas y presentarlas de forma comprensible. Por eso, la propuesta final no sustituye el pipeline determinista por un modelo generativo, sino que lo utiliza como capa de interpretación controlada sobre resultados ya calculados.
+\section{Limitaciones}
 
-\section{Análisis de robustez y límites}
+La evaluación aún presenta limitaciones. El número de casos es reducido para afirmar robustez estadística. La calidad de las respuestas LLM requiere revisión humana y las cifras de latencia dependen de red, cuota y carga del proveedor. Además, la evaluación cualitativa incorpora juicio humano, por lo que debe entenderse como una comparación exploratoria apoyada en criterios previamente definidos, no como una medición objetiva absoluta.
 
-La Tabla~\ref{tab:casos_estres} agrupa los escenarios de estrés utilizados. En todos ellos el comportamiento esperado era que el sistema no continuase como si la consulta fuera válida, sino que devolviera un error controlado. El resultado fue correcto en los 12 casos.
-
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabularx}{\textwidth}{p{3.4cm}p{5.3cm}X}
-\toprule
-\textbf{Grupo} & \textbf{Casos evaluados} & \textbf{Comportamiento observado} \\
-\midrule
-Entrada inválida & Consulta vacía, intención no soportada, ausencia de ticker, ausencia de CSV y fichero inexistente & El flujo detiene la ejecución y devuelve un estado de error explicable. \\
-Cardinalidad incorrecta & Crecimiento con varios tickers, comparación con un solo ticker, visión general con varios tickers y análisis técnico con varios tickers & El router y la validación impiden seleccionar un flujo incompatible con la consulta. \\
-Datos no alineados & Ticker solicitado que no aparece en el CSV & La ejecución no inventa datos y termina con error controlado. \\
-Datos insuficientes & Retornos e indicadores técnicos con una única fila disponible & El sistema detecta que la serie no permite calcular las métricas solicitadas. \\
-\bottomrule
-\end{tabularx}
-\caption{Familias de casos de estrés utilizados para intentar romper el MVP.}
-\label{tab:casos_estres}
-\end{table}
-
-Estos resultados muestran que el MVP no solo completa los casos ideales, sino que incorpora barreras para evitar salidas aparentemente válidas sobre entradas inválidas. Sin embargo, la batería sigue siendo limitada respecto a un entorno de producción. No se han evaluado miles de activos, datos en tiempo real, consultas ambiguas generadas por usuarios finales ni degradaciones prolongadas de proveedores externos.
-
-\section{Por qué no basta con una plantilla de código}
-
-Una plantilla de código sería suficiente si el objetivo fuese resolver una única consulta fija, con un único formato de datos y una única salida textual. De hecho, el propio sistema utiliza plantillas deterministas como una pieza interna porque aportan trazabilidad y reproducibilidad. La contribución del trabajo no consiste en negar el valor de las plantillas, sino en integrarlas dentro de una arquitectura capaz de decidir cuándo se pueden aplicar y cómo responder cuando no se pueden aplicar.
-
-Frente a una plantilla aislada, el sistema desarrollado aporta cinco elementos. Primero, normaliza la consulta en una estructura común que separa intención, tickers, rango temporal, intervalo y fuentes de datos. Segundo, valida si la intención y la cardinalidad de activos son compatibles antes de ejecutar código. Tercero, selecciona una familia de agente y un plan analítico explícito, por lo que cada resultado puede trazarse hasta métricas concretas. Cuarto, ejecuta el análisis en un proceso controlado y captura errores de forma explicable. Quinto, permite activar una capa LLM intercambiable para mejorar la interpretación sin cederle el control del cálculo financiero.
-
-Por tanto, el valor del enfoque multiagente híbrido aparece cuando hay varias consultas posibles, varias familias de análisis, distintos proveedores de interpretación y necesidad de fallback. En ese contexto, una plantilla individual resuelve el cálculo local de un caso, pero no resuelve la orquestación, la validación, la trazabilidad ni la degradación controlada del sistema completo.
-
-\section{Limitaciones de la evaluación}
-
-La evaluación realizada mejora la primera versión de resultados, pero aún presenta limitaciones. El número de casos sigue siendo reducido para afirmar robustez estadística. Las respuestas LLM se han valorado mediante inspección cualitativa y métricas operativas, no mediante un estudio con usuarios ni una rúbrica humana formal. Además, la planificación y la generación de código con LLM permanecen desactivadas en la evaluación principal, precisamente para reducir riesgo y mantener el cálculo bajo control determinista.
-
-También debe tenerse en cuenta que los tiempos de los proveedores LLM dependen de condiciones externas como carga, cuota, red y disponibilidad del endpoint. Por ello, las cifras deben leerse como evidencia experimental del prototipo y no como una comparación universal de rendimiento entre modelos.
+También debe distinguirse entre resultados observados y resultados pendientes de repetición. La pasada progresiva completa quedó condicionada por cuotas diarias, especialmente en Groq y Gemini. Por ello se conserva el informe actual como evidencia de comportamiento real, pero se propone repetir la evaluación con cuotas disponibles para obtener una comparación más equilibrada.
 
 \section{Síntesis}
 
-Los resultados respaldan la hipótesis de diseño del trabajo: una arquitectura híbrida permite combinar cálculo financiero determinista con una capa opcional de interpretación mediante LLM. El modo determinista ofrece rapidez, reproducibilidad y control; los perfiles LLM mejoran la claridad comunicativa; y la batería de estrés muestra que el sistema puede fallar de manera controlada ante entradas inválidas. La aportación principal frente a una plantilla de código es la orquestación trazable de varios agentes, métricas y proveedores bajo un flujo común.
+Los resultados respaldan la hipótesis de diseño: una arquitectura LLM con ejecución controlada puede transformar consultas financieras estructuradas en código, métricas, datos visuales y explicaciones trazables. La evaluación por niveles A/B/C muestra que el sistema responde a consultas simples, escala hacia análisis con tablas y gráficas, y puede abordar peticiones profesionales o de estrés visual. La aportación principal es separar interpretación, generación de código, validación, ejecución e interpretación final, permitiendo revisión humana posterior y documentación clara de fallos.
+
+
+
+
+
+
+
+

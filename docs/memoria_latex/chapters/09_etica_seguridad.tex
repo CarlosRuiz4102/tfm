@@ -1,4 +1,4 @@
-\chapter{Aspectos éticos, seguridad y uso responsable}
+﻿\chapter{Aspectos éticos, seguridad y uso responsable}
 
 \section{Delimitación financiera del sistema}
 
@@ -8,13 +8,13 @@ El prototipo calcula métricas como crecimiento, retornos, volatilidad, drawdown
 
 \section{Riesgos de interpretación}
 
-Un riesgo relevante es que el usuario confunda una explicación descriptiva con asesoramiento financiero. Para reducirlo, el sistema debe utilizar formulaciones prudentes, explicitar el periodo analizado y recordar que los resultados históricos no garantizan comportamientos futuros.
+Un riesgo relevante es que el usuario confunda una explicación descriptiva con asesoramiento financiero. Para reducirlo, el sistema debe utilizar formulaciones prudentes, explicitar el período analizado y recordar que los resultados históricos no garantizan comportamientos futuros.
 
-La capa LLM aumenta este riesgo si redacta respuestas demasiado persuasivas. Por ello, la configuración actual solo permite al modelo interpretar resultados ya calculados y conserva mecanismos de fallback programático.
+La capa LLM aumenta este riesgo si redacta respuestas demasiado persuasivas. Por ello, la configuración actual pide al modelo interpretar resultados ya calculados, no añadir datos externos y evitar recomendaciones de inversión.
 
 \section{Seguridad en la generación y ejecución de código}
 
-La generación automática de código introduce riesgos específicos. Un script mal generado podría fallar, calcular una métrica incorrecta o acceder a recursos no previstos. En este proyecto, el riesgo se reduce mediante plantillas deterministas, entradas estructuradas, ejecución controlada y captura explícita de salidas.
+La generación automática de código introduce riesgos específicos. Un script mal generado podría fallar, calcular una métrica incorrecta o acceder a recursos no previstos. En este proyecto, el riesgo se reduce mediante entradas estructuradas, ejecución controlada, validación mínima del contrato y captura explícita de salidas.
 
 El código generado se ejecuta como proceso externo, con registro de salida estándar, salida de error y código de retorno. Esta estrategia permite revisar errores y evita que la respuesta final oculte fallos de ejecución.
 
@@ -26,7 +26,7 @@ En una versión productiva, sería necesario revisar las condiciones de uso de l
 
 \section{Sostenibilidad, costes y recursos}
 
-El enfoque incremental reduce costes computacionales. El MVP no entrena modelos desde cero y puede ejecutarse en CPU sobre datos ya descargados. La capa LLM se activa solo cuando aporta valor, principalmente en interpretación, y el modo determinista permite trabajar sin consumo de APIs externas.
+El enfoque incremental reduce costes computacionales. El MVP no entrena modelos desde cero y puede ejecutarse en CPU sobre datos ya descargados. La capa LLM se concentra principalmente en interpretación y permite comparar proveedores sin entrenar ni ajustar pesos.
 
 Esta estrategia también mejora la sostenibilidad del desarrollo: evita ejecuciones innecesarias de modelos grandes, reduce dependencia de infraestructura GPU y permite comparar proveedores antes de elegir una configuración de uso continuado.
 
@@ -35,3 +35,6 @@ Esta estrategia también mejora la sostenibilidad del desarrollo: evita ejecucio
 El sistema no debe utilizarse como herramienta profesional de decisión financiera sin validaciones adicionales. Su valor actual es académico y experimental: demostrar una arquitectura modular, trazable y robusta para automatizar análisis históricos.
 
 Entre las limitaciones principales se encuentran el uso de un conjunto de datos acotado, la dependencia de datos obtenidos desde Yahoo Finance mediante \texttt{yfinance}~\cite{yfinance,yahoofinancehistorical}, la ausencia de validación financiera profesional y la no incorporación de información fundamental, noticias o variables macroeconómicas.
+
+
+

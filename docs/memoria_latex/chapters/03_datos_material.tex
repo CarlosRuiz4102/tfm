@@ -1,16 +1,39 @@
-\chapter{Datos y material de trabajo}
+﻿\chapter{Datos y material de trabajo}
 
 \section{Fuente de datos y trazabilidad}
 
-El sistema trabaja con datos financieros históricos descargados previamente mediante \texttt{yfinance}~\cite{yfinance} y almacenados en ficheros CSV. Esta librería permite acceder de forma programática a datos disponibles en Yahoo Finance~\cite{yahoofinancehistorical}. Cada fichero de datos dispone de un fichero de metadatos asociado en formato JSON, donde se conserva información sobre la consulta original, la intención analítica, los símbolos financieros implicados, el intervalo temporal y los parámetros utilizados para la descarga.
+El sistema trabaja con datos financieros históricos descargados previamente mediante \texttt{yfinance}~\cite{yfinance} y almacenados en ficheros CSV. Yahoo Finance es un portal de información financiera que publica datos de mercado, fichas de activos y series históricas para acciones, fondos cotizados, índices, divisas, criptomonedas y materias primas. La librería \texttt{yfinance} permite acceder de forma programática a una parte de esta información disponible en Yahoo Finance~\cite{yahoofinancehistorical}, incluyendo campos habituales de mercado como apertura, máximo, mínimo, cierre, cierre ajustado y volumen. En este trabajo se utiliza como herramienta práctica de descarga para un contexto académico, no como proveedor garantizado para producción.
 
-Esta decisión permite separar la fase de obtención de datos de la fase de análisis. El MVP no depende de que la API externa esté disponible durante cada ejecución, sino que opera sobre un conjunto de datos congelado y versionado. De este modo, los resultados obtenidos son más reproducibles y pueden revisarse posteriormente a partir de los mismos ficheros de entrada.
+Cada fichero de datos dispone de un fichero de metadatos asociado en formato JSON, donde se conserva información sobre la consulta original, la intención analítica, los símbolos financieros implicados, el intervalo temporal y los parámetros utilizados para la descarga.
+
+Esta decisión permite separar la fase de obtención de datos de la fase de análisis. El MVP no depende de que la API externa esté disponible durante cada ejecución, sino que opera sobre un conjunto de datos congelado y versionado. De este modo, los resultados obtenidos son más reproducibles y pueden revisarse posteriormente a partir de los mismos ficheros de entrada. Además, el script \texttt{scripts/generate\_data\_eda.py} documenta la estructura real de los datos utilizados: lee el catálogo de consultas, carga los CSV con cabeceras multinivel, normaliza las series a formato largo y genera tablas procesadas en \texttt{data/processed}.
 
 \section{Catálogo de consultas, activos y formato de entrada}
 
 En la versión actual se han definido diez consultas de referencia y se han analizado ocho CSV, que contienen diez series normalizadas por símbolo financiero y caso de uso. Los activos incluidos cubren acciones, ETFs, un índice amplio, un criptoactivo, una divisa y un futuro de materia prima.
 
-Cada consulta se transforma en una representación estructurada antes de entrar en el flujo multiagente. Esta representación no expone detalles internos del proyecto, sino los elementos semánticos necesarios para que el sistema pueda seleccionar el análisis adecuado y recuperar los datos correspondientes. La Tabla~\ref{tab:formato_consulta} resume el formato utilizado.
+Cada consulta se transforma en una representación estructurada antes de entrar en el flujo LLM. Esta representación no expone detalles internos innecesarios del proyecto, sino los elementos semánticos necesarios para que el modelo interprete la intención, genere código y use los datos correspondientes. El siguiente bloque muestra un ejemplo simplificado del formato de entrada que recibe el flujo:
+
+\begin{small}
+\begin{verbatim}
+{
+  "query": "Compárame QQQ y SPY en 2024 de forma clara,
+            con tabla y gráfica normalizada",
+  "tickers": ["QQQ", "SPY"],
+  "csv_paths": [
+    "data/raw/qqq_y_spy_desde_20240101_hasta_20241231.csv"
+  ],
+  "intent": "compare_assets",
+  "start": "2024-01-01",
+  "end": "2024-12-31",
+  "period": null,
+  "interval": "1d",
+  "warnings": []
+}
+\end{verbatim}
+\end{small}
+
+La Tabla~\ref{tab:formato_consulta} resume el significado de los campos principales.
 
 \begin{table}[h]
 \centering
@@ -48,7 +71,28 @@ Materia prima / futuro & GC=F \\
 \caption{Tipos de activos representados en el conjunto de datos.}
 \end{table}
 
-La variedad de activos permite comprobar que el sistema no está limitado a un único instrumento financiero y que puede trabajar con diferentes horizontes temporales e intervalos de observación.
+La variedad de activos permite comprobar que el sistema no está limitado a un único instrumento financiero y que puede trabajar con diferentes horizontes temporales \mbox{e intervalos de observación}.
+
+También se conservaron consultas con distintos niveles de dificultad. Las consultas sencillas validan el comportamiento esperado del MVP en peticiones directas, mientras que las consultas más complejas comprueban si el sistema respeta requisitos explícitos de visualización, comparación o explicación.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lXlX}
+\toprule
+\textbf{Tipo} & \textbf{Consulta de ejemplo} & \textbf{Datos} & \textbf{Qué comprueba} \\
+\midrule
+Sencilla & ¿Cuánto ha crecido Nvidia en los últimos cinco años? & NVDA, 1d & Cálculo de rentabilidad y resumen breve. \\
+Sencilla & Compara Nvidia y AMD en dos años. & NVDA, AMD, 1d & Comparación básica entre activos. \\
+Sencilla & Dame una visión general de AAPL en tres meses. & AAPL, 1d & Resumen de precio, variación y volumen. \\
+Compleja & Compárame QQQ y SPY en 2024 de forma clara, con tabla y gráfica normalizada. & QQQ, SPY, 1d & Respeto de una visualización solicitada y métricas comparativas. \\
+Compleja & Analiza retorno y riesgo de QQQ y SPY, incluyendo drawdown. & QQQ, SPY, 1d & Selección de métricas de riesgo y explicación. \\
+Compleja & Dame un análisis profesional con evolución normalizada, drawdown mensual y conclusión para usuario no técnico. & QQQ, SPY, 1d & Capacidad de organizar una salida enriquecida y adaptada al destinatario. \\
+\bottomrule
+\end{tabularx}
+\caption{Ejemplos de consultas fáciles y exigentes utilizadas para evaluar el flujo.}
+\label{tab:consultas_faciles_complejas}
+\end{table}
 
 \section{Estructura de los CSV}
 
@@ -57,6 +101,8 @@ Los ficheros generados por \texttt{yfinance} contienen columnas de tipo OHLCV: a
 La variable más importante para el MVP es el precio de cierre, ya que sobre ella se calculan crecimiento, rentabilidades, volatilidad, máxima caída acumulada e indicadores técnicos básicos. El volumen se conserva como información complementaria, aunque no se trata como obligatorio para todos los activos, especialmente en divisas o futuros intradía.
 
 \section{Análisis exploratorio de datos}
+
+El análisis exploratorio se realizó con \texttt{scripts/generate\_data\_eda.py}. Este script lee los CSV descargados con \texttt{yfinance}, los interpreta con cabeceras multinivel mediante \texttt{header=[0, 1]}, normaliza cada combinación caso--ticker a formato largo y genera tres salidas procesadas: dataset largo, resumen por fichero y resumen por serie. Además, produce un informe textual en \texttt{docs/}, que se utiliza como apoyo para las tablas de esta sección.
 
 El análisis exploratorio confirma que el conjunto de datos contiene 5.080 filas normalizadas en formato largo, con un rango temporal observado entre el 2 de enero de 2020 y el 17 de marzo de 2026. Los intervalos considerados son diario (\texttt{1d}) e intradía horario (\texttt{1h}).
 
@@ -76,6 +122,25 @@ Duplicados por fecha & 0 en los ficheros analizados \\
 \bottomrule
 \end{tabular}
 \caption{Resumen de cobertura y calidad del conjunto de datos.}
+\end{table}
+
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabularx}{\textwidth}{Xlrr}
+\toprule
+\textbf{Fichero} & \textbf{Tickers} & \textbf{Filas} & \textbf{Rango observado} \\
+\midrule
+\texttt{aapl\_en\_3\_meses.csv} & AAPL & 60 & 2025-12-17 a 2026-03-16 \\
+\texttt{compara\_nvidia\_y\_amd\_en\_2\_aos.csv} & AMD, NVDA & 500 & 2024-03-18 a 2026-03-16 \\
+\texttt{cunto\_ha\_crecido\_nvidia\_en\_5\_aos.csv} & NVDA & 1.255 & 2021-03-17 a 2026-03-16 \\
+\texttt{datos\_de\_bitcoin\_desde\_20240101\_hasta\_20241231.csv} & BTC-USD & 365 & 2024-01-01 a 2024-12-30 \\
+\texttt{descrgame\_el\_histrico\_del\_sp\_500\_desde\_2020.csv} & \texttt{\^{}GSPC} & 1.558 & 2020-01-02 a 2026-03-16 \\
+\texttt{qqq\_y\_spy\_desde\_20240101\_hasta\_20241231.csv} & QQQ, SPY & 251 & 2024-01-02 a 2024-12-30 \\
+\bottomrule
+\end{tabularx}
+\caption{Muestra de cobertura temporal obtenida en el EDA.}
+\label{tab:cobertura_eda}
 \end{table}
 
 Además del resumen agregado, se calcularon métricas descriptivas por serie para comprobar que los casos de prueba cubrían situaciones financieras diversas. La Tabla~\ref{tab:resumen_series_eda} muestra una selección de las series analizadas. Se observan activos con crecimientos muy elevados, como NVDA en cinco años, series con caídas acumuladas significativas, como AMD en la comparativa con NVDA, y activos de menor volatilidad relativa, como SPY. Esta diversidad es útil porque obliga al sistema a redactar respuestas para escenarios con magnitudes y niveles de riesgo distintos.
@@ -104,8 +169,13 @@ AAPL, 3 meses & -7.00 \% & 24.15 \% & -10.07 \% \\
 
 La ausencia de nulos en el precio de cierre es relevante porque las métricas principales del MVP dependen directamente de esta columna. También se comprobó la ausencia de duplicados por fecha en los ficheros analizados. Estas condiciones permiten ejecutar las seis intenciones actuales sin introducir imputaciones adicionales.
 
-Como limitación, las descargas basadas en periodos relativos, por ejemplo tres meses o cinco años, dependen de la fecha en la que se generó el CSV. Para una versión final completamente cerrada sería recomendable fijar fechas explícitas de inicio y fin en todos los casos. También debe considerarse que los datos proceden de Yahoo Finance mediante \texttt{yfinance}. Al tratarse de una herramienta abierta no afiliada ni avalada por Yahoo, su uso se considera adecuado para un contexto académico y experimental, pero en un entorno productivo habría que estudiar licencias, disponibilidad, estabilidad del proveedor y derechos de uso de los datos descargados~\cite{yfinance}.
+Como limitación, las descargas basadas en períodos relativos, por ejemplo tres meses o cinco años, dependen de la fecha en la que se generó el CSV. Para una versión final completamente cerrada sería recomendable fijar fechas explícitas de inicio y fin en todos los casos. También debe considerarse que los datos proceden de Yahoo Finance mediante \texttt{yfinance}. Al tratarse de una herramienta abierta no afiliada ni avalada por Yahoo, su uso se considera adecuado para un contexto académico y experimental, pero en un entorno productivo habría que estudiar licencias, disponibilidad, estabilidad del proveedor y derechos de uso de los datos descargados~\cite{yfinance}.
 
-\section{Papel de los cuadernos auxiliares}
+\section{Trazabilidad del EDA y artefactos auxiliares}
 
-Durante el desarrollo se conservaron tres cuadernos auxiliares con funciones diferenciadas. El primero se utilizó como laboratorio para probar nuevos símbolos financieros, periodos e intervalos antes de incorporarlos al conjunto de datos definitivo. El segundo sirvió para documentar la relación entre las consultas de referencia y los CSV esperados. El tercero quedó como referencia principal del análisis exploratorio formal y de las tablas agregadas utilizadas en esta memoria.
+Durante el desarrollo se conservaron tres cuadernos auxiliares con funciones diferenciadas. El primero se utilizó como laboratorio para probar nuevos símbolos financieros, períodos e intervalos antes de incorporarlos al conjunto de datos definitivo. El segundo sirvió para documentar la relación entre las consultas de referencia y los CSV esperados. El tercero quedó como referencia principal del análisis exploratorio formal, apoyado por el script \texttt{scripts/generate\_data\_eda.py} y por las tablas agregadas utilizadas en esta memoria.
+
+También se revisaron los documentos Markdown generados durante la evolución del proyecto. El documento de arquitectura sirvió para consolidar la descripción del flujo LLM con generación de código controlada; los documentos de evaluación cualitativa y amplitud se emplearon para definir los niveles de análisis, las consultas A/B/C y la revisión manual; y las salidas de ejecución se reservaron como evidencias de apoyo para el capítulo de resultados y los anexos. Esta separación evita mezclar notas de desarrollo con resultados finales, pero mantiene la trazabilidad de las decisiones metodológicas.
+
+
+

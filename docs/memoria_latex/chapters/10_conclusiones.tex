@@ -1,29 +1,24 @@
-\chapter{Conclusiones y trabajo futuro}
+﻿\chapter{Conclusiones y trabajo futuro}
 
-\section{Cumplimiento de objetivos}
+El trabajo desarrollado demuestra la viabilidad de un sistema LLM para análisis financiero histórico basado en una arquitectura modular, trazable y extensible. El MVP valida entradas estructuradas, interpreta la intención del usuario, genera código Python, revisa su seguridad, ejecuta el script sobre CSV locales y redacta una respuesta final a partir de resultados observados. La aportación principal no es predecir el mercado, sino conectar lenguaje natural, cálculo reproducible y explicación financiera prudente.
 
-El trabajo desarrollado demuestra la viabilidad de un sistema multiagente para análisis financiero histórico basado en una arquitectura modular, trazable y extensible. El MVP actual completa el flujo de extremo a extremo para seis intenciones analíticas, gestiona errores básicos de entrada y conserva una base determinista reproducible.
+Los objetivos planteados se cumplen en una versión funcional y evaluable. Se ha definido un workflow modular, se ha incorporado generación de código mediante LLM, se ha añadido una capa de seguridad previa a la ejecución, se han conservado artefactos auditables y se han preparado scripts de evaluación con perfiles Groq, Gemini y university. Además, se ha ampliado la evaluación desde queries simples hacia una metodología cualitativa por niveles A/B/C, más cercana a la forma real en que un usuario valora una respuesta de análisis.
 
-Los objetivos planteados se cumplen en una primera versión funcional: se ha definido un workflow modular, se han implementado familias de agentes, se ha generado y ejecutado código Python de forma controlada, se han incorporado pruebas automatizadas y se ha preparado una integración controlada con modelos de lenguaje.
+Una aportación importante es la separación de responsabilidades. El primer agente debe producir código, métricas, tablas o datos de visualización suficientes para responder la consulta. El segundo agente debe interpretar esos resultados con claridad, distinguir dato histórico, lectura y limitaciones, y evitar recomendaciones de inversión. Esta división permite revisar el sistema por partes y detectar si un fallo procede de la comprensión de la query, del código, de la ejecución o de la interpretación final.
 
-\section{Aportaciones principales}
+La evaluación realizada muestra un estado prometedor, pero todavía experimental. En la pasada progresiva más reciente, el perfil universitario basado en \nolinkurl{openai/gpt-oss-20b} completó cuatro de cinco casos, incluyendo un Nivel C y una query de estrés visual. Gemini con \nolinkurl{gemini-2.5-flash} completó dos de cinco casos y mostró buen comportamiento en niveles A/B, aunque presentó fallos de formato o cuota al aumentar la exigencia. Groq con \nolinkurl{llama-3.3-70b-versatile} quedó condicionado por límite diario de cuota en esa pasada concreta, si bien se conservaron ejecuciones previas A/B/C con resultados útiles. Por tanto, no se afirma una superioridad objetiva definitiva de ningún proveedor; se presenta evidencia observada bajo condiciones concretas.
 
-La primera aportación del trabajo es la separación clara entre cálculo financiero e interpretación textual. El sistema no delega las métricas en un LLM, sino que ejecuta código controlado y utiliza el modelo, cuando está activo, para mejorar la explicación final.
+Los resultados también han permitido mejorar el diseño. Las consultas profesionales o visuales generaban salidas muy extensas, especialmente cuando incluían series temporales completas para gráficas. Esto reveló un problema práctico de contexto para el segundo agente. La solución incorporada compacta la información enviada al LLM interpretador, manteniendo la salida completa como artefacto auditable. Este ajuste refuerza la robustez del MVP sin perder trazabilidad.
 
-La segunda aportación es la estrategia de fallback determinista. Gracias a ella, el MVP puede seguir funcionando aunque fallen las APIs externas, existan límites de cuota o se produzcan errores de red.
+El prototipo trabaja con un conjunto acotado de datos históricos ya descargados. No aborda predicción futura, recomendación de inversión, análisis fundamental ni incorporación de noticias. La generación de código mediante LLM queda limitada por contratos, validaciones y revisión posterior, por lo que requiere más pruebas antes de cualquier uso fuera del entorno académico. La revisión cualitativa también incorpora juicio humano, aunque se controla mediante criterios explícitos y una plantilla común.
 
-La tercera aportación es la validación comparativa de distintas configuraciones LLM. La memoria distingue proveedores e infraestructura: Groq se evalúa con \nolinkurl{llama-3.3-70b-versatile}~\cite{groqllama33docs,meta2024llama33modelcard,meta2024llama3herd}; Gemini, con \nolinkurl{gemini-2.5-flash}~\cite{google2025gemini25flashdocs,google2025gemini25report}; y el servidor vLLM, con \nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}. Esta separación demuestra que la arquitectura no está acoplada a un proveedor concreto.
+Como trabajo futuro se proponen varias líneas: repetir la evaluación multi-modelo con cuotas disponibles para equilibrar la comparación, ampliar la batería de queries de estrés, reforzar el análisis de seguridad del código generado, registrar experimentos con herramientas MLOps, automatizar parte de la rúbrica cualitativa sin sustituir la revisión humana y mejorar la generación de visualizaciones exportables. También sería natural incorporar pruebas con más activos, ventanas temporales y perfiles de usuario, manteniendo siempre la separación entre rendimiento histórico observado e interpretación.
 
-\section{Limitaciones actuales}
+En conjunto, el TFM se encuentra en un punto sólido para memoria: existe un MVP ejecutable, una metodología defendible, evidencias guardadas, comparación exploratoria entre modelos y ejemplos visuales que muestran cómo se ha aumentado progresivamente la dificultad de las consultas.
 
-El prototipo trabaja con un conjunto acotado de intenciones y con datos históricos ya descargados. No aborda predicción futura, recomendación de inversión, análisis fundamental ni incorporación de noticias. Tampoco se ha activado todavía la generación de código mediante LLM en la evaluación principal, por considerarse una fase de mayor riesgo.
 
-Otra limitación es que la evaluación se basa en casos representativos y pruebas automatizadas, pero aún no incluye una evaluación extensa con usuarios ni una comparación cuantitativa frente a plataformas financieras profesionales.
 
-\section{Líneas de trabajo futuro}
 
-Como trabajo futuro se plantea ampliar el catálogo de consultas, incorporar más activos y fijar rangos temporales completamente reproducibles. También sería interesante añadir visualizaciones al informe final, mejorar la capa de logging y extender las pruebas de robustez.
 
-En la parte LLM, el siguiente paso razonable es mantener la interpretación asistida y estudiar de forma controlada la activación de la planificación. La generación de código mediante modelo debería evaluarse solo después de definir contratos estrictos, validadores automáticos y restricciones de seguridad adicionales.
 
-Finalmente, una evolución natural del proyecto sería construir una interfaz de usuario o API local que permita ejecutar el sistema de forma interactiva, manteniendo siempre visibles las limitaciones del análisis histórico y la ausencia de recomendación de inversión.
+

@@ -24,12 +24,12 @@ Para cada proveedor necesitas una clave API distinta:
 +----------------------+--------------------------+----------------------------------+
 | Proveedor            | Variable en .env         | Donde se obtiene                 |
 +----------------------+--------------------------+----------------------------------+
-| Groq                 | GROQ_API_KEY             | Cuenta/consola de Groq           |
-| Gemini               | GEMINI_API_KEY           | Google AI Studio / Google Cloud  |
-| Universidad vLLM     | UNIVERSITY_API_KEY       | Universidad / profesor / admin   |
+| Groq con llama-3.3-70b-versatile | GROQ_API_KEY | Cuenta/consola de Groq |
+| Gemini con gemini-2.5-flash | GEMINI_API_KEY | Google AI Studio / Google Cloud |
+| openai/gpt-oss-20b sobre vLLM universitario | UNIVERSITY_API_KEY | Universidad / profesor / admin |
 +----------------------+--------------------------+----------------------------------+
 
-Ademas, para el modelo universitario necesitas conservar:
+Además, para `openai/gpt-oss-20b` sobre vLLM universitario, modelo usado por su capacidad de razonamiento, seguimiento de instrucciones y generación de código, necesitas conservar:
 
   UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
   UNIVERSITY_MODEL=openai/gpt-oss-20b
@@ -47,7 +47,8 @@ Si el .env tiene valores de ejemplo como:
   your_gemini_key_here
   your_university_key_here
 
-entonces el sistema no llama a la API y usa fallback determinista.
+entonces el sistema no podra generar la respuesta final con LLM y devolvera un
+error de configuracion.
 
 
 3. COMO PREPARAR EL ORDENADOR PERSONAL
@@ -67,16 +68,11 @@ Despues abre .env y rellena las claves reales.
 
 En .env:
 
-  LLM_ENABLED=true
   LLM_PROFILE=groq
   LLM_PROVIDER=openai-compatible
 
   GROQ_API_KEY=pegar_aqui_tu_clave_real_de_groq
   GROQ_MODEL=llama-3.3-70b-versatile
-
-  LLM_USE_FOR_PLANNING=false
-  LLM_USE_FOR_CODEGEN=false
-  LLM_USE_FOR_INTERPRETATION=true
 
 Comando de prueba:
 
@@ -86,11 +82,7 @@ Si funciona, debe aparecer:
 
   llm/directo
 
-Si aparece:
-
-  fallback
-
-significa que no se ha podido usar la API.
+Si aparece llm/error, significa que no se ha podido usar la API.
 
 
 5. CONFIGURACION PARA GEMINI
@@ -98,16 +90,11 @@ significa que no se ha podido usar la API.
 
 En .env:
 
-  LLM_ENABLED=true
   LLM_PROFILE=gemini
   LLM_PROVIDER=openai-compatible
 
   GEMINI_API_KEY=pegar_aqui_tu_clave_real_de_gemini
   GEMINI_MODEL=gemini-2.5-flash
-
-  LLM_USE_FOR_PLANNING=false
-  LLM_USE_FOR_CODEGEN=false
-  LLM_USE_FOR_INTERPRETATION=true
 
 Comando de prueba:
 
@@ -119,7 +106,6 @@ Comando de prueba:
 
 En .env:
 
-  LLM_ENABLED=true
   LLM_PROFILE=university
   LLM_PROVIDER=openai-compatible
 
@@ -128,13 +114,9 @@ En .env:
   UNIVERSITY_MODEL=openai/gpt-oss-20b
   UNIVERSITY_VERIFY_SSL=false
 
-  LLM_USE_FOR_PLANNING=false
-  LLM_USE_FOR_CODEGEN=false
-  LLM_USE_FOR_INTERPRETATION=true
-
 Nota: UNIVERSITY_VERIFY_SSL=false solo es necesario si el endpoint universitario
 falla con un error de certificado SSL. En las pruebas del equipo de trabajo fue
-necesario para que el perfil university funcionase como llm/directo.
+necesario para que `openai/gpt-oss-20b` sobre vLLM universitario, activado con el perfil `university`, funcionase como llm/directo.
 
 Comando de prueba:
 
@@ -146,17 +128,17 @@ Comando de prueba:
 
 Puedes comprobar si el proyecto detecta una clave real sin imprimirla:
 
-  venv\Scripts\python.exe -c "from src.config import LLMConfig; c=LLMConfig.from_env(); print(c.enabled, c.profile, c.is_configured, c.model, c.use_for_interpretation)"
+  venv\Scripts\python.exe -c "from src.config import LLMConfig; c=LLMConfig.from_env(); print(c.profile, c.is_configured, c.model)"
 
 Lectura esperada:
 
-  True groq True llama-3.3-70b-versatile True
+  groq True llama-3.3-70b-versatile
 
-o, para universidad:
+o, para `openai/gpt-oss-20b` sobre vLLM universitario:
 
-  True university True openai/gpt-oss-20b True
+  university True openai/gpt-oss-20b
 
-El tercer valor debe ser True. Si es False, falta clave real, modelo o activacion.
+El segundo valor debe ser True. Si es False, falta clave real o modelo.
 
 
 8. COMO TRASLADAR LAS CLAVES DE FORMA SEGURA
@@ -182,11 +164,10 @@ Evitar:
 
 Cuando el .env tenga claves reales:
 
-  venv\Scripts\python.exe scripts\evaluate_llm_profiles.py --profiles deterministic groq gemini university --examples all --show-answers
+  venv\Scripts\python.exe scripts\evaluate_llm_profiles.py --profiles groq gemini university --examples all --show-answers
 
 La lectura correcta es:
 
-  - deterministic: sin_llm
-  - groq/gemini/university: llm/directo
+  - groq/llama-3.3-70b-versatile, gemini/gemini-2.5-flash y university/openai/gpt-oss-20b: llm/directo
 
-Si groq, gemini o university aparecen como fallback, la API no se ha usado.
+Si Groq con llama-3.3-70b-versatile, Gemini con gemini-2.5-flash o university/openai/gpt-oss-20b aparecen como llm/error, la API no se ha usado correctamente.

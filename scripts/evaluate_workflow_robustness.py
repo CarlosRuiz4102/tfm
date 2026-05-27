@@ -158,14 +158,11 @@ def _build_cases() -> list[dict[str, Any]]:
 
     stress_cases = [
         ("stress_empty_query", {**base_growth, "query": ""}),
-        ("stress_unsupported_intent", {**base_growth, "intent": "unsupported_intent"}),
+        ("stress_invalid_start_date", {**base_growth, "start": "17/03/2021"}),
+        ("stress_invalid_end_date", {**base_growth, "end": "16-03-2026"}),
         ("stress_missing_csv", {**base_growth, "csv_paths": [_raw("missing_file.csv")]}),
         ("stress_no_ticker", {**base_growth, "tickers": []}),
         ("stress_no_csv", {**base_growth, "csv_paths": []}),
-        ("stress_growth_multiple_tickers", {**base_growth, "tickers": ["NVDA", "AMD"]}),
-        ("stress_compare_single_ticker", {**base_compare, "tickers": ["NVDA"]}),
-        ("stress_overview_multiple_tickers", {**base_overview, "tickers": ["AAPL", "MSFT"]}),
-        ("stress_technical_multiple_tickers", {**base_technical, "tickers": ["AAPL", "MSFT"]}),
         ("stress_unknown_ticker_in_csv", {**base_overview, "tickers": ["MSFT"]}),
         (
             "stress_returns_insufficient_data",
@@ -226,10 +223,9 @@ def _run_case(case: dict[str, Any]) -> dict[str, Any]:
     return {
         "name": case["name"],
         "group": case["group"],
-        "intent": case["payload"]["intent"],
+        "input_intent_hint": case["payload"].get("intent"),
         "expected_status": case["expected_status"],
         "status": state.status,
-        "selected_agent": state.selected_agent,
         "execution_returncode": state.execution_returncode,
         "elapsed_seconds": round(elapsed, 3),
         "warnings": warnings,
@@ -269,16 +265,12 @@ def _aggregate(results: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def main() -> int:
-    os.environ["LLM_ENABLED"] = "false"
-    os.environ["LLM_USE_FOR_PLANNING"] = "false"
-    os.environ["LLM_USE_FOR_CODEGEN"] = "false"
-    os.environ["LLM_USE_FOR_INTERPRETATION"] = "false"
     cases = _build_cases()
     results = [_run_case(case) for case in cases]
     aggregate = _aggregate(results)
     payload = {
         "started_at": datetime.now().isoformat(timespec="seconds"),
-        "mode": "deterministic",
+        "mode": "llm",
         "aggregate": aggregate,
         "results": results,
     }

@@ -1,72 +1,99 @@
 \chapter{Implementación}
 
-\section{Estructura del repositorio}
+\section{Estructura del código}
 
-El código del proyecto se organiza en una estructura separada por responsabilidades. La carpeta \texttt{src/} contiene la implementación principal, \texttt{data/} conserva los datos y catálogos, \texttt{notebooks/} incluye el análisis exploratorio y \texttt{tests/} agrupa las pruebas automatizadas.
+La implementación se organiza en módulos pequeños:
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
-\begin{tabularx}{\textwidth}{lX}
+\footnotesize
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.5cm}X}
 \toprule
-\textbf{Ruta} & \textbf{Función} \\
+\textbf{Módulo} & \textbf{Responsabilidad} \\
 \midrule
-\texttt{src/schemas.py} & Define modelos de entrada, salida y estado. \\
-\texttt{src/graph/} & Contiene nodos, routing y construcción del workflow. \\
-\texttt{src/agents/} & Agrupa las familias analíticas del MVP. \\
-\texttt{src/execution/} & Gestiona persistencia y ejecución de scripts. \\
-\texttt{src/io/} & Lee y normaliza los CSV financieros. \\
-\texttt{src/llm/} & Prepara la integración controlada con APIs LLM. \\
-\texttt{tests/} & Valida casos funcionales y escenarios de error. \\
+\texttt{schemas.py} & Define la entrada, el plan interpretado, los artefactos y el estado del workflow. \\
+\texttt{validation.py} & Valida query, tickers, fechas y rutas CSV antes de llamar al LLM. \\
+\texttt{nodes.py} & Implementa los nodos del flujo: análisis LLM, codegen, seguridad, ejecución e interpretación. \\
+\texttt{src/llm/} & Contiene prompts, cliente compatible con OpenAI y funciones del pipeline LLM. \\
+\texttt{code\_security.py} & Revisa el código generado antes de ejecutarlo. \\
+\texttt{code\_runner.py} & Guarda el script, lanza la ejecución y captura stdout, stderr y artefactos. \\
+\texttt{tests/} & Comprueba el workflow con llamadas LLM simuladas y escenarios de error. \\
 \bottomrule
 \end{tabularx}
-\caption{Principales módulos del repositorio.}
+\caption{Módulos principales de la implementación.}
 \end{table}
 
-\section{Módulos principales}
+\section{Contratos de datos}
 
-El fichero \texttt{schemas.py} define los contratos de datos que atraviesan el sistema. Los módulos de \texttt{src/graph/} implementan los nodos del pipeline y las reglas de transición. Las familias de agentes se concentran en \texttt{src/agents/}, donde cada intención se asocia con una lógica analítica concreta.
+La entrada del sistema se representa mediante \texttt{FinancialQueryInput}. La interpretación generada por el LLM se almacena en \texttt{AnalysisPlan}, que contiene intencionalidad interpretada, tipo de análisis, métricas esperadas, requisitos de datos, requisitos de salida, preferencias de presentación y razonamiento resumido. El estado completo se conserva en \texttt{WorkflowState}.
 
-La ejecución de código se encapsula en \texttt{src/execution/code\_runner.py}. Este módulo guarda el script generado, lo lanza como proceso externo y devuelve salidas estructuradas. Esta separación evita mezclar el cálculo financiero con la orquestación del workflow.
+\section{Pipeline LLM}
 
-\section{Ejecución, despliegue local y reproducibilidad}
+El pipeline LLM se divide en tres llamadas principales. La primera interpreta la consulta y construye un plan estructurado. La segunda genera código Python usando tanto el plan como el mensaje original del usuario. La tercera interpreta la salida JSON producida por el script y redacta la respuesta final.
 
-El MVP se ejecuta de forma local mediante \texttt{run\_mvp.py}. La memoria considera este despliegue local como suficiente para la fase académica del trabajo, ya que el objetivo principal es validar el pipeline y no publicar un servicio productivo.
+El prompt de generación de código exige que el script lea un payload por \texttt{argv[1]}, use librerías permitidas y escriba un único JSON en \texttt{stdout}. Esta restricción permite tratar el código generado como un artefacto ejecutable, auditable y validable.
 
-\begin{verbatim}
-python run_mvp.py --example growth_nvda
-python run_mvp.py --example compare_nvda_amd
-python run_mvp.py --example overview_aapl
-python run_mvp.py --example returns_qqq_spy
-python run_mvp.py --example risk_qqq_spy
-python run_mvp.py --example technical_aapl
-\end{verbatim}
+El flujo completo puede resumirse como una cadena de transformación controlada:
 
-La reproducibilidad se apoya en tres elementos: datos CSV versionados, ejemplos de entrada controlados y pruebas automatizadas. Las claves de API se almacenan en un fichero local \texttt{.env}, excluido del control de versiones.
+\begin{quote}
+\centering
+\texttt{prompt} \(\rightarrow\) \texttt{código Python} \(\rightarrow\) validación de seguridad \(\rightarrow\) ejecución \(\rightarrow\) \texttt{JSON} \(\rightarrow\) interpretación final.
+\end{quote}
 
-\section{Tests automatizados}
+Esta cadena es importante porque el LLM no produce directamente una afirmación financiera final sin pasar antes por cálculos ejecutados. El primer bloque LLM prepara el análisis y genera el script; el entorno de ejecución produce datos estructurados; y el segundo bloque LLM redacta una explicación basada en esa salida.
 
-El proyecto incorpora pruebas unitarias para validar tanto el modo determinista como la configuración LLM. La batería principal comprueba las seis intenciones soportadas y varios errores previsibles.
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.5cm}X}
+\toprule
+\textbf{Elemento} & \textbf{Contrato exigido} \\
+\midrule
+Entrada & El script recibe un único payload JSON por \texttt{argv[1]}, con consulta, tickers, fechas, intervalo y rutas CSV. \\
+Lectura de datos & El código debe leer únicamente los CSV proporcionados por el workflow y no descargar datos externos. \\
+Salida & Debe escribir un único objeto JSON en \texttt{stdout}, mediante \texttt{json.dumps}, para que el sistema pueda parsearlo. \\
+Contenido & La salida debe incluir métricas, tablas o datos de visualización necesarios para responder a la consulta. \\
+Artefactos & La ejecución conserva script, salida estándar, salida de error, código de retorno y metadatos de ejecución. \\
+Errores & Si el script falla, el error queda registrado y el workflow puede devolver una explicación controlada o intentar reparación. \\
+\bottomrule
+\end{tabularx}
+\caption{Contrato operativo del código Python generado por el LLM.}
+\label{tab:contrato_codigo_generado}
+\end{table}
 
-\begin{verbatim}
-python -m unittest tests/test_mvp.py
-python -m unittest tests/test_llm_config.py tests/test_mvp.py
-\end{verbatim}
+\section{Control de seguridad}
 
-En las ejecuciones documentadas, el MVP supera nueve pruebas sobre nueve en la batería funcional principal. Al incluir las pruebas de configuración LLM, se documenta una ejecución de catorce pruebas superadas, lo que confirma que la incorporación de dependencias LLM no rompe el funcionamiento determinista.
+Antes de ejecutar el script, el módulo \texttt{code\_security.py} analiza el código con el AST de Python. El validador comprueba imports permitidos, llamadas bloqueadas como \texttt{eval} o \texttt{exec}, presencia de \texttt{main()} y uso de \texttt{json.dumps}. Si el código no cumple el contrato, el workflow termina con estado de error y no ejecuta el script.
 
-\section{Evaluación automática de perfiles LLM}
+El uso del árbol de sintaxis abstracta permite revisar la estructura del programa antes de ejecutarlo, en lugar de depender solo de búsquedas textuales. La validación comprueba nodos de importación, llamadas a funciones y elementos mínimos del contrato. Con ello se reduce el riesgo de que un script generado por LLM ejecute operaciones fuera del alcance del MVP. Esta capa no convierte el entorno en una sandbox completa, pero sí añade una barrera explícita entre generación y ejecución.
 
-Para comparar el modo determinista con los distintos proveedores LLM se incorporó el script \texttt{scripts/evaluate\_llm\_profiles.py}. Este script ejecuta una misma batería de ejemplos contra varios perfiles: \texttt{deterministic}, \texttt{groq}, \texttt{gemini} y \texttt{university}. Su objetivo es evitar evaluaciones manuales aisladas y generar evidencias comparables entre configuraciones.
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Comprobación} & \textbf{Finalidad} \\
+\midrule
+Imports permitidos & Limitar el código a librerías necesarias para análisis de datos y serialización. \\
+Funciones bloqueadas & Evitar llamadas peligrosas o no necesarias, como \texttt{eval} y \texttt{exec}. \\
+Función \texttt{main()} & Forzar una estructura ejecutable y sencilla de auditar. \\
+Salida JSON & Garantizar que el resultado pueda pasar al nodo de interpretación sin ambigüedad. \\
+Errores explícitos & Separar fallos de seguridad, fallos de ejecución y fallos de interpretación. \\
+\bottomrule
+\end{tabularx}
+\caption{Comprobaciones principales del validador de seguridad.}
+\label{tab:validador_seguridad_ast}
+\end{table}
 
-Cada ejecución registra el perfil utilizado, el ejemplo, la intención analítica, el estado final, el código de retorno del script generado, posibles avisos, la respuesta final, el agente seleccionado, el plan analítico, la salida estructurada de ejecución y el tiempo aproximado. También se incorporan comprobaciones cualitativas simples, como detectar si se ha usado fallback o si la respuesta evita formulaciones propias de una recomendación directa de inversión.
+\section{Reparación y compactación}
 
-\begin{verbatim}
-python scripts/evaluate_llm_profiles.py \
-  --profiles deterministic groq gemini university --examples all
-\end{verbatim}
+Cuando el código generado no supera la validación o falla durante la ejecución, el workflow puede solicitar al LLM una reparación manteniendo la consulta original, el plan analítico y el detalle del error. La reparación no evita la validación: el código corregido vuelve a pasar por el mismo control de seguridad antes de ejecutarse. Si la reparación tampoco cumple el contrato, el caso se marca como error controlado.
 
-Los resultados generados se consideran artefactos de evaluación y no código fuente. Por ello, las salidas completas pueden almacenarse en una carpeta de resultados ignorada por el control de versiones, mientras que la memoria recoge los indicadores agregados más relevantes.
+En consultas de Nivel B o C, el script puede generar series visuales largas. Estas series son útiles como artefacto completo, pero pueden saturar el contexto del segundo agente. Por ello, antes de la interpretación final se compactan listas y textos extensos: se conserva una muestra representativa para el LLM interpretador y la salida completa queda guardada como evidencia auditable. Esta decisión permite mantener trazabilidad sin degradar la respuesta final por exceso de contexto.
 
-\section{Artefactos generados}
+\section{Pruebas}
 
-Cada ejecución puede producir scripts, logs y payloads de resultado. Estos artefactos permiten revisar el comportamiento del sistema después de la ejecución y aportan evidencia para la memoria. La existencia de scripts generados también facilita detectar errores en la fase de cálculo, en lugar de confiar únicamente en la respuesta final.
+La batería de pruebas simula las respuestas LLM para evitar dependencias externas durante el test suite. De este modo se valida el workflow, el control de seguridad, la ejecución controlada y los errores de entrada sin consumir APIs reales.
+
+
+

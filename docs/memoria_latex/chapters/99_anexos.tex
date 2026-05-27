@@ -1,8 +1,8 @@
-\chapter{Anexos}
+﻿\chapter{Anexos}
 
 \section{Ejecución del MVP}
 
-El proyecto puede ejecutarse en modo determinista mediante los ejemplos incluidos en el repositorio:
+El proyecto puede ejecutarse con perfiles LLM mediante los ejemplos incluidos en el repositorio:
 
 \begin{verbatim}
 python run_mvp.py --example growth_nvda
@@ -13,51 +13,151 @@ python run_mvp.py --example risk_qqq_spy
 python run_mvp.py --example technical_aapl
 \end{verbatim}
 
-\section{Configuración de APIs}
-
-Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe subirse al repositorio. Para trabajar sin APIs externas:
+Además de estos ejemplos funcionales, se prepararon scripts específicos para la evaluación cualitativa, la demostración para cliente y la comparación progresiva entre proveedores LLM:
 
 \begin{verbatim}
-LLM_ENABLED=false
+python scripts\generate_qualitative_client_demo.py
+python scripts\generate_qualitative_demo_report.py
+python scripts\evaluate_progressive_llm_scope.py --profiles groq gemini university
 \end{verbatim}
 
-Para activar Groq, el modelo configurado es:
+La última orden puede restringirse a una muestra concreta de dificultad creciente:
+
+\begin{verbatim}
+python scripts\evaluate_progressive_llm_scope.py ^
+  --profiles groq gemini university ^
+  --cases level_a_nvda_growth level_a_qqq_spy_returns ^
+          level_b_qqq_spy_clear_compare ^
+          level_c_qqq_spy_professional ^
+          stress_visual_qqq_spy_monthly
+\end{verbatim}
+
+\section{Configuración de APIs}
+
+Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe subirse al repositorio. El proyecto asume llamadas LLM en el flujo principal, por lo que no hay variables de activación.
+
+Para activar Groq con \nolinkurl{llama-3.3-70b-versatile}, modelo Llama 3.3 70B Instruct orientado a razonamiento general y baja latencia, la configuración es:
 
 \begin{center}
 \nolinkurl{llama-3.3-70b-versatile}~\cite{groqllama33docs,meta2024llama33modelcard,meta2024llama3herd}
 \end{center}
 
 \begin{verbatim}
-LLM_ENABLED=true
 LLM_PROFILE=groq
 GROQ_MODEL=llama-3.3-70b-versatile
 \end{verbatim}
 
-Para activar Gemini, el modelo configurado es:
+Para activar Gemini con \nolinkurl{gemini-2.5-flash}, modelo Flash de Gemini 2.5 orientado a rapidez y razonamiento, la configuración es:
 
 \begin{center}
 \nolinkurl{gemini-2.5-flash}~\cite{google2025gemini25flashdocs,google2025gemini25report}
 \end{center}
 
 \begin{verbatim}
-LLM_ENABLED=true
 LLM_PROFILE=gemini
 GEMINI_MODEL=gemini-2.5-flash
 \end{verbatim}
 
-Para activar el perfil del servidor vLLM, el modelo configurado es:
+Para activar \nolinkurl{openai/gpt-oss-20b} servido por vLLM en el entorno universitario, modelo abierto de la familia gpt-oss usado por su capacidad de razonamiento, seguimiento de instrucciones y generación de código, el perfil técnico configurado es \texttt{university}:
 
 \begin{center}
 \nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}
 \end{center}
 
 \begin{verbatim}
-LLM_ENABLED=true
 LLM_PROFILE=university
 UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
 UNIVERSITY_MODEL=openai/gpt-oss-20b
 \end{verbatim}
 
+\section{Batería de queries A/B/C}
+
+La batería cualitativa se diseñó para comprobar que el sistema no solo termina la ejecución, sino que adapta la profundidad del análisis a la consulta. Las seis primeras queries corresponden al Nivel A y representan peticiones habituales sin formato especial. Las tres siguientes elevan la exigencia al Nivel B, y las tres últimas obligan a una salida de Nivel C.
+
+\begin{longtable}{p{0.11\textwidth} p{0.49\textwidth} p{0.11\textwidth} p{0.21\textwidth}}
+\caption{Batería cualitativa de queries por nivel de profundidad.}
+\label{tab:anexo_bateria_queries_abc}\\
+\toprule
+\textbf{ID} & \textbf{Consulta} & \textbf{Nivel} & \textbf{Objetivo de evaluación} \\
+\midrule
+\endhead
+A1 & Analiza el crecimiento de NVDA durante los últimos cinco años. & A & Rentabilidad y resumen simple. \\
+A2 & Dime la rentabilidad de AAPL en el período disponible. & A & Cálculo directo y respuesta breve. \\
+A3 & Resume la evolución de SPY en 2024. & A & Visión general sin gráficas obligatorias. \\
+A4 & Compara de forma sencilla QQQ y SPY en 2024. & A & Comparación básica de retornos. \\
+A5 & Indica si AAPL fue volátil en los últimos tres meses disponibles. & A & Uso de volatilidad y drawdown. \\
+A6 & Resume el volumen negociado de NVDA en 2024. & A & Selección de métrica de volumen. \\
+B1 & Hazme un análisis completo de NVDA con una tabla de métricas y una gráfica de precio. & B & Tabla y visualización principal. \\
+B2 & Compárame QQQ y SPY de forma clara con evolución normalizada. & B & Comparación relativa base 100. \\
+B3 & Quiero entender retorno y riesgo de AAPL en el último año. & B & Relación riesgo-retorno. \\
+C1 & Dame un análisis profesional de QQQ y SPY con tabla, gráfica normalizada, drawdown y conclusión. & C & Varias salidas estructuradas. \\
+C2 & Compara NVDA y AMD con rentabilidad, volatilidad, correlación, mejor y peor mes, y explicación para usuario no técnico. & C & Múltiples métricas y adaptación de lenguaje. \\
+C3 & Analiza SPY desde 2020 con retornos anuales, drawdown, medias móviles y limitaciones del análisis. & C & Desglose temporal y limitaciones. \\
+\bottomrule
+\end{longtable}
+
+\section{Query de estrés visual}
+
+Para forzar al sistema a respetar una estructura concreta se incorporó una query adicional de estrés visual:
+
+\begin{quote}
+Compara QQQ y SPY durante 2024 como si fuera un informe para un cliente no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: 1) una tabla resumen con rentabilidad total, volatilidad anualizada, máximo drawdown, mejor mes y peor mes; 2) una tabla ranking mensual indicando que activo ganó cada mes; 3) datos para una gráfica normalizada base 100 de ambos activos; 4) datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
+\end{quote}
+
+Esta consulta se eligió porque comprueba simultáneamente comprensión, selección de métricas, generación de código, control de formato, datos para visualización e interpretación final sin recomendación de inversión.
+
+\section{Evidencias generadas}
+
+Durante el desarrollo se dejaron evidencias en Markdown, JSON y figuras para facilitar la revisión posterior:
+
+\begin{itemize}
+    \item \nolinkurl{docs/evaluacion_cualitativa_llm.md}: metodología cualitativa, criterios, niveles A/B/C y rúbrica.
+    \item \nolinkurl{docs/salidas_demo_cliente_evaluacion_cualitativa.md}: salidas demostrativas para cliente generadas desde CSV históricos.
+    \item \nolinkurl{docs/salidas_ejecucion_llm_real_muestra_abc.md}: muestra real A/B/C con LLM.
+    \item \nolinkurl{docs/salidas_ejecucion_llm_real_nivel_c.md}: ejecución real de un caso Nivel C.
+    \item \nolinkurl{docs/salida_query_exigente_visual_llm.md}: prueba visual exigente con Gemini.
+    \item \nolinkurl{docs/salida_query_exigente_visual_llm_groq.md}: prueba visual exigente con Groq.
+    \item \nolinkurl{docs/evaluacion_amplitud_tfm_llms.md}: informe consolidado de amplitud del TFM.
+    \item \nolinkurl{docs/resumen_evaluacion_amplitud_tfm.md}: síntesis ejecutiva de resultados.
+    \item \nolinkurl{results/evaluations/progressive_llm_scope_20260527_173646.json}: salida JSON completa de la pasada progresiva.
+    \item \nolinkurl{docs/figures/evaluacion_amplitud_llm/}: visualizaciones usadas en la memoria.
+\end{itemize}
+
+\section{Plantilla de revisión manual}
+
+La siguiente plantilla se usa para revisar cada ejecución sin presentar la evaluación como una métrica matemática absoluta:
+
+\begin{table}[p]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{0.25\textwidth} p{0.21\textwidth} X}
+\toprule
+\textbf{Criterio} & \textbf{Valoración} & \textbf{Observaciones} \\
+\midrule
+Comprensión de la consulta & Excelente / Correcto / Parcial / Deficiente & \\
+Selección de métricas y datos & Excelente / Correcto / Parcial / Deficiente & \\
+Código generado & Excelente / Correcto / Parcial / Deficiente & \\
+Tablas y gráficas solicitadas & Excelente / Correcto / Parcial / Deficiente & \\
+Exactitud frente a la salida ejecutada & Excelente / Correcto / Parcial / Deficiente & \\
+Claridad del análisis final & Excelente / Correcto / Parcial / Deficiente & \\
+Utilidad para el usuario & Excelente / Correcto / Parcial / Deficiente & \\
+Reconocimiento de limitaciones & Excelente / Correcto / Parcial / Deficiente & \\
+Ausencia de recomendación de inversión & Excelente / Correcto / Parcial / Deficiente & \\
+Trazabilidad consulta-código-resultados & Excelente / Correcto / Parcial / Deficiente & \\
+\bottomrule
+\end{tabularx}
+\caption{Plantilla de revisión manual cualitativa.}
+\label{tab:plantilla_revision_manual}
+\end{table}
+
 \section{Documentación interna de apoyo}
 
-Durante el desarrollo se conservaron notas técnicas, informes de EDA y fichas de evaluación en formato TXT. Estos documentos no sustituyen a la memoria, pero sirvieron como evidencias auxiliares para reconstruir decisiones de diseño y resultados experimentales. En particular, se utilizaron las notas de iteración del MVP, el informe de EDA, las fichas de evaluación determinista y LLM, la primera ejecución comparativa completa y la guía de credenciales para reforzar las secciones de metodología, datos, implementación, integración LLM y resultados.
+Durante el desarrollo se conservaron notas técnicas, informes de EDA, fichas de evaluación LLM y documentos metodológicos en Markdown. Estos documentos no sustituyen a la memoria, pero sirvieron como evidencias auxiliares para reconstruir decisiones de diseño, resultados experimentales y limitaciones observadas. En particular, se utilizaron el informe de evaluación cualitativa, las salidas de demostración para cliente, la batería progresiva A/B/C y el informe de amplitud multi-modelo para reforzar las secciones de metodología, implementación, integración LLM, resultados y trabajo futuro.
+
+
+
+
+
+
+
+

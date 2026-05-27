@@ -1,72 +1,69 @@
 \chapter{Metodología}
 
-\section{Enfoque incremental del desarrollo}
+\section{Enfoque de desarrollo}
 
-El desarrollo del trabajo se ha planteado como una sucesión de iteraciones controladas. En lugar de construir desde el inicio un sistema completamente dependiente de modelos de lenguaje, se ha partido de un MVP determinista capaz de completar el flujo de extremo a extremo. Esta decisión permite validar primero la arquitectura, la trazabilidad y la ejecución del código generado antes de introducir componentes generativos más variables.
+El desarrollo se ha reorganizado hacia un flujo más simple y trazable. El sistema trabaja con dos responsabilidades principales: interpretar la consulta y generar código; ejecutar ese código y explicar el resultado.
 
-La primera iteración validó el flujo mínimo con dos intenciones analíticas: crecimiento histórico y comparación de activos. La segunda iteración amplió el alcance con análisis descriptivo y análisis de retornos. La tercera incorporó análisis de riesgo histórico, análisis técnico, pruebas de error y una reorganización interna basada en familias de agentes. La Tabla~\ref{tab:iteraciones_mvp} resume la progresión seguida.
+La metodología sigue una lógica incremental:
 
-\begin{table}[h]
-\centering
-\begin{tabularx}{\textwidth}{lXX}
-\toprule
-\textbf{Iteración} & \textbf{Objetivo principal} & \textbf{Evidencia obtenida} \\
-\midrule
-MVP 1 & Validar el flujo extremo a extremo con \texttt{price\_growth} y \texttt{compare\_assets}. & El sistema procesa un caso de activo único y un caso multi-activo, genera código ejecutable y produce una respuesta interpretable. \\
-MVP 2 & Comprobar que la arquitectura crece sin rediseñarse, incorporando \texttt{asset\_overview} y \texttt{return\_analysis}. & Se pasa de dos a cuatro intenciones y se valida que las nuevas métricas se integran sobre las mismas interfaces. \\
-MVP 3 & Aumentar madurez funcional y robustez mediante \texttt{historical\_risk\_analysis}, \texttt{technical\_analysis} y pruebas negativas. & Se consolidan seis intenciones, tres escenarios de error controlado y una modularización por familias de agentes. \\
-\bottomrule
-\end{tabularx}
-\caption{Evolución incremental del MVP.}
-\label{tab:iteraciones_mvp}
-\end{table}
+\begin{enumerate}
+    \item Definir una entrada estructurada con consulta, tickers, fechas y CSV.
+    \item Validar campos mínimos antes de llamar al modelo.
+    \item Usar un LLM central para interpretar la intencionalidad financiera.
+    \item Generar código Python a partir de la interpretación y del mensaje original.
+    \item Validar el código antes de ejecutarlo.
+    \item Ejecutar el script en un entorno controlado y guardar artefactos.
+    \item Usar el LLM para explicar las métricas obtenidas.
+\end{enumerate}
 
-\section{Definición de intenciones analíticas}
+\section{Evolución incremental del MVP}
 
-El MVP trabaja con un conjunto cerrado de intenciones. Esta restricción hace que el problema sea evaluable y reduce la ambigüedad del sistema. Cada intención se asocia con una familia de agente, un plan analítico, un bloque de código y una forma de interpretar la salida.
+El desarrollo del prototipo no se planteó como una implementación cerrada desde el inicio, sino como una sucesión de MVPs. La primera versión tuvo como objetivo validar que el flujo completo podía funcionar de extremo a extremo. Para ello se trabajó con un LLM de OpenAI o compatible con OpenAI y con dos intencionalidades básicas: crecimiento de un activo y comparación entre activos. Esta fase permitió comprobar la viabilidad inicial de la cadena formada por consulta, interpretación, cálculo y respuesta.
 
-\begin{table}[h]
-\centering
-\begin{tabularx}{\textwidth}{lX}
-\toprule
-\textbf{Intención} & \textbf{Objetivo} \\
-\midrule
-\texttt{price\_growth} & Calcular crecimiento o caída de un activo en un periodo. \\
-\texttt{compare\_assets} & Comparar la evolución relativa de varios activos. \\
-\texttt{asset\_overview} & Generar una visión descriptiva general de un activo. \\
-\texttt{return\_analysis} & Analizar retornos históricos y estadísticos básicos. \\
-\texttt{historical\_risk\_analysis} & Estimar riesgo histórico mediante volatilidad y drawdown. \\
-\texttt{technical\_analysis} & Calcular indicadores técnicos como medias móviles y RSI. \\
-\bottomrule
-\end{tabularx}
-\caption{Intenciones analíticas soportadas por el MVP.}
-\end{table}
+Una vez validado ese flujo mínimo, el segundo MVP amplió la cobertura funcional de dos a seis intencionalidades analíticas: crecimiento de precio, comparación de activos, visión descriptiva de un activo, análisis de retornos, análisis de riesgo histórico y análisis técnico básico. Esta ampliación obligó a revisar contratos de entrada y salida, estructura de los planes analíticos, gestión de datos y formato de las respuestas.
 
-\section{Diseño experimental}
+Posteriormente, el proyecto evolucionó hacia la arquitectura actual, centrada en LLM y generación de código controlada. En esta etapa se introdujeron validación de seguridad, ejecución aislada del script generado, guardado de artefactos, reintentos ante errores LLM y reparación del código cuando falla la validación o la ejecución. Finalmente, el sistema se preparó para comparar varios modelos y para iniciar una fase de consultas más complejas sobre los mismos datos históricos.
 
-La evaluación se apoya en seis casos representativos, uno por cada intención implementada. Estos casos permiten comprobar que el sistema valida la entrada, selecciona la familia analítica correcta, genera un plan, construye código ejecutable, ejecuta el script y devuelve una respuesta final interpretable.
+\section{Criterios de validación}
 
-Además de los casos correctos, se incorporan escenarios negativos para comprobar la robustez del flujo. Entre ellos se incluyen intenciones no soportadas, rutas CSV inexistentes y cardinalidad incorrecta de tickers para análisis que requieren una única serie.
+La validación del prototipo se apoya en tres niveles. El primero comprueba entradas mínimas: query no vacía, tickers, rutas CSV existentes y fechas en formato correcto. El segundo revisa que el código generado cumpla un contrato básico: función \texttt{main()}, uso de \texttt{json.dumps}, imports permitidos y salida JSON. El tercero comprueba que la respuesta final evita predicciones, recomendaciones de inversión y datos externos no presentes en la ejecución.
 
-\section{Métricas de validación}
+\section{Criterios cualitativos de calidad del análisis}
 
-La validación del MVP no se plantea como entrenamiento de un modelo supervisado, sino como evaluación funcional de un pipeline software. Por tanto, las métricas principales son:
+Además de la validación técnica, la metodología incorpora una revisión humana de la calidad del análisis generado. Esta revisión es necesaria porque dos ejecuciones pueden terminar con estado \texttt{completed} y, aun así, ofrecer niveles de utilidad distintos para el usuario. El objetivo no es obtener una puntuación matemática absoluta, sino valorar si la respuesta es completa, prudente, trazable y coherente con la consulta.
+
+Se considera buen análisis aquel que responde directamente a la petición, calcula o muestra los datos esenciales, respeta el formato solicitado por el usuario y separa con claridad dato histórico, interpretación y limitaciones. Esta definición se apoya en recomendaciones de educación financiera que advierten que el rendimiento histórico debe presentarse indicando cómo se calcula y sin tratarlo como garantía de resultados futuros \cite{investorgov2022performanceclaims}. La selección de métricas parte de la relación entre riesgo y retorno \cite{investorgov2026risk} y de medidas habituales como rentabilidad, volatilidad y correlación en series de retornos históricos \cite{cfainstitute2026portfolioriskreturn}. El drawdown se incluye como medida interpretable de caídas históricas porque permite observar pérdidas desde máximos previos usando datos observados \cite{cfainstitute2018drawdown}.
+
+La revisión diferencia dos responsabilidades. El primer agente no debe redactar una respuesta financiera final: su tarea es interpretar la consulta y generar código que produzca métricas, tablas o datos de visualización suficientes para responderla. El segundo agente no debe inventar datos ni completar huecos con conocimiento externo: su tarea es transformar la salida estructurada de la ejecución en una explicación comprensible, separando dato histórico, interpretación y limitaciones. De este modo, la calidad final depende de dos eslabones evaluables por separado: la calidad del material generado por el primer agente y la calidad de la explicación redactada por el segundo.
+
+\section{Niveles de profundidad del análisis}
+
+La profundidad del análisis se adapta a lo que solicita el usuario. Se definen tres niveles:
 
 \begin{itemize}
-    \item Éxito de ejecución del flujo completo.
-    \item Código de retorno del script generado.
-    \item Presencia o ausencia de errores controlados.
-    \item Cobertura de intenciones analíticas.
-    \item Uso de fallback determinista cuando falla una API externa.
-    \item Tiempo de respuesta en las pruebas con proveedores LLM.
+    \item \textbf{Nivel A, análisis simple por defecto}: se aplica cuando la consulta es sencilla y no pide formato especial. La salida esperada es un texto breve y una tabla o bloque estructurado con métricas básicas. No se fuerza la generación de gráficas si la respuesta puede entenderse con datos resumidos.
+    \item \textbf{Nivel B, análisis mejorado}: se aplica cuando el usuario pide un análisis más completo, una comparativa clara o una explicación con más detalle. La salida esperada combina texto, tabla de métricas y una gráfica principal o los datos necesarios para representarla.
+    \item \textbf{Nivel C, análisis profesional o enriquecido}: se aplica cuando el usuario pide expresamente un informe detallado, profesional, avanzado o con varias visualizaciones concretas. Puede incluir varias tablas, evolución normalizada, drawdown, retornos, volatilidad, correlación, volumen, medias móviles o desglose por períodos.
 \end{itemize}
 
-\section{Justificación de no entrenar un modelo propio}
+Esta graduación evita sobrecargar consultas simples y, al mismo tiempo, permite evaluar si el sistema es capaz de aumentar la riqueza del análisis cuando el usuario lo solicita. En series temporales financieras, los gráficos de línea son adecuados para mostrar evolución en el tiempo; en comparaciones entre activos con escalas distintas se prioriza la normalización, y se evita abusar de demasiadas series o ejes dobles para no inducir lecturas confusas \cite{atlassianlinecharts}.
 
-El objetivo del TFM no es entrenar desde cero un modelo financiero, sino estudiar una arquitectura multiagente trazable para automatizar análisis históricos. Por ello, el trabajo utiliza modelos de lenguaje preentrenados a través de APIs compatibles con OpenAI y limita su papel, en la configuración actual, a la fase de interpretación final.
+En las queries de Nivel B y C, el primer agente puede producir datos extensos para visualizaciones. Para evitar que esas series completas saturen el contexto del segundo agente, el workflow conserva la salida íntegra como artefacto auditable y envía al LLM interpretador una versión compactada. Esta decisión mantiene la trazabilidad técnica y, a la vez, reduce el riesgo de errores por exceso de contexto.
 
-Esta decisión reduce el coste computacional, evita depender de hardware GPU propio y permite centrar la evaluación en la robustez del workflow. La planificación, el cálculo financiero y la ejecución permanecen bajo control programático.
+\section{Evaluación con proveedores LLM}
 
-\section{Gestión de riesgos técnicos}
+La evaluación se ha preparado para comparar tres configuraciones compatibles con OpenAI: Groq con \nolinkurl{llama-3.3-70b-versatile}, modelo Llama 3.3 70B Instruct orientado a razonamiento general y baja latencia; Gemini con \nolinkurl{gemini-2.5-flash}, modelo Flash de Gemini 2.5 orientado a rapidez y razonamiento; y \nolinkurl{openai/gpt-oss-20b} servido mediante vLLM en el entorno universitario, modelo abierto de la familia gpt-oss usado por su capacidad de razonamiento, seguimiento de instrucciones y generación de código. El proceso de depuración principal se documentó con \nolinkurl{openai/gpt-oss-20b}; posteriormente se comprobó la misma batería compleja con Groq usando \nolinkurl{llama-3.3-70b-versatile} y se realizaron pruebas puntuales con Gemini usando \nolinkurl{gemini-2.5-flash}. En todos los casos el flujo conceptual es el mismo: análisis de la consulta, generación de código, control de seguridad, ejecución e interpretación final. Las diferencias entre proveedores se observan en latencia, estabilidad, calidad textual y cumplimiento del formato esperado.
 
-Los principales riesgos identificados son la fragilidad del código generado, la disponibilidad de APIs externas, los problemas de codificación en respuestas LLM, las cuotas de proveedores gratuitos y la posible confusión entre análisis histórico y recomendación financiera. Para mitigarlos, el sistema conserva una base determinista, valida entradas, captura salidas de ejecución, registra artefactos y activa la capa LLM de forma controlada, empezando por la interpretación final.
+\section{Revisión humana}
+
+El flujo no se plantea como una automatización ciega. La revisión humana posterior forma parte del proceso metodológico: permite comprobar si la interpretación inicial, el código generado, los resultados estructurados y la respuesta final son coherentes con la consulta del usuario y con los datos históricos utilizados.
+
+La plantilla de revisión manual considera, como mínimo, comprensión de la consulta, selección de métricas, adecuación del código generado, cumplimiento de tablas o gráficas solicitadas, exactitud respecto a la salida ejecutada, claridad de la respuesta final, utilidad para el usuario, reconocimiento de limitaciones, ausencia de recomendaciones de inversión y trazabilidad entre consulta, código, métricas e interpretación. La valoración se expresa mediante categorías cualitativas, por ejemplo excelente, correcto, parcial o deficiente, para reconocer la subjetividad controlada de este tipo de evaluación.
+
+
+
+
+
+
+
+

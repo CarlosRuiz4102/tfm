@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import sys
 
 try:
     from dotenv import load_dotenv
@@ -54,13 +55,6 @@ else:
                 os.environ.setdefault(name, value)
 
 
-def _env_bool(name: str, default: bool = False) -> bool:
-    value = os.getenv(name)
-    if value is None:
-        return default
-    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
 def _env_int(name: str, default: int) -> int:
     value = os.getenv(name)
     if value is None or not value.strip():
@@ -77,13 +71,12 @@ def _env_float(name: str, default: float) -> float:
 
 @dataclass(frozen=True)
 class ExecutionConfig:
-    python_executable: str = "python"
+    python_executable: str = sys.executable
     timeout_seconds: int = 60
 
 
 @dataclass(frozen=True)
 class LLMConfig:
-    enabled: bool
     provider: str
     profile: str
     base_url: str | None
@@ -92,10 +85,7 @@ class LLMConfig:
     temperature: float
     max_tokens: int
     timeout_seconds: int
-    use_for_planning: bool
-    use_for_codegen: bool
-    use_for_interpretation: bool
-    verify_ssl: bool = True
+    verify_ssl: bool
 
     @classmethod
     def from_env(cls) -> "LLMConfig":
@@ -103,9 +93,9 @@ class LLMConfig:
         profile_config = LLM_PROFILES.get(profile, {})
         profile_api_key = os.getenv(profile_config.get("api_key_env", ""), "")
         profile_model = os.getenv(profile_config.get("model_env", ""), "")
+        verify_ssl_value = os.getenv(f"{profile.upper()}_VERIFY_SSL") or os.getenv("LLM_VERIFY_SSL")
 
         return cls(
-            enabled=_env_bool("LLM_ENABLED", False),
             provider=os.getenv("LLM_PROVIDER", "openai-compatible"),
             profile=profile,
             base_url=os.getenv("LLM_BASE_URL")
@@ -118,12 +108,9 @@ class LLMConfig:
             or profile_model
             or profile_config.get("default_model", ""),
             temperature=_env_float("LLM_TEMPERATURE", 0.1),
-            max_tokens=_env_int("LLM_MAX_TOKENS", 2048),
-            timeout_seconds=_env_int("LLM_TIMEOUT_SECONDS", 60),
-            verify_ssl=_env_bool(f"{profile.upper()}_VERIFY_SSL", _env_bool("LLM_VERIFY_SSL", True)),
-            use_for_planning=_env_bool("LLM_USE_FOR_PLANNING", False),
-            use_for_codegen=_env_bool("LLM_USE_FOR_CODEGEN", False),
-            use_for_interpretation=_env_bool("LLM_USE_FOR_INTERPRETATION", False),
+            max_tokens=_env_int("LLM_MAX_TOKENS", 4096),
+            timeout_seconds=_env_int("LLM_TIMEOUT_SECONDS", 120),
+            verify_ssl=verify_ssl_value is None or verify_ssl_value.strip().lower() not in {"0", "false", "no", "n", "off"},
         )
 
     @property
@@ -138,7 +125,7 @@ class LLMConfig:
             "tu_clave_gemini",
             "tu_clave_universidad",
         }
-        return self.enabled and bool(api_key) and api_key not in placeholder_keys and bool(model)
+        return bool(api_key) and api_key not in placeholder_keys and bool(model)
 
 
 EXECUTION_CONFIG = ExecutionConfig()

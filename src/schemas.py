@@ -1,26 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
 from typing import Any
-
-
-SUPPORTED_INTENTS = {
-    "price_growth",
-    "compare_assets",
-    "asset_overview",
-    "return_analysis",
-    "historical_risk_analysis",
-    "technical_analysis",
-}
 
 
 @dataclass
 class FinancialQueryInput:
     query: str
-    intent: str
     tickers: list[str]
     csv_paths: list[str]
+    intent: str = ""
     start: str | None = None
     end: str | None = None
     period: str | None = None
@@ -35,9 +24,9 @@ class FinancialQueryInput:
             warnings = [warnings] if warnings else []
         return cls(
             query=data["query"],
-            intent=data["intent"],
-            tickers=list(data["tickers"]),
-            csv_paths=[str(Path(path)) for path in data["csv_paths"]],
+            intent=str(data.get("intent") or ""),
+            tickers=list(data.get("tickers") or []),
+            csv_paths=[str(path) for path in data.get("csv_paths") or []],
             start=data.get("start"),
             end=data.get("end"),
             period=data.get("period"),
@@ -51,24 +40,15 @@ class FinancialQueryInput:
 
 
 @dataclass
-class RouterOutput:
-    selected_agent: str
-    is_valid: bool
-    warnings: list[str] = field(default_factory=list)
-    error_message: str | None = None
-
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
-
-
-@dataclass
 class AnalysisPlan:
-    intent: str
+    interpreted_intent: str
+    analysis_type: str
     metrics: list[str]
-    plots: list[str]
     required_columns: list[str]
-    textual_focus: str
-    agent_name: str
+    data_requirements: list[str]
+    output_requirements: list[str]
+    presentation_preferences: list[str]
+    reasoning: str
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -114,7 +94,6 @@ class WorkflowState:
     normalized_query: dict[str, Any]
     csv_paths: list[str]
     detected_intent: str | None = None
-    selected_agent: str | None = None
     analysis_plan: dict[str, Any] | None = None
     generated_code: str | None = None
     execution_stdout: str = ""
@@ -133,7 +112,7 @@ class WorkflowState:
             user_query=query_input.query,
             normalized_query=query_input.to_dict(),
             csv_paths=list(query_input.csv_paths),
-            detected_intent=query_input.intent,
+            detected_intent=query_input.intent or None,
             warnings=list(query_input.warnings),
         )
 

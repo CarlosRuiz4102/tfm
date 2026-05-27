@@ -30,7 +30,7 @@ def load_input(args: argparse.Namespace) -> FinancialQueryInput:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Ejecuta el MVP financiero multiagente.")
+    parser = argparse.ArgumentParser(description="Ejecuta el MVP financiero con LLM y codegen.")
     parser.add_argument("--example", choices=sorted(SAMPLE_INPUTS))
     parser.add_argument("--input-json")
     args = parser.parse_args()
