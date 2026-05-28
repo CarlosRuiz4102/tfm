@@ -17,9 +17,11 @@ Para situar el alcance tecnológico del trabajo, la Figura~\ref{fig:alcance_ia_t
 
 \section{Motivación}
 
-La motivación principal del proyecto es explorar cómo un flujo LLM con ejecución controlada puede aportar orden, modularidad y robustez a un sistema de análisis financiero asistido por inteligencia artificial. La aplicación de modelos de lenguaje al dominio financiero resulta atractiva por su capacidad para interpretar peticiones, generar código y adaptar el lenguaje al usuario, pero también exige mecanismos de control.
+La motivación principal del proyecto es explorar cómo un flujo LLM con ejecución controlada puede aportar orden, modularidad y robustez a un sistema de análisis financiero asistido por inteligencia artificial. La aplicación de modelos de lenguaje al dominio financiero resulta atractiva por su capacidad para interpretar peticiones, generar código y adaptar el lenguaje al usuario, pero también exige mecanismos de control, especialmente cuando la respuesta final puede confundirse con una recomendación financiera.
 
-Por esta razón, el MVP separa las responsabilidades principales. El LLM interpreta la intencionalidad de la consulta y genera código, pero el sistema valida dicho código antes de ejecutarlo y captura los resultados en formato estructurado. Después, el LLM redacta la respuesta final a partir de las métricas calculadas. Si el proveedor no está configurado o falla, el sistema informa el error y no genera una respuesta alternativa sin modelo.
+El interés del trabajo no está en construir un producto financiero completo, sino en estudiar si un prototipo incremental puede convertir consultas históricas en cálculos trazables y explicaciones prudentes. Por ello se evita que el LLM actúe como una caja negra que responde directamente al usuario: el modelo interpreta la intencionalidad de la consulta y genera código, pero el sistema valida dicho código antes de ejecutarlo y captura los resultados en formato estructurado. Después, el LLM redacta la respuesta final a partir de métricas ya calculadas. Si el proveedor no está configurado o falla, el sistema informa el error y no genera una respuesta alternativa sin modelo.
+
+En esta memoria se utiliza el término MVP como \textit{prototipo mínimo viable} dentro de una evolución por etapas, no como producto comercial cerrado. El primer MVP validó dos intencionalidades básicas, crecimiento y comparación; el segundo amplió la cobertura a seis tipos de análisis; y la versión actual incorpora generación de código controlada, validación de seguridad, ejecución aislada, artefactos auditables y comparación entre proveedores LLM. Esta evolución se detalla en la Sección~\ref{sec:evolucion_mvp}.
 
 \section{Objetivos}
 

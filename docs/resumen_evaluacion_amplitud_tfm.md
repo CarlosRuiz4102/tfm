@@ -4,22 +4,23 @@ Este documento resume la ejecucion progresiva realizada con queries de Nivel A, 
 
 ## Resultado global
 
-- Completados: `6/15`.
-- La evaluacion usa tres perfiles: Groq, Gemini y universidad/vLLM.
+- Completados: `14/15`.
+- La evaluacion usa tres perfiles ejecutados de nuevo el 2026-05-28 con cuota disponible: Groq, Gemini y universidad/vLLM.
 - Se guardan salidas, planes LLM, ejecuciones, errores y respuestas finales en JSON y Markdown.
 
 ## Matriz compacta
 
 | Perfil | A simple | A retornos | B visual | C profesional | C estres visual | Lectura |
 |---|---|---|---|---|---|---|
-| gemini | Parcial plan | OK | OK | Parcial plan | Falla/cuota | Competente en A/B, pero limitado por formato/cuota en C. |
-| groq | Falla/cuota | Falla/cuota | Falla/cuota | Falla/cuota | Falla/cuota | No medible en esta pasada por cuota diaria; hay muestras previas A/B/C en docs. |
-| university | OK | OK | Parcial ejec. | OK | OK | Mejor cobertura: completa A, C y estres; falla B por contexto en interpretacion. |
+| gemini | OK | OK | OK | OK | Parcial codegen | Muy buen salto frente a la pasada anterior; solo falla la query de estres visual. |
+| groq | OK | OK | OK | OK | OK | Repetido con cuota disponible: completa los cinco casos progresivos. |
+| university | OK | OK | OK | OK | OK | Cobertura completa, aunque con mayor latencia en algunos casos. |
 
 ## Archivos visuales generados
 
 - [Informe completo](C:/Users/usuario/Desktop/tfm/docs/evaluacion_amplitud_tfm_llms.md)
-- [JSON completo](C:/Users/usuario/Desktop/tfm/results/evaluations/progressive_llm_scope_20260527_173646.json)
+- [JSON completo](C:/Users/usuario/Desktop/tfm/results/evaluations/progressive_llm_scope_20260528_180822.json)
+- [Salidas Groq 2026-05-28](C:/Users/usuario/Desktop/tfm/docs/salidas_ejecucion_groq_20260528.md)
 - [Grafica normalizada QQQ/SPY](C:/Users/usuario/Desktop/tfm/docs/figures/evaluacion_amplitud_llm/qqq_spy_normalizada_2024.png)
 - [Grafica drawdown QQQ/SPY](C:/Users/usuario/Desktop/tfm/docs/figures/evaluacion_amplitud_llm/qqq_spy_drawdown_2024.png)
 - [Completitud por modelo y nivel](C:/Users/usuario/Desktop/tfm/docs/figures/evaluacion_amplitud_llm/completitud_por_modelo_nivel.png)
@@ -34,4 +35,4 @@ Este documento resume la ejecucion progresiva realizada con queries de Nivel A, 
 
 ## Lectura de competencia de resultados
 
-Los resultados son competentes especialmente con el perfil universitario, que completa 4 de 5 casos incluyendo una query C profesional y la query de estres visual. Gemini demuestra buen rendimiento en A/B, pero tiene limitaciones en C por cuota/formato. Groq habia mostrado buenos resultados en ejecuciones previas, pero en esta pasada la cuota diaria impidio medirlo de forma justa.
+Los resultados actualizados son muy competentes: Groq y el perfil universitario completan 5 de 5 casos, incluyendo los niveles C y la query de estres visual. Gemini completa 4 de 5 y solo falla en la query visual mas exigente por generacion de codigo. La comparacion sigue siendo exploratoria y depende de disponibilidad, contexto, latencia y coste de cada proveedor.

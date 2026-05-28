@@ -18,7 +18,8 @@ Además de estos ejemplos funcionales, se prepararon scripts específicos para l
 \begin{verbatim}
 python scripts\generate_qualitative_client_demo.py
 python scripts\generate_qualitative_demo_report.py
-python scripts\evaluate_progressive_llm_scope.py --profiles groq gemini university
+python scripts\evaluate_progressive_llm_scope.py ^
+  --profiles groq gemini university
 \end{verbatim}
 
 La última orden puede restringirse a una muestra concreta de dificultad creciente:
@@ -36,10 +37,10 @@ python scripts\evaluate_progressive_llm_scope.py ^
 
 Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe subirse al repositorio. El proyecto asume llamadas LLM en el flujo principal, por lo que no hay variables de activación.
 
-Para activar Groq con \nolinkurl{llama-3.3-70b-versatile}, modelo Llama 3.3 70B Instruct orientado a razonamiento general y baja latencia, la configuración es:
+Para activar Groq con \nolinkurl{llama-3.3-70b-versatile} \cite{groqllama33docs}, modelo Llama 3.3 70B Instruct orientado a razonamiento general y baja latencia, la configuración es:
 
 \begin{center}
-\nolinkurl{llama-3.3-70b-versatile}~\cite{groqllama33docs,meta2024llama33modelcard,meta2024llama3herd}
+\nolinkurl{llama-3.3-70b-versatile} \cite{groqllama33docs}
 \end{center}
 
 \begin{verbatim}
@@ -47,10 +48,10 @@ LLM_PROFILE=groq
 GROQ_MODEL=llama-3.3-70b-versatile
 \end{verbatim}
 
-Para activar Gemini con \nolinkurl{gemini-2.5-flash}, modelo Flash de Gemini 2.5 orientado a rapidez y razonamiento, la configuración es:
+Para activar Gemini con \nolinkurl{gemini-2.5-flash} \cite{google2025gemini25flashdocs}, modelo Flash de Gemini 2.5 orientado a rapidez y razonamiento, la configuración es:
 
 \begin{center}
-\nolinkurl{gemini-2.5-flash}~\cite{google2025gemini25flashdocs,google2025gemini25report}
+\nolinkurl{gemini-2.5-flash} \cite{google2025gemini25flashdocs}
 \end{center}
 
 \begin{verbatim}
@@ -58,10 +59,10 @@ LLM_PROFILE=gemini
 GEMINI_MODEL=gemini-2.5-flash
 \end{verbatim}
 
-Para activar \nolinkurl{openai/gpt-oss-20b} servido por vLLM en el entorno universitario, modelo abierto de la familia gpt-oss usado por su capacidad de razonamiento, seguimiento de instrucciones y generación de código, el perfil técnico configurado es \texttt{university}:
+Para activar \nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} servido por vLLM en el entorno universitario, modelo abierto de la familia gpt-oss usado por su capacidad de razonamiento, seguimiento de instrucciones y generación de código, el perfil técnico configurado es \texttt{university}:
 
 \begin{center}
-\nolinkurl{openai/gpt-oss-20b}~\cite{openai2025gptossmodelcard}
+\nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard}
 \end{center}
 
 \begin{verbatim}
@@ -111,15 +112,25 @@ Esta consulta se eligió porque comprueba simultáneamente comprensión, selecci
 Durante el desarrollo se dejaron evidencias en Markdown, JSON y figuras para facilitar la revisión posterior:
 
 \begin{itemize}
+    \item \nolinkurl{docs/evolucion_mvp_tfm.md}: evolución incremental del MVP desde dos intencionalidades hasta el flujo actual con codegen controlado.
+    \item \nolinkurl{docs/arquitectura_llm_codegen.md}: descripción técnica del flujo LLM, nodos, prompts, seguridad y ejecución.
+    \item \nolinkurl{docs/llm_api_setup.md}: configuración de perfiles Groq, Gemini y servidor vLLM universitario.
+    \item \nolinkurl{docs/plan_pruebas_queries_llm.md}: planificación y lectura de pruebas con queries más complejas.
+    \item \nolinkurl{docs/control_tamano_salidas_visualizacion.md}: justificación de la compactación de salidas visuales largas antes de la interpretación final.
     \item \nolinkurl{docs/evaluacion_cualitativa_llm.md}: metodología cualitativa, criterios, niveles A/B/C y rúbrica.
+    \item \nolinkurl{docs/salidas_ejecucion_evaluacion_cualitativa.md}: salidas completas de la evaluación cualitativa.
     \item \nolinkurl{docs/salidas_demo_cliente_evaluacion_cualitativa.md}: salidas demostrativas para cliente generadas desde CSV históricos.
     \item \nolinkurl{docs/salidas_ejecucion_llm_real_muestra_abc.md}: muestra real A/B/C con LLM.
     \item \nolinkurl{docs/salidas_ejecucion_llm_real_nivel_c.md}: ejecución real de un caso Nivel C.
     \item \nolinkurl{docs/salida_query_exigente_visual_llm.md}: prueba visual exigente con Gemini.
     \item \nolinkurl{docs/salida_query_exigente_visual_llm_groq.md}: prueba visual exigente con Groq.
     \item \nolinkurl{docs/evaluacion_amplitud_tfm_llms.md}: informe consolidado de amplitud del TFM.
+    \item \nolinkurl{docs/registro_resultados_llm_20260528.md}: registro de la actualización tras liberar cuota diaria de Groq.
+    \item \nolinkurl{docs/salidas_ejecucion_groq_20260528.md}: repetición de Groq tras liberar cuota diaria.
     \item \nolinkurl{docs/resumen_evaluacion_amplitud_tfm.md}: síntesis ejecutiva de resultados.
-    \item \nolinkurl{results/evaluations/progressive_llm_scope_20260527_173646.json}: salida JSON completa de la pasada progresiva.
+    \item \nolinkurl{results/evaluations/progressive_llm_scope_20260528_180822.json}: salida JSON completa de la pasada progresiva actualizada.
+    \item \nolinkurl{results/evaluations/progressive_llm_scope_20260528_180641.json}: salida JSON específica de la repetición de Groq.
+    \item \nolinkurl{results/evaluations/progressive_llm_scope_20260527_173646.json}: salida JSON de la pasada previa conservada como referencia.
     \item \nolinkurl{docs/figures/evaluacion_amplitud_llm/}: visualizaciones usadas en la memoria.
 \end{itemize}
 
@@ -153,6 +164,27 @@ Trazabilidad consulta-código-resultados & Excelente / Correcto / Parcial / Defi
 \section{Documentación interna de apoyo}
 
 Durante el desarrollo se conservaron notas técnicas, informes de EDA, fichas de evaluación LLM y documentos metodológicos en Markdown. Estos documentos no sustituyen a la memoria, pero sirvieron como evidencias auxiliares para reconstruir decisiones de diseño, resultados experimentales y limitaciones observadas. En particular, se utilizaron el informe de evaluación cualitativa, las salidas de demostración para cliente, la batería progresiva A/B/C y el informe de amplitud multi-modelo para reforzar las secciones de metodología, implementación, integración LLM, resultados y trabajo futuro.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{0.35\textwidth} X}
+\toprule
+\textbf{Documento interno} & \textbf{Uso principal en la memoria} \\
+\midrule
+\nolinkurl{docs/evolucion_mvp_tfm.md} & Motivación y metodología incremental del prototipo. \\
+\nolinkurl{docs/arquitectura_llm_codegen.md} & Diseño del sistema, nodos, contrato de codegen y trazabilidad. \\
+\nolinkurl{docs/control_tamano_salidas_visualizacion.md} & Compactación de salidas largas y gestión de contexto en Nivel B/C. \\
+\nolinkurl{docs/evaluacion_cualitativa_llm.md} & Criterios de buen análisis, niveles A/B/C y plantilla de revisión. \\
+\nolinkurl{docs/plan_pruebas_queries_llm.md} & Evolución de fallos observados, mejoras técnicas y batería progresiva. \\
+\nolinkurl{docs/registro_resultados_llm_20260528.md} & Actualización de resultados tras repetir Groq con cuota disponible. \\
+\nolinkurl{docs/evaluacion_amplitud_tfm_llms.md} & Evidencia principal de comparación multi-modelo y detalle por ejecución. \\
+\nolinkurl{docs/resumen_evaluacion_amplitud_tfm.md} & Lectura ejecutiva de resultados y síntesis para conclusiones. \\
+\bottomrule
+\end{tabularx}
+\caption{Relación entre documentación Markdown y secciones de la memoria.}
+\label{tab:documentacion_markdown_memoria}
+\end{table}
 
 
 

@@ -1,34 +1,15 @@
--Podria estar interesante mostrar que para un futuropodriamos tener la opinion de analisatas profesionales para ver por un lado que tal analiza nuestro sistema y por otro que nos ayuden a refizorzar nuestros analisis.
+-Podria estar interesante mostrar que para un futuro podriamos tener la opinion de analisatas profesionales para ver por un lado que tal analiza nuestro sistema y por otro que nos ayuden a refizorzar nuestros analisis.
 
--Darle una vuelta a lo de la motivación punto 1.2 , eso de mvp.... MAs que todo eso del MVP miralo bine porque no se si esta muy bine, si eso define en algun lado los diferentes MVP que tuvimos para que se sepa.
+-como podemos conseguir mejores resultados?? prompt???
+pregunta si estaría interesante hacer algo de prompt para rencaminar el resultado y compararlo para que pasa cunaod esta con o sin promtp. esto habría que realizrlo y comparar que obtenemos. estaría interesante realizar estas prueba para comentarlo en la memoria en la parte de resultados
 
--Seria interesante mostrar los datos que obtenemos? tipo en el 3.1
-
--Como ves en el punto 3.2 cometar el proceso que hay que hacer para descargarnos los datos? contarlo y puedes unirlo con el punto 3.3 donde mostramos la estructiura de los csv
-
--Ten cuidado que en el punto 3.3 las tablas no corten frases, lo mismo en el 3.4
-
--lo del punto 3.6? es profesional comentar esas cosas??
-
--cada vez que menciones los modelos que vayan seguidos de sus citas
-
--ver el 5.3, que es y que sentido tiene
-
--hay que volver a ejeutar para ver que tal resultados obtenemos y poder poner bine la tabla del 8.8. Tambien seria interesante que los resultamos que obtengamos los pongamos en [evaluacion_amplitud_tfm_llms.md] y borremos los antiguos
-
--mirar los .md que hay en docs y comentar en la memoria la info que tienen, puede ser interesante
+-Gemini es multimodal eso puede significar algo de mejora para el análisis?
 
 -darle una vuelta a lo de las salidas, si el usuario pide en el mensaje que le mostremos algo, nos ceñiremos a ello y se lo mostraremos junto lo que consideremos adicional
-
--revisar eso de lo que hemos hecho sobre elegir un buen analisis, citar de las fuentes donde nos hemos formado 
-
--mencionar tambine en la memoria el github donde estamos trabajando y como hemos organizado todo, un poco que se note que hemos realizado trabajo de MLops
 
 -porcentahe de errores, benmarch, respuesta esperada vs respuesta que da, ver los intent, retrival, darle una vuelta
 
 -estimar estas cosas a futuro como apis no gratuitas, oseaq comentar nuestras limitaciones y que estaria bien para un futuro
-
--crees que lo de anexos se deberia quedar ahi o lo deberiamos meter por otro lado de la memoria, me refiero a su contenido.
 
 -a la que acabemos de hacer todo darle una vuelta a las conclusiones
 

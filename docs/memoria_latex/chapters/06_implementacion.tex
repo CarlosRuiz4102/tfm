@@ -17,15 +17,37 @@ La implementación se organiza en módulos pequeños:
 \texttt{src/llm/} & Contiene prompts, cliente compatible con OpenAI y funciones del pipeline LLM. \\
 \texttt{code\_security.py} & Revisa el código generado antes de ejecutarlo. \\
 \texttt{code\_runner.py} & Guarda el script, lanza la ejecución y captura stdout, stderr y artefactos. \\
+\texttt{market\_data.py} & Proporciona helpers para leer CSV financieros descargados con \texttt{yfinance}. \\
 \texttt{tests/} & Comprueba el workflow con llamadas LLM simuladas y escenarios de error. \\
 \bottomrule
 \end{tabularx}
 \caption{Módulos principales de la implementación.}
 \end{table}
 
+\section{Repositorio y organización del trabajo}
+
+El desarrollo se ha gestionado en un repositorio GitHub disponible en \nolinkurl{https://github.com/CarlosRuiz4102/tfm}. El uso de control de versiones permite conservar la evolución del código, la memoria, los scripts de evaluación y la documentación auxiliar en un único espacio de trabajo. Esta organización facilita revisar qué parte corresponde a datos, qué parte corresponde al flujo LLM, qué parte corresponde a resultados y qué parte corresponde a documentación académica.
+
+La estructura del repositorio separa responsabilidades de forma cercana a una práctica MLOps ligera:
+
+\begin{itemize}
+    \item \texttt{data/}: contiene el catálogo de casos, los CSV históricos congelados y sus metadatos.
+    \item \texttt{src/}: agrupa el código de aplicación, dividido en esquemas, grafo, integración LLM y ejecución controlada.
+    \item \texttt{scripts/}: incluye utilidades para generar EDA, ejecutar evaluaciones y producir informes reproducibles.
+    \item \texttt{tests/}: valida el workflow con respuestas LLM simuladas, evitando depender de APIs externas durante las pruebas básicas.
+    \item \texttt{docs/}: conserva la memoria LaTeX, informes Markdown, figuras y registros de resultados.
+    \item \texttt{results/}: almacena artefactos generados durante ejecuciones, como scripts, payloads, logs y salidas JSON.
+\end{itemize}
+
+También se separan configuración y secretos. El fichero \texttt{.env} contiene claves locales y queda excluido del control de versiones, mientras que \texttt{.env.example} documenta las variables necesarias para reproducir la configuración sin exponer credenciales. Del mismo modo, \texttt{.gitignore} excluye entornos virtuales, cachés, logs y resultados generados de gran tamaño, manteniendo versionados los artefactos que aportan trazabilidad académica.
+
+Aunque el proyecto no implementa un ciclo MLOps productivo completo con despliegue continuo, sí incorpora prácticas propias de ese enfoque: versionado del código, separación entre datos, código y resultados, scripts de evaluación repetibles, pruebas automatizadas, conservación de artefactos, documentación de configuraciones y registro explícito de fallos. Para el alcance del TFM, estas prácticas son suficientes para defender que el sistema no se limita a una demo puntual, sino que se ha organizado como un prototipo reproducible y auditable.
+
 \section{Contratos de datos}
 
 La entrada del sistema se representa mediante \texttt{FinancialQueryInput}. La interpretación generada por el LLM se almacena en \texttt{AnalysisPlan}, que contiene intencionalidad interpretada, tipo de análisis, métricas esperadas, requisitos de datos, requisitos de salida, preferencias de presentación y razonamiento resumido. El estado completo se conserva en \texttt{WorkflowState}.
+
+La necesidad de helpers de datos apareció durante las pruebas documentadas en \nolinkurl{docs/plan_pruebas_queries_llm.md}: los CSV generados por \texttt{yfinance} pueden contener cabeceras multinivel y formatos distintos según el activo o el intervalo. Para reducir errores repetidos en el código generado, se incorporaron funciones reutilizables de carga y normalización. Así, el LLM no tiene que resolver desde cero cada variante de lectura de CSV y puede concentrarse en el cálculo solicitado.
 
 \section{Pipeline LLM}
 
@@ -90,6 +112,8 @@ Errores explícitos & Separar fallos de seguridad, fallos de ejecución y fallos
 Cuando el código generado no supera la validación o falla durante la ejecución, el workflow puede solicitar al LLM una reparación manteniendo la consulta original, el plan analítico y el detalle del error. La reparación no evita la validación: el código corregido vuelve a pasar por el mismo control de seguridad antes de ejecutarse. Si la reparación tampoco cumple el contrato, el caso se marca como error controlado.
 
 En consultas de Nivel B o C, el script puede generar series visuales largas. Estas series son útiles como artefacto completo, pero pueden saturar el contexto del segundo agente. Por ello, antes de la interpretación final se compactan listas y textos extensos: se conserva una muestra representativa para el LLM interpretador y la salida completa queda guardada como evidencia auditable. Esta decisión permite mantener trazabilidad sin degradar la respuesta final por exceso de contexto.
+
+Este ajuste quedó documentado en una nota interna de control de tamaño de salidas, referenciada en el Anexo~\ref{tab:documentacion_markdown_memoria}. La decisión práctica fue limitar o resumir datos de visualización enviados al segundo agente, manteniendo siempre la salida completa en los logs. De este modo, las consultas de Nivel B y C pueden producir material gráfico sin convertir la interpretación final en una llamada demasiado grande para el proveedor LLM.
 
 \section{Pruebas}
 

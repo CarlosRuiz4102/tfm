@@ -8,6 +8,8 @@ El estado compartido conserva la consulta normalizada, la interpretación estruc
 
 La separación entre agentes es una decisión central del diseño. El primer agente actúa como preparador de datos: entiende la petición, decide qué cálculos son necesarios y genera un script que produce resultados estructurados. El segundo agente actúa como intérprete: recibe resultados ya calculados y los convierte en una explicación para el usuario. Esta división evita que el sistema dependa solo de una respuesta textual del modelo y permite revisar por separado consulta, código, ejecución, métricas e interpretación.
 
+La arquitectura se documentó también como artefacto interno de apoyo, recogido en el Anexo~\ref{tab:documentacion_markdown_memoria}. Ese documento sirvió para fijar el mapa conceptual del flujo, la responsabilidad de cada nodo y la decisión de tratar la generación de código como una etapa intermedia validable, no como una respuesta final. La memoria recoge esa lógica de forma resumida y la formaliza en la Figura~\ref{fig:arquitectura_nodos_workflow}.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.96\textwidth]{figures/arquitectura_nodos_workflow.pdf}
@@ -28,11 +30,17 @@ El flujo se compone de los siguientes nodos:
     \item \textbf{LLM central / interpretación}: lee métricas y redacta una conclusión comprensible para el usuario.
 \end{itemize}
 
+La documentación interna de arquitectura ayudó a mantener una correspondencia directa entre estos nodos y los módulos reales del repositorio. En particular, el flujo separa los nodos que dependen del proveedor LLM de los nodos deterministas de validación, seguridad y ejecución. Esta separación facilita cambiar de modelo sin modificar la lógica principal del workflow y permite analizar los fallos por origen.
+
 \section{Contrato del código generado}
 
-El código generado no debe redactar la respuesta final. Su responsabilidad es calcular métricas y devolver una salida estructurada. El contrato mínimo exige una función \texttt{main()}, lectura del payload recibido por \texttt{argv[1]}, escritura de un único JSON por \texttt{stdout} y uso exclusivo de imports permitidos.
+El contrato del código generado es la interfaz entre la parte generativa del sistema y la parte determinista. Su función es convertir una salida libre del LLM en un artefacto que pueda revisarse, ejecutarse y comparar de forma sistemática. Sin este contrato, cada script podría tener una estructura distinta, imprimir texto no parseable, depender de recursos externos o mezclar cálculo con explicación, lo que haría difícil auditar el resultado.
+
+El código generado no debe redactar la respuesta final. Su responsabilidad es calcular métricas y devolver una salida estructurada. El contrato mínimo exige una función \texttt{main()}, lectura del payload recibido por \texttt{argv[1]}, escritura de un único JSON por \texttt{stdout} y uso exclusivo de imports permitidos. Estas reglas permiten que el sistema trate todos los scripts generados de la misma forma: primero los valida, después los ejecuta en un proceso separado y finalmente interpreta su salida JSON.
 
 Por tanto, el primer agente no se evalúa por lo convincente que suene una explicación, sino por si prepara datos suficientes para la consulta. Del mismo modo, el segundo agente no se evalúa por calcular nuevas métricas, sino por interpretar fielmente lo que el script ha devuelto. La respuesta final solo se considera sólida cuando ambos componentes funcionan de forma coherente.
+
+El sentido práctico de este contrato es reducir el riesgo de tres problemas habituales en sistemas LLM con generación de código: ejecución de instrucciones no deseadas, respuestas imposibles de procesar automáticamente y pérdida de trazabilidad entre consulta, código, métricas y explicación final. Por ello, el contrato no es solo una restricción técnica, sino una decisión metodológica: obliga a que el modelo produzca cálculo verificable antes de producir lenguaje natural.
 
 \section{Gestión de errores}
 

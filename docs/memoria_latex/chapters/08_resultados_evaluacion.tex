@@ -8,7 +8,15 @@ La evaluación se ha diseñado alrededor de consultas representativas de anális
 
 La lectura de resultados debe interpretarse teniendo en cuenta la evolución del MVP. Las primeras pruebas se centraron en comprobar dos intencionalidades básicas, crecimiento y comparación. Después se amplió la batería a seis intencionalidades para validar una cobertura funcional más amplia. La fase actual incorpora comparación entre modelos, niveles cualitativos de profundidad y queries de estrés visual que obligan al sistema a producir tablas, datos para gráficas y conclusiones explicativas.
 
-El proyecto contempla tres perfiles de ejecución: Groq con \nolinkurl{llama-3.3-70b-versatile}, Gemini con \nolinkurl{gemini-2.5-flash} y el perfil técnico \texttt{university}, que corresponde a \nolinkurl{openai/gpt-oss-20b} servido mediante vLLM en el entorno universitario. En todos los casos el workflow usa el modelo configurado para interpretación de consulta, generación de código e interpretación final. Si falta una clave, el modelo no está disponible, el código se rechaza o la ejecución falla, el caso queda marcado como error controlado.
+El proyecto contempla tres perfiles de ejecución:
+
+\begin{itemize}
+    \item Groq con \nolinkurl{llama-3.3-70b-versatile} \cite{groqllama33docs}.
+    \item Gemini con \nolinkurl{gemini-2.5-flash} \cite{google2025gemini25flashdocs}.
+    \item Perfil técnico \texttt{university}, correspondiente a \nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} servido mediante vLLM en el entorno universitario.
+\end{itemize}
+
+En todos los casos el workflow usa el modelo configurado para interpretación de consulta, generación de código e interpretación final. Si falta una clave, el modelo no está disponible, el código se rechaza o la ejecución falla, el caso queda marcado como error controlado.
 
 \section{Métricas y criterios de evaluación}
 
@@ -24,6 +32,8 @@ Las métricas técnicas utilizadas son:
 \end{itemize}
 
 A estas métricas se añade una revisión cualitativa, porque la completitud técnica no garantiza por sí sola que el análisis sea útil. La revisión humana valora comprensión de la consulta, selección de métricas, suficiencia del código generado, adecuación de tablas o gráficas, exactitud respecto a los datos ejecutados, claridad del texto final, reconocimiento de limitaciones y ausencia de recomendaciones de inversión. Esta decisión es coherente con la necesidad de explicar cómo se calcula y presenta el rendimiento histórico \cite{investorgov2022performanceclaims}, y con la separación entre retorno, riesgo, volatilidad y correlación como conceptos de análisis histórico \cite{investorgov2026risk,cfainstitute2026portfolioriskreturn}.
+
+La rúbrica cualitativa se preparó previamente en \nolinkurl{docs/evaluacion_cualitativa_llm.md}. En ella se separan criterios del primer agente, como selección de métricas y generación de datos suficientes, y criterios del segundo agente, como claridad, prudencia y fidelidad a la salida ejecutada. Esta división permite que un caso completado técnicamente pueda seguir revisándose por calidad analítica, y no solo por estado final del workflow.
 
 \section{Niveles cualitativos de salida}
 
@@ -70,6 +80,8 @@ La query de estrés visual es especialmente relevante porque obliga al primer ag
 \begin{quote}
 Compara QQQ y SPY durante 2024 como si fuera un informe para un cliente no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: 1) una tabla resumen con rentabilidad total, volatilidad anualizada, máximo drawdown, mejor mes y peor mes; 2) una tabla ranking mensual indicando que activo ganó cada mes; 3) datos para una gráfica normalizada base 100 de ambos activos; 4) datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
 \end{quote}
+
+La batería se definió de forma incremental a partir del plan de pruebas interno referenciado en el Anexo~\ref{tab:documentacion_markdown_memoria}: primero se comprobaron consultas simples, después consultas con tablas o visualizaciones y finalmente casos de Nivel C con varias salidas obligatorias. Esta progresión permite observar si las mejoras del sistema resuelven únicamente ejemplos aislados o si aumentan la cobertura funcional sobre distintos tipos de petición.
 
 \section{Ejemplos de resultados obtenidos}
 
@@ -146,7 +158,7 @@ La respuesta final no se limitó a listar números. El segundo agente interpret�
 
 \section{Comparación progresiva entre proveedores}
 
-La Tabla~\ref{tab:matriz_amplitud_llm} resume la pasada progresiva ejecutada con los tres perfiles. La ejecución se realizó con cinco queries de dificultad creciente. El resultado debe interpretarse teniendo en cuenta limitaciones de cuota y disponibilidad: Groq había completado muestras A/B/C en ejecuciones previas, pero en esta pasada concreta no pudo evaluarse por límite diario de cuota.
+La Tabla~\ref{tab:matriz_amplitud_llm} resume la pasada progresiva actualizada, ejecutada el 28/05/2026 con los tres perfiles y con cuota disponible. La ejecución se realizó con cinco queries de dificultad creciente. Esta repetición sustituye la pasada anterior en la que Groq quedó condicionado por límite diario de cuota. El informe reproducible queda guardado en \nolinkurl{docs/evaluacion_amplitud_tfm_llms.md} y el JSON completo en \nolinkurl{results/evaluations/progressive_llm_scope_20260528_180822.json}.
 
 \begin{table}[H]
 \centering
@@ -155,9 +167,9 @@ La Tabla~\ref{tab:matriz_amplitud_llm} resume la pasada progresiva ejecutada con
 \toprule
 \textbf{Perfil} & \textbf{Completadas} & \textbf{Fallos principales} & \textbf{Lectura} \\
 \midrule
-Groq / \nolinkurl{llama-3.3-70b-versatile} & 0/5 & Cuota diaria & No medible en esta pasada por cuota agotada; se conservan muestras previas A/B/C completadas. \\
-Gemini / \nolinkurl{gemini-2.5-flash} & 2/5 & Codegen y cuota & Competente en Nivel A/B, con dificultades al subir a Nivel C o a peticiones visuales extensas. \\
-\nolinkurl{openai/gpt-oss-20b} / vLLM universitario & 4/5 & Contexto en un caso B & Mejor cobertura observada en esta pasada, incluyendo Nivel C profesional y estrés visual. \\
+Groq / \nolinkurl{llama-3.3-70b-versatile} \cite{groqllama33docs} & 5/5 & Sin fallos en la repetición & Completa toda la batería tras repetir la pasada con cuota disponible. \\
+Gemini / \nolinkurl{gemini-2.5-flash} \cite{google2025gemini25flashdocs} & 4/5 & Codegen en estrés visual & Completa A, B y un caso C; solo falla la query visual más exigente. \\
+\nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} / vLLM universitario & 5/5 & Sin fallos en la repetición & Cobertura completa, incluyendo Nivel C profesional y estrés visual. \\
 \bottomrule
 \end{tabularx}
 \caption{Matriz de amplitud progresiva por proveedor LLM.}
@@ -184,7 +196,7 @@ El ranking mensual calculado mostró una alternancia razonable: QQQ destacó en 
 Los errores observados durante la evaluación fueron técnicamente útiles:
 
 \begin{itemize}
-    \item \textbf{Cuotas de proveedor}: Groq y Gemini devolvieron errores \texttt{429} al superar límites de uso. Estos fallos no invalidan la arquitectura, pero condicionan la comparación experimental.
+    \item \textbf{Cuotas de proveedor}: en la pasada anterior, Groq devolvió errores \texttt{429} al superar límites de uso. La repetición posterior permitió completar sus cinco casos, pero el episodio confirma que la disponibilidad condiciona la comparación experimental.
     \item \textbf{Contexto excesivo}: algunas salidas visuales incluían series demasiado largas. Esto provocaba errores de contexto en el segundo agente.
     \item \textbf{Formato JSON}: en algunos casos el modelo entendía bien la query, pero fallaba al devolver código dentro de JSON válido.
     \item \textbf{Reparación de código}: algunas ejecuciones requirieron reparación automática antes de producir una salida válida.
@@ -192,11 +204,13 @@ Los errores observados durante la evaluación fueron técnicamente útiles:
 
 A partir de estos problemas se incorporó compactación de salidas antes de la interpretación final. La salida completa permanece guardada en artefactos, pero el segundo agente recibe una versión resumida de listas y textos largos. Esta decisión mantiene trazabilidad y reduce errores por límite de contexto.
 
+La evolución de las pruebas muestra que los fallos iniciales fueron útiles para mejorar el prototipo. La documentación intermedia registra errores de lectura de CSV, serialización de objetos \texttt{pandas}/\texttt{numpy}, respuestas fuera de JSON, timeouts y exceso de contexto. Las medidas incorporadas --helpers de datos, validación AST, reparación de código, reintentos y compactación-- explican el paso desde pruebas parciales hacia una batería progresiva con 14 de 15 casos completados en la pasada principal del 28/05/2026.
+
 \section{Limitaciones}
 
 La evaluación aún presenta limitaciones. El número de casos es reducido para afirmar robustez estadística. La calidad de las respuestas LLM requiere revisión humana y las cifras de latencia dependen de red, cuota y carga del proveedor. Además, la evaluación cualitativa incorpora juicio humano, por lo que debe entenderse como una comparación exploratoria apoyada en criterios previamente definidos, no como una medición objetiva absoluta.
 
-También debe distinguirse entre resultados observados y resultados pendientes de repetición. La pasada progresiva completa quedó condicionada por cuotas diarias, especialmente en Groq y Gemini. Por ello se conserva el informe actual como evidencia de comportamiento real, pero se propone repetir la evaluación con cuotas disponibles para obtener una comparación más equilibrada.
+También debe distinguirse entre resultados observados y condiciones de ejecución. La pasada del 28/05/2026 corrige el hueco de Groq con cuota disponible y mejora la comparación entre proveedores, pero sigue siendo una evaluación exploratoria con un número reducido de casos. Por ello los resultados se presentan como evidencia reproducible bajo condiciones concretas, no como ranking estadístico definitivo.
 
 \section{Síntesis}
 
