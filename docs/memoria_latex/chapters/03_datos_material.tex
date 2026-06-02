@@ -33,7 +33,7 @@ La variedad de activos permite comprobar que el sistema no está limitado a una 
 
 \section{Catálogo de consultas y proceso de descarga}
 
-El punto de partida del dataset es el catálogo \texttt{data/catalog/query\_cases.json}. Cada entrada define la consulta de referencia, la intención esperada, los tickers, el rango temporal o período relativo, el intervalo de observación y los posibles avisos. Este catálogo actúa como contrato entre la fase de preparación de datos y el flujo de análisis.
+El punto de partida del conjunto de datos es el catálogo \texttt{data/catalog/query\_cases.json}. Cada entrada define la consulta de referencia, la intención esperada, los tickers, el rango temporal o período relativo, el intervalo de observación y los posibles avisos. Este catálogo actúa como contrato entre la fase de preparación de datos y el flujo de análisis.
 
 El proceso utilizado para construir el conjunto de datos puede resumirse en cuatro pasos:
 
@@ -44,7 +44,7 @@ El proceso utilizado para construir el conjunto de datos puede resumirse en cuat
     \item Ejecutar \texttt{scripts/generate\_data\_eda.py} para normalizar los CSV, generar tablas procesadas y producir el informe exploratorio auxiliar.
 \end{enumerate}
 
-En el repositorio actual, los CSV crudos ya están congelados. Por tanto, para reproducir la parte documentada de esta memoria no es necesario volver a llamar a Yahoo Finance: basta con conservar \texttt{data/raw} y ejecutar el script de EDA si se quieren regenerar las tablas procesadas. Si se quisiera ampliar el dataset, el procedimiento correcto sería añadir primero la consulta al catálogo y después generar un nuevo CSV con su metadato asociado.
+En el repositorio actual, los CSV crudos ya están congelados. Por tanto, para reproducir la parte documentada de esta memoria no es necesario volver a llamar a Yahoo Finance: basta con conservar \texttt{data/raw} y ejecutar el script de EDA si se quieren regenerar las tablas procesadas. Si se quisiera ampliar el conjunto de datos, el procedimiento correcto sería añadir primero la consulta al catálogo y después generar un nuevo CSV con su metadato asociado.
 
 Cada consulta se transforma en una representación estructurada antes de entrar en el flujo LLM. El siguiente bloque muestra un ejemplo simplificado:
 
@@ -79,7 +79,7 @@ La Tabla~\ref{tab:formato_consulta} resume el significado de los campos principa
 Consulta original & Texto introducido o definido como caso de prueba. & Comparar Nvidia y AMD. \\
 Intención analítica & Tipo de análisis que debe ejecutarse. & Comparación de activos. \\
 Símbolos financieros & Activos sobre los que se realiza el análisis. & NVDA, AMD. \\
-Rango temporal & Periodo relativo o fechas de inicio y fin. & Dos años. \\
+Rango temporal & Período relativo o fechas de inicio y fin. & Dos años. \\
 Intervalo & Frecuencia de los datos históricos. & Diario. \\
 Avisos & Observaciones detectadas al preparar la entrada. & Sin avisos. \\
 \bottomrule

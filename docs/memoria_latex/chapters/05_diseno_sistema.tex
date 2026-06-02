@@ -22,10 +22,10 @@ La arquitectura se documentó también como artefacto interno de apoyo, recogido
 El flujo se compone de los siguientes nodos:
 
 \begin{itemize}
-    \item \textbf{Validación mínima}: comprueba query, tickers, fechas y existencia de CSV.
+    \item \textbf{Validación mínima}: comprueba la consulta, los tickers, las fechas y la existencia de CSV.
     \item \textbf{LLM central / análisis}: interpreta la consulta, identifica la intencionalidad financiera y define qué debe calcularse.
     \item \textbf{Generación de código}: recibe la interpretación y el mensaje original del usuario para producir un script Python.
-    \item \textbf{Control de seguridad}: valida contrato del script, imports permitidos y salida JSON.
+    \item \textbf{Control de seguridad}: valida contrato del script, importaciones permitidas y salida JSON.
     \item \textbf{Ejecución controlada}: lanza el script en un proceso separado, captura stdout, stderr y artefactos.
     \item \textbf{LLM central / interpretación}: lee métricas y redacta una conclusión comprensible para el usuario.
 \end{itemize}
@@ -36,7 +36,7 @@ La documentación interna de arquitectura ayudó a mantener una correspondencia 
 
 El contrato del código generado es la interfaz entre la parte generativa del sistema y la parte determinista. Su función es convertir una salida libre del LLM en un artefacto que pueda revisarse, ejecutarse y comparar de forma sistemática. Sin este contrato, cada script podría tener una estructura distinta, imprimir texto no parseable, depender de recursos externos o mezclar cálculo con explicación, lo que haría difícil auditar el resultado.
 
-El código generado no debe redactar la respuesta final. Su responsabilidad es calcular métricas y devolver una salida estructurada. El contrato mínimo exige una función \texttt{main()}, lectura del payload recibido por \texttt{argv[1]}, escritura de un único JSON por \texttt{stdout} y uso exclusivo de imports permitidos. Estas reglas permiten que el sistema trate todos los scripts generados de la misma forma: primero los valida, después los ejecuta en un proceso separado y finalmente interpreta su salida JSON.
+El código generado no debe redactar la respuesta final. Su responsabilidad es calcular métricas y devolver una salida estructurada. El contrato mínimo exige una función \texttt{main()}, lectura de los datos de entrada recibidos por \texttt{argv[1]}, escritura de un único JSON por \texttt{stdout} y uso exclusivo de importaciones permitidas. Estas reglas permiten que el sistema trate todos los scripts generados de la misma forma: primero los valida, después los ejecuta en un proceso separado y finalmente interpreta su salida JSON.
 
 Por tanto, el primer agente no se evalúa por lo convincente que suene una explicación, sino por si prepara datos suficientes para la consulta. Del mismo modo, el segundo agente no se evalúa por calcular nuevas métricas, sino por interpretar fielmente lo que el script ha devuelto. La respuesta final solo se considera sólida cuando ambos componentes funcionan de forma coherente.
 

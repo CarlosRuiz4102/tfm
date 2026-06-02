@@ -1,12 +1,10 @@
 \chapter{Resultados y evaluación}
 
-Este capítulo recoge la evaluación del prototipo desarrollado con foco en resultados generados mediante LLM y código Python ejecutado de forma controlada. El objetivo no es demostrar que el sistema prediga el mercado, sino comprobar si la arquitectura interpreta consultas, genera código, valida su seguridad, ejecuta métricas históricas y redacta conclusiones comprensibles.
+Este capítulo define el protocolo con el que se realizará la evaluación definitiva del prototipo. Las ejecuciones realizadas durante el desarrollo se utilizaron para depurar el sistema, pero no se presentan como resultados finales: la comparación definitiva debe realizarse con una batería fijada previamente, los mismos datos locales y criterios de revisión homogéneos.
 
-\section{Protocolo de evaluación}
+\section{Objetivo de la evaluación}
 
-La evaluación se ha diseñado alrededor de consultas representativas de análisis financiero histórico: crecimiento de precio, comparación de activos, visión descriptiva, análisis de retornos, análisis de riesgo histórico y análisis técnico. Para cada ejecución se registran el estado final, la interpretación estructurada, el código de retorno del script, el tiempo de ejecución, los avisos, la salida JSON y la respuesta final.
-
-La lectura de resultados debe interpretarse teniendo en cuenta la evolución del MVP. Las primeras pruebas se centraron en comprobar dos intencionalidades básicas, crecimiento y comparación. Después se amplió la batería a seis intencionalidades para validar una cobertura funcional más amplia. La fase actual incorpora comparación entre modelos, niveles cualitativos de profundidad y queries de estrés visual que obligan al sistema a producir tablas, datos para gráficas y conclusiones explicativas.
+El objetivo no es demostrar que el sistema prediga el mercado, sino comprobar si la arquitectura interpreta consultas financieras históricas, genera código Python adecuado, valida su seguridad, ejecuta métricas trazables y redacta conclusiones comprensibles.
 
 El proyecto contempla tres perfiles de ejecución:
 
@@ -16,36 +14,39 @@ El proyecto contempla tres perfiles de ejecución:
     \item Perfil técnico \texttt{university}, correspondiente a \nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} servido mediante vLLM en el entorno universitario.
 \end{itemize}
 
-En todos los casos el workflow usa el modelo configurado para interpretación de consulta, generación de código e interpretación final. Si falta una clave, el modelo no está disponible, el código se rechaza o la ejecución falla, el caso queda marcado como error controlado.
+En todos los casos el workflow usa el modelo configurado para interpretación de consulta, generación de código e interpretación final. Si falta una clave, el proveedor no está disponible, el código se rechaza o la ejecución falla, el caso debe quedar registrado como error controlado.
 
-\section{Métricas y criterios de evaluación}
+\section{Métricas y criterios}
 
-Las métricas técnicas utilizadas son:
+La evaluación técnica registrará:
 
 \begin{itemize}
-    \item \textbf{Casos funcionales completados}: número de consultas válidas que terminan con estado \texttt{completed}.
-    \item \textbf{Errores controlados}: número de consultas inválidas o fallidas que terminan con explicación.
+    \item \textbf{Casos completados}: consultas válidas que terminan con estado \texttt{completed}.
+    \item \textbf{Errores controlados}: consultas inválidas o fallidas que terminan con explicación.
     \item \textbf{Errores LLM}: problemas de configuración, red, cuota, disponibilidad, contexto o formato.
     \item \textbf{Código rechazado}: scripts que no superan el contrato de seguridad.
-    \item \textbf{Violaciones de recomendación de inversión}: presencia de expresiones como comprar, vender o recomendar invertir.
+    \item \textbf{Errores de ejecución}: scripts válidos que fallan al calcular o serializar la salida.
+    \item \textbf{Violaciones de recomendación de inversión}: presencia de recomendaciones o predicciones fuera del alcance del MVP.
     \item \textbf{Tiempo de ejecución}: duración observada por caso y proveedor.
 \end{itemize}
 
-A estas métricas se añade una revisión cualitativa, porque la completitud técnica no garantiza por sí sola que el análisis sea útil. La revisión humana valora comprensión de la consulta, selección de métricas, suficiencia del código generado, adecuación de tablas o gráficas, exactitud respecto a los datos ejecutados, claridad del texto final, reconocimiento de limitaciones y ausencia de recomendaciones de inversión. Esta decisión es coherente con la necesidad de explicar cómo se calcula y presenta el rendimiento histórico \cite{investorgov2022performanceclaims}, y con la separación entre retorno, riesgo, volatilidad y correlación como conceptos de análisis histórico \cite{investorgov2026risk,cfainstitute2026portfolioriskreturn}.
+Estas métricas deben complementarse con revisión humana. La completitud técnica no garantiza por sí sola que el análisis sea útil. La revisión cualitativa valora comprensión de la consulta, selección de métricas, suficiencia del código generado, adecuación de tablas o gráficas, exactitud respecto a los datos ejecutados, claridad del texto final, reconocimiento de limitaciones y ausencia de recomendaciones de inversión.
 
-La rúbrica cualitativa se preparó previamente en \nolinkurl{docs/evaluacion_cualitativa_llm.md}. En ella se separan criterios del primer agente, como selección de métricas y generación de datos suficientes, y criterios del segundo agente, como claridad, prudencia y fidelidad a la salida ejecutada. Esta división permite que un caso completado técnicamente pueda seguir revisándose por calidad analítica, y no solo por estado final del workflow.
+Esta decisión es coherente con la necesidad de explicar cómo se calcula y presenta el rendimiento histórico \cite{investorgov2022performanceclaims}, y con la separación entre retorno, riesgo, volatilidad y correlación como conceptos de análisis histórico \cite{investorgov2026risk,cfainstitute2026portfolioriskreturn}.
+
+La rúbrica se define en \nolinkurl{docs/evaluacion_cualitativa_llm.md}. En ella se separan criterios del primer agente, como selección de métricas y generación de datos suficientes, y criterios del segundo agente, como claridad, prudencia y fidelidad a la salida ejecutada.
 
 \section{Niveles cualitativos de salida}
 
-La evaluación cualitativa se estructura en tres niveles:
+La evaluación se estructura en tres niveles:
 
 \begin{itemize}
     \item \textbf{Nivel A}: consultas simples sin requisitos de presentación. La respuesta esperada es breve y debe incluir métricas básicas suficientes.
     \item \textbf{Nivel B}: consultas que piden un análisis más completo. La respuesta esperada incluye texto, tabla de métricas y una gráfica principal o datos estructurados para generarla.
-    \item \textbf{Nivel C}: consultas profesionales o detalladas. La respuesta esperada incluye varias salidas estructuradas, por ejemplo tabla, evolución normalizada, drawdown, ranking mensual, desglose de riesgo o conclusión ejecutiva.
+    \item \textbf{Nivel C}: consultas profesionales o detalladas. La respuesta esperada incluye varias salidas estructuradas, por ejemplo tabla, evolución normalizada, drawdown, clasificación mensual, desglose de riesgo o conclusión ejecutiva.
 \end{itemize}
 
-El uso de visualizaciones depende de la intención de la consulta. Para series temporales se priorizan gráficos de línea y, cuando se comparan activos con escalas distintas, una evolución normalizada permite comparar la tendencia sin confundir niveles de precio absolutos. También se evita abusar de demasiadas series o ejes dobles, porque pueden dificultar la lectura \cite{atlassianlinecharts}. En consultas de riesgo se considera especialmente útil el drawdown, ya que resume caídas históricas desde máximos previos y se entiende con facilidad \cite{cfainstitute2018drawdown}.
+Para series temporales se priorizan gráficos de línea y, cuando se comparan activos con escalas distintas, una evolución normalizada permite comparar la tendencia sin confundir niveles de precio absolutos. También se evita abusar de demasiadas series o ejes dobles, porque pueden dificultar la lectura \cite{atlassianlinecharts}. En consultas de riesgo se considera especialmente útil el drawdown, ya que resume caídas históricas desde máximos previos y se entiende con facilidad \cite{cfainstitute2018drawdown}.
 
 \begin{table}[htbp]
 \centering
@@ -63,163 +64,41 @@ C & Petición profesional, detallada o con varias salidas & Texto, tablas, varia
 \label{tab:niveles_cualitativos_analisis}
 \end{table}
 
-\section{Batería progresiva de evaluación}
+\section{Batería progresiva}
 
-Para comprobar la amplitud del TFM se utilizaron queries de dificultad creciente. La batería completa documentada incluye doce queries A/B/C; para la comparación multi-modelo se seleccionó una muestra progresiva de cinco casos:
-
-\begin{itemize}
-    \item \texttt{level\_a\_nvda\_growth}: crecimiento simple de NVDA.
-    \item \texttt{level\_a\_qqq\_spy\_returns}: retornos históricos de QQQ y SPY.
-    \item \texttt{level\_b\_qqq\_spy\_clear\_compare}: comparativa con tabla y gráfica normalizada.
-    \item \texttt{level\_c\_qqq\_spy\_professional}: análisis profesional con tabla, normalización, drawdown y conclusión.
-    \item \texttt{stress\_visual\_qqq\_spy\_monthly}: query de estrés visual con cuatro bloques obligatorios: tabla resumen, ranking mensual, gráfica normalizada y gráfica de drawdown.
-\end{itemize}
-
-La query de estrés visual es especialmente relevante porque obliga al primer agente a generar datos de forma concreta y al segundo agente a respetar una estructura de comunicación para cliente no técnico. El texto usado fue:
+La batería cualitativa incluye consultas A/B/C sobre crecimiento, comparación de activos, visión descriptiva, retornos, riesgo histórico y análisis técnico. También se mantiene una query de estrés visual que obliga al sistema a respetar cuatro bloques de salida:
 
 \begin{quote}
-Compara QQQ y SPY durante 2024 como si fuera un informe para un cliente no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: 1) una tabla resumen con rentabilidad total, volatilidad anualizada, máximo drawdown, mejor mes y peor mes; 2) una tabla ranking mensual indicando que activo ganó cada mes; 3) datos para una gráfica normalizada base 100 de ambos activos; 4) datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
+Compara QQQ y SPY durante 2024 como si fuera un informe para un cliente no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: 1) una tabla resumen con rentabilidad total, volatilidad anualizada, máximo drawdown, mejor mes y peor mes; 2) una tabla de clasificación mensual indicando qué activo ganó cada mes; 3) datos para una gráfica normalizada base 100 de ambos activos; 4) datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
 \end{quote}
 
-La batería se definió de forma incremental a partir del plan de pruebas interno referenciado en el Anexo~\ref{tab:documentacion_markdown_memoria}: primero se comprobaron consultas simples, después consultas con tablas o visualizaciones y finalmente casos de Nivel C con varias salidas obligatorias. Esta progresión permite observar si las mejoras del sistema resuelven únicamente ejemplos aislados o si aumentan la cobertura funcional sobre distintos tipos de petición.
+Esta consulta comprueba simultáneamente comprensión, selección de métricas, generación de código, control de formato, datos para visualización e interpretación final. La batería completa y las familias técnicas complementarias se describen en \nolinkurl{docs/planificacion_evaluacion_tfm.md}.
 
-\section{Ejemplos de resultados obtenidos}
+\section{Protocolo de ejecución definitiva}
 
-La Tabla~\ref{tab:ejemplos_metricas_ejecutadas} resume algunos resultados calculados desde los CSV históricos. Estos datos sirven para ilustrar que el sistema no solo produce texto, sino que genera métricas auditables.
+La evaluación final seguirá los siguientes pasos:
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{l X r r r}
-\toprule
-\textbf{Caso} & \textbf{Activos} & \textbf{Rentabilidad} & \textbf{Volatilidad} & \textbf{Max. drawdown} \\
-\midrule
-NVDA 5 años & NVDA & 1273.33\% & 51.73\% & -66.36\% \\
-QQQ/SPY 2024 & QQQ & 28.07\% & 17.96\% & -13.56\% \\
-QQQ/SPY 2024 & SPY & 24.45\% & 12.61\% & -8.41\% \\
-AAPL 3 meses & AAPL & -7.00\% & 24.07\% & -10.07\% \\
-S\&P 500 desde 2020 & \texttt{\string^GSPC} & 105.64\% & 20.71\% & -33.92\% \\
-\bottomrule
-\end{tabularx}
-\caption{Ejemplos de métricas históricas calculadas durante la evaluación.}
-\label{tab:ejemplos_metricas_ejecutadas}
-\end{table}
+\begin{enumerate}
+    \item Fijar la batería exacta de consultas y los CSV locales utilizados.
+    \item Ejecutar la misma batería con cada perfil LLM seleccionado.
+    \item Guardar por caso el plan, el código, la salida estructurada, los avisos, el estado y el tiempo.
+    \item Revisar cada respuesta con la plantilla manual definida previamente.
+    \item Separar fallos de proveedor, fallos de codegen, rechazos de seguridad, fallos de ejecución y defectos de interpretación.
+    \item Presentar la comparación como evidencia observada bajo condiciones concretas, no como clasificación estadística absoluta.
+\end{enumerate}
 
-En el caso QQQ/SPY 2024, la salida para cliente se resume así: QQQ obtuvo mayor rentabilidad histórica que SPY, 28.07\% frente a 24.45\%, pero también presentó mayor volatilidad y una caída máxima más profunda. La interpretación correcta no consiste en recomendar uno u otro, sino en explicar el intercambio observado entre retorno y riesgo.
+\section{Resultados pendientes}
 
-\section{Visualizaciones generadas}
+Los resultados comparativos definitivos se incorporarán después de ejecutar la batería cerrada. Hasta entonces no se presentan porcentajes de completitud, latencias por proveedor ni ejemplos numéricos como conclusiones finales del TFM.
 
-Las Figuras~\ref{fig:qqq_spy_normalizada_2024} y~\ref{fig:qqq_spy_drawdown_2024} muestran dos visualizaciones base generadas desde los CSV reales. La primera normaliza ambos activos a base 100 para comparar su evolución relativa; la segunda muestra el drawdown histórico, útil para entender las caídas desde máximos previos.
+Los informes Markdown y JSON producidos por scripts de evaluación se consideran artefactos temporales mientras no se haya seleccionado la pasada definitiva. Esta separación evita confundir registros de depuración con evidencia final.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{../figures/evaluacion_amplitud_llm/qqq_spy_normalizada_2024.png}
-\caption{Evolución normalizada de QQQ y SPY en 2024.}
-\label{fig:qqq_spy_normalizada_2024}
-\end{figure}
+\section{Limitaciones metodológicas}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{../figures/evaluacion_amplitud_llm/qqq_spy_drawdown_2024.png}
-\caption{Drawdown histórico de QQQ y SPY en 2024.}
-\label{fig:qqq_spy_drawdown_2024}
-\end{figure}
+La calidad de las respuestas LLM requiere revisión humana y las cifras de latencia dependen de red, cuota y carga del proveedor. Además, una batería reducida no permite afirmar robustez estadística. La comparación debe entenderse como exploratoria, trazable y revisable.
 
-\section{Ejemplo de salida para usuario}
-
-Para mostrar con más claridad qué recibe el usuario final, se recoge un caso real de Nivel C ejecutado con el perfil universitario. La consulta exigía una salida con estructura concreta:
-
-\begin{quote}
-\small
-Compara QQQ y SPY durante 2024 como si fuera un informe para un usuario no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: tabla resumen, ranking mensual, datos para una gráfica normalizada base 100 y datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
-\end{quote}
-
-El primer agente generó el plan y el código necesario para calcular los bloques solicitados. La ejecución produjo una tabla resumen con métricas de retorno y riesgo, además de series para las visualizaciones. Una versión compacta de la tabla mostrada al usuario se presenta en la Tabla~\ref{tab:ejemplo_salida_cliente}.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lrr}
-\toprule
-\textbf{Indicador} & \textbf{QQQ} & \textbf{SPY} \\
-\midrule
-Rentabilidad total anual & 28.07\% & 24.45\% \\
-Volatilidad anualizada & 17.93\% & 12.59\% \\
-Máximo drawdown & -13.56\% & -8.41\% \\
-Mejor mes & 2024-05 & 2024-11 \\
-Peor mes & 2024-04 & 2024-04 \\
-\bottomrule
-\end{tabular}
-\caption{Fragmento de salida cliente para la consulta exigente QQQ/SPY 2024.}
-\label{tab:ejemplo_salida_cliente}
-\end{table}
-
-La respuesta final no se limitó a listar números. El segundo agente interpretó que QQQ obtuvo mayor rentabilidad en 2024, pero con más volatilidad y una caída máxima más profunda; SPY mostró un perfil más estable. La conclusión se mantuvo dentro del alcance del sistema: explicar el comportamiento histórico observado sin recomendar comprar ni vender. Las visualizaciones asociadas son las Figuras~\ref{fig:qqq_spy_normalizada_2024} y~\ref{fig:qqq_spy_drawdown_2024}, generadas desde los datos usados por el análisis.
-
-\section{Comparación progresiva entre proveedores}
-
-La Tabla~\ref{tab:matriz_amplitud_llm} resume la pasada progresiva actualizada, ejecutada el 28/05/2026 con los tres perfiles y con cuota disponible. La ejecución se realizó con cinco queries de dificultad creciente. Esta repetición sustituye la pasada anterior en la que Groq quedó condicionado por límite diario de cuota. El informe reproducible queda guardado en \nolinkurl{docs/evaluacion_amplitud_tfm_llms.md} y el JSON completo en \nolinkurl{results/evaluations/progressive_llm_scope_20260528_180822.json}.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabularx}{\textwidth}{l c c X}
-\toprule
-\textbf{Perfil} & \textbf{Completadas} & \textbf{Fallos principales} & \textbf{Lectura} \\
-\midrule
-Groq / \nolinkurl{llama-3.3-70b-versatile} \cite{groqllama33docs} & 5/5 & Sin fallos en la repetición & Completa toda la batería tras repetir la pasada con cuota disponible. \\
-Gemini / \nolinkurl{gemini-2.5-flash} \cite{google2025gemini25flashdocs} & 4/5 & Codegen en estrés visual & Completa A, B y un caso C; solo falla la query visual más exigente. \\
-\nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} / vLLM universitario & 5/5 & Sin fallos en la repetición & Cobertura completa, incluyendo Nivel C profesional y estrés visual. \\
-\bottomrule
-\end{tabularx}
-\caption{Matriz de amplitud progresiva por proveedor LLM.}
-\label{tab:matriz_amplitud_llm}
-\end{table}
-
-La Figura~\ref{fig:completitud_modelo_nivel} resume visualmente la completitud por perfil y nivel.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\textwidth]{../figures/evaluacion_amplitud_llm/completitud_por_modelo_nivel.png}
-\caption{Casos completados por perfil LLM y nivel de dificultad.}
-\label{fig:completitud_modelo_nivel}
-\end{figure}
-
-\section{Análisis de la query de estrés visual}
-
-La query de estrés visual permitió comprobar si el sistema podía respetar una salida impuesta por el usuario. Con el perfil universitario, el workflow completo llegó a estado \texttt{completed}. La salida estructurada incluyó rentabilidad total, volatilidad anualizada, drawdown, ranking mensual y datos para representaciones normalizadas y de drawdown. El resultado principal fue que QQQ obtuvo mayor rentabilidad histórica en 2024, mientras que SPY presentó un perfil más estable.
-
-El ranking mensual calculado mostró una alternancia razonable: QQQ destacó en varios meses alcistas, mientras que SPY se comportó mejor en meses donde su menor volatilidad favoreció la comparación. Este tipo de caso muestra por qué la evaluación cualitativa es necesaria: no basta con que el modelo devuelva un número, sino que debe organizar datos de forma comprensible para el cliente.
-
-\section{Fallos observados y mejoras derivadas}
-
-Los errores observados durante la evaluación fueron técnicamente útiles:
-
-\begin{itemize}
-    \item \textbf{Cuotas de proveedor}: en la pasada anterior, Groq devolvió errores \texttt{429} al superar límites de uso. La repetición posterior permitió completar sus cinco casos, pero el episodio confirma que la disponibilidad condiciona la comparación experimental.
-    \item \textbf{Contexto excesivo}: algunas salidas visuales incluían series demasiado largas. Esto provocaba errores de contexto en el segundo agente.
-    \item \textbf{Formato JSON}: en algunos casos el modelo entendía bien la query, pero fallaba al devolver código dentro de JSON válido.
-    \item \textbf{Reparación de código}: algunas ejecuciones requirieron reparación automática antes de producir una salida válida.
-\end{itemize}
-
-A partir de estos problemas se incorporó compactación de salidas antes de la interpretación final. La salida completa permanece guardada en artefactos, pero el segundo agente recibe una versión resumida de listas y textos largos. Esta decisión mantiene trazabilidad y reduce errores por límite de contexto.
-
-La evolución de las pruebas muestra que los fallos iniciales fueron útiles para mejorar el prototipo. La documentación intermedia registra errores de lectura de CSV, serialización de objetos \texttt{pandas}/\texttt{numpy}, respuestas fuera de JSON, timeouts y exceso de contexto. Las medidas incorporadas --helpers de datos, validación AST, reparación de código, reintentos y compactación-- explican el paso desde pruebas parciales hacia una batería progresiva con 14 de 15 casos completados en la pasada principal del 28/05/2026.
-
-\section{Limitaciones}
-
-La evaluación aún presenta limitaciones. El número de casos es reducido para afirmar robustez estadística. La calidad de las respuestas LLM requiere revisión humana y las cifras de latencia dependen de red, cuota y carga del proveedor. Además, la evaluación cualitativa incorpora juicio humano, por lo que debe entenderse como una comparación exploratoria apoyada en criterios previamente definidos, no como una medición objetiva absoluta.
-
-También debe distinguirse entre resultados observados y condiciones de ejecución. La pasada del 28/05/2026 corrige el hueco de Groq con cuota disponible y mejora la comparación entre proveedores, pero sigue siendo una evaluación exploratoria con un número reducido de casos. Por ello los resultados se presentan como evidencia reproducible bajo condiciones concretas, no como ranking estadístico definitivo.
+El sistema trabaja con datos históricos locales. Su objetivo es describir métricas observadas, no producir asesoramiento financiero, incorporar noticias externas ni predecir el comportamiento futuro de los activos.
 
 \section{Síntesis}
 
-Los resultados respaldan la hipótesis de diseño: una arquitectura LLM con ejecución controlada puede transformar consultas financieras estructuradas en código, métricas, datos visuales y explicaciones trazables. La evaluación por niveles A/B/C muestra que el sistema responde a consultas simples, escala hacia análisis con tablas y gráficas, y puede abordar peticiones profesionales o de estrés visual. La aportación principal es separar interpretación, generación de código, validación, ejecución e interpretación final, permitiendo revisión humana posterior y documentación clara de fallos.
-
-
-
-
-
-
-
-
+La evaluación propuesta combina criterios técnicos y cualitativos. Su aportación principal consiste en revisar por separado interpretación, generación de código, validación, ejecución e interpretación final. Esta estructura permite analizar no solo si el workflow termina, sino también si responde con datos suficientes, comprensibles y trazables.

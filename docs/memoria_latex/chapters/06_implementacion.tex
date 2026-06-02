@@ -17,7 +17,7 @@ La implementación se organiza en módulos pequeños:
 \texttt{src/llm/} & Contiene prompts, cliente compatible con OpenAI y funciones del pipeline LLM. \\
 \texttt{code\_security.py} & Revisa el código generado antes de ejecutarlo. \\
 \texttt{code\_runner.py} & Guarda el script, lanza la ejecución y captura stdout, stderr y artefactos. \\
-\texttt{market\_data.py} & Proporciona helpers para leer CSV financieros descargados con \texttt{yfinance}. \\
+\texttt{market\_data.py} & Proporciona funciones auxiliares para leer CSV financieros descargados con \texttt{yfinance}. \\
 \texttt{tests/} & Comprueba el workflow con llamadas LLM simuladas y escenarios de error. \\
 \bottomrule
 \end{tabularx}
@@ -36,10 +36,10 @@ La estructura del repositorio separa responsabilidades de forma cercana a una pr
     \item \texttt{scripts/}: incluye utilidades para generar EDA, ejecutar evaluaciones y producir informes reproducibles.
     \item \texttt{tests/}: valida el workflow con respuestas LLM simuladas, evitando depender de APIs externas durante las pruebas básicas.
     \item \texttt{docs/}: conserva la memoria LaTeX, informes Markdown, figuras y registros de resultados.
-    \item \texttt{results/}: almacena artefactos generados durante ejecuciones, como scripts, payloads, logs y salidas JSON.
+    \item \texttt{results/}: almacena artefactos generados durante ejecuciones, como scripts, datos de entrada, registros y salidas JSON.
 \end{itemize}
 
-También se separan configuración y secretos. El fichero \texttt{.env} contiene claves locales y queda excluido del control de versiones, mientras que \texttt{.env.example} documenta las variables necesarias para reproducir la configuración sin exponer credenciales. Del mismo modo, \texttt{.gitignore} excluye entornos virtuales, cachés, logs y resultados generados de gran tamaño, manteniendo versionados los artefactos que aportan trazabilidad académica.
+También se separan configuración y secretos. El fichero \texttt{.env} contiene claves locales y queda excluido del control de versiones, mientras que \texttt{.env.example} documenta las variables necesarias para reproducir la configuración sin exponer credenciales. Del mismo modo, \texttt{.gitignore} excluye entornos virtuales, cachés, registros y resultados generados de gran tamaño, manteniendo versionados los artefactos que aportan trazabilidad académica.
 
 Aunque el proyecto no implementa un ciclo MLOps productivo completo con despliegue continuo, sí incorpora prácticas propias de ese enfoque: versionado del código, separación entre datos, código y resultados, scripts de evaluación repetibles, pruebas automatizadas, conservación de artefactos, documentación de configuraciones y registro explícito de fallos. Para el alcance del TFM, estas prácticas son suficientes para defender que el sistema no se limita a una demo puntual, sino que se ha organizado como un prototipo reproducible y auditable.
 
@@ -47,7 +47,7 @@ Aunque el proyecto no implementa un ciclo MLOps productivo completo con desplieg
 
 La entrada del sistema se representa mediante \texttt{FinancialQueryInput}. La interpretación generada por el LLM se almacena en \texttt{AnalysisPlan}, que contiene intencionalidad interpretada, tipo de análisis, métricas esperadas, requisitos de datos, requisitos de salida, preferencias de presentación y razonamiento resumido. El estado completo se conserva en \texttt{WorkflowState}.
 
-La necesidad de helpers de datos apareció durante las pruebas documentadas en \nolinkurl{docs/plan_pruebas_queries_llm.md}: los CSV generados por \texttt{yfinance} pueden contener cabeceras multinivel y formatos distintos según el activo o el intervalo. Para reducir errores repetidos en el código generado, se incorporaron funciones reutilizables de carga y normalización. Así, el LLM no tiene que resolver desde cero cada variante de lectura de CSV y puede concentrarse en el cálculo solicitado.
+La necesidad de funciones auxiliares de datos apareció durante las pruebas de desarrollo resumidas en \nolinkurl{docs/planificacion_evaluacion_tfm.md}: los CSV generados por \texttt{yfinance} pueden contener cabeceras multinivel y formatos distintos según el activo o el intervalo. Para reducir errores repetidos en el código generado, se incorporaron funciones reutilizables de carga y normalización. Así, el LLM no tiene que resolver desde cero cada variante de lectura de CSV y puede concentrarse en el cálculo solicitado.
 
 \section{Pipeline LLM}
 
@@ -73,7 +73,7 @@ Esta cadena es importante porque el LLM no produce directamente una afirmación 
 \midrule
 Entrada & El script recibe un único payload JSON por \texttt{argv[1]}, con consulta, tickers, fechas, intervalo y rutas CSV. \\
 Lectura de datos & El código debe leer únicamente los CSV proporcionados por el workflow y no descargar datos externos. \\
-Salida & Debe escribir un único objeto JSON en \texttt{stdout}, mediante \texttt{json.dumps}, para que el sistema pueda parsearlo. \\
+Salida & Debe escribir un único objeto JSON en \texttt{stdout}, mediante \texttt{json.dumps}, para que el sistema pueda analizarlo. \\
 Contenido & La salida debe incluir métricas, tablas o datos de visualización necesarios para responder a la consulta. \\
 Artefactos & La ejecución conserva script, salida estándar, salida de error, código de retorno y metadatos de ejecución. \\
 Errores & Si el script falla, el error queda registrado y el workflow puede devolver una explicación controlada o intentar reparación. \\
@@ -85,7 +85,7 @@ Errores & Si el script falla, el error queda registrado y el workflow puede devo
 
 \section{Control de seguridad}
 
-Antes de ejecutar el script, el módulo \texttt{code\_security.py} analiza el código con el AST de Python. El validador comprueba imports permitidos, llamadas bloqueadas como \texttt{eval} o \texttt{exec}, presencia de \texttt{main()} y uso de \texttt{json.dumps}. Si el código no cumple el contrato, el workflow termina con estado de error y no ejecuta el script.
+Antes de ejecutar el script, el módulo \texttt{code\_security.py} analiza el código con el AST de Python. El validador comprueba importaciones permitidas, llamadas bloqueadas como \texttt{eval} o \texttt{exec}, presencia de \texttt{main()} y uso de \texttt{json.dumps}. Si el código no cumple el contrato, el workflow termina con estado de error y no ejecuta el script.
 
 El uso del árbol de sintaxis abstracta permite revisar la estructura del programa antes de ejecutarlo, en lugar de depender solo de búsquedas textuales. La validación comprueba nodos de importación, llamadas a funciones y elementos mínimos del contrato. Con ello se reduce el riesgo de que un script generado por LLM ejecute operaciones fuera del alcance del MVP. Esta capa no convierte el entorno en una sandbox completa, pero sí añade una barrera explícita entre generación y ejecución.
 
@@ -113,11 +113,11 @@ Cuando el código generado no supera la validación o falla durante la ejecució
 
 En consultas de Nivel B o C, el script puede generar series visuales largas. Estas series son útiles como artefacto completo, pero pueden saturar el contexto del segundo agente. Por ello, antes de la interpretación final se compactan listas y textos extensos: se conserva una muestra representativa para el LLM interpretador y la salida completa queda guardada como evidencia auditable. Esta decisión permite mantener trazabilidad sin degradar la respuesta final por exceso de contexto.
 
-Este ajuste quedó documentado en una nota interna de control de tamaño de salidas, referenciada en el Anexo~\ref{tab:documentacion_markdown_memoria}. La decisión práctica fue limitar o resumir datos de visualización enviados al segundo agente, manteniendo siempre la salida completa en los logs. De este modo, las consultas de Nivel B y C pueden producir material gráfico sin convertir la interpretación final en una llamada demasiado grande para el proveedor LLM.
+Este ajuste quedó documentado en una nota interna de control de tamaño de salidas, referenciada en el Anexo~\ref{tab:documentacion_markdown_memoria}. La decisión práctica fue limitar o resumir datos de visualización enviados al segundo agente, manteniendo siempre la salida completa en los registros. De este modo, las consultas de Nivel B y C pueden producir material gráfico sin convertir la interpretación final en una llamada demasiado grande para el proveedor LLM.
 
 \section{Pruebas}
 
-La batería de pruebas simula las respuestas LLM para evitar dependencias externas durante el test suite. De este modo se valida el workflow, el control de seguridad, la ejecución controlada y los errores de entrada sin consumir APIs reales.
+Las pruebas automatizadas simulan las respuestas LLM para evitar dependencias externas durante su ejecución. De este modo se validan el workflow, el control de seguridad, la ejecución controlada y los errores de entrada sin consumir APIs reales.
 
 
 

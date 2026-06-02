@@ -23,16 +23,10 @@ from src.schemas import FinancialQueryInput
 
 
 DEFAULT_PROFILES = ["groq", "gemini", "university"]
-DEFAULT_CASE_IDS = [
-    "level_a_nvda_growth",
-    "level_a_qqq_spy_returns",
-    "level_b_qqq_spy_clear_compare",
-    "level_c_qqq_spy_professional",
-    "stress_visual_qqq_spy_monthly",
-]
+DEFAULT_CASE_IDS = [case["id"] for case in DEMO_CASES]
 
-REPORT_PATH = ROOT / "docs" / "evaluacion_amplitud_tfm_llms.md"
-FIGURES_DIR = ROOT / "docs" / "figures" / "evaluacion_amplitud_llm"
+REPORT_PATH = RESULTS_DIR / "reports" / "evaluacion_15_queries_llms.md"
+FIGURES_DIR = RESULTS_DIR / "reports" / "figures" / "evaluacion_amplitud_llm"
 EVALUATION_DIR = RESULTS_DIR / "evaluations"
 
 FORBIDDEN_TERMS = [
@@ -200,9 +194,30 @@ def _write_json(results: list[dict[str, Any]], profiles: list[str], cases: list[
 
 
 def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: dict[str, str]) -> None:
+    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     completion_chart = _build_completion_chart(results)
     completed = sum(1 for result in results if result["status"] == "completed")
     total = len(results)
+    quota_limited_profiles = sorted(
+        {
+            result["profile"]
+            for result in results
+            if "quota" in (result.get("error_message") or "").lower()
+            or "resource_exhausted" in (result.get("error_message") or "").lower()
+        }
+    )
+    quick_notes = [
+        f"- Casos completados: `{completed}/{total}`.",
+        "- Un caso se considera completo si llega a interpretacion final con estado `completed`.",
+        "- Los casos parciales tambien son informativos: muestran si el modelo entiende la consulta, genera codigo, ejecuta metricas o falla en la interpretacion.",
+    ]
+    if quota_limited_profiles:
+        profile_list = ", ".join(f"`{profile}`" for profile in quota_limited_profiles)
+        quick_notes.append(
+            f"- Aviso metodologico: {profile_list} alcanzo el limite de cuota durante esta ejecucion. "
+            "Sus fallos posteriores por `429 RESOURCE_EXHAUSTED` describen la disponibilidad de la API, "
+            "no la capacidad intrinseca del modelo."
+        )
     lines = [
         "# Evaluacion de amplitud del TFM con LLMs",
         "",
@@ -215,9 +230,7 @@ def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: 
         "",
         "## Lectura rapida",
         "",
-        f"- Casos completados: `{completed}/{total}`.",
-        "- Un caso se considera completo si llega a interpretacion final con estado `completed`.",
-        "- Los casos parciales tambien son informativos: muestran si el modelo entiende la consulta, genera codigo, ejecuta metricas o falla en la interpretacion.",
+        *quick_notes,
         "",
         "![Completitud por modelo y nivel](" + completion_chart.replace("\\", "/") + ")",
         "",
@@ -250,11 +263,30 @@ def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: 
     lines.extend(
         [
             "",
+            "## Cobertura por perfil y nivel",
+            "",
+            "| Perfil | Nivel A | Nivel B | Nivel C | Total |",
+            "|---|---:|---:|---:|---:|",
+        ]
+    )
+    profiles = sorted({result["profile"] for result in results})
+    for profile in profiles:
+        subset = [result for result in results if result["profile"] == profile]
+        level_cells = []
+        for level in ["A", "B", "C"]:
+            level_subset = [result for result in subset if result["level"] == level]
+            level_ok = sum(1 for result in level_subset if result["status"] == "completed")
+            level_cells.append(f"`{level_ok}/{len(level_subset)}`")
+        total_ok = sum(1 for result in subset if result["status"] == "completed")
+        lines.append(f"| {profile} | {' | '.join(level_cells)} | `{total_ok}/{len(subset)}` |")
+
+    lines.extend(
+        [
+            "",
             "## Analisis por perfil",
             "",
         ]
     )
-    profiles = sorted({result["profile"] for result in results})
     for profile in profiles:
         subset = [result for result in results if result["profile"] == profile]
         ok = sum(1 for result in subset if result["status"] == "completed")

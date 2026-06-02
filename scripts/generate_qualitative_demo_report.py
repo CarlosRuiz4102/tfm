@@ -12,12 +12,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.config import LLMConfig, RAW_DATA_DIR
+from src.config import LLMConfig, RAW_DATA_DIR, RESULTS_DIR
 from src.graph.build_graph import build_workflow
 from src.schemas import FinancialQueryInput
 
 
-REPORT_PATH = ROOT / "docs" / "salidas_ejecucion_evaluacion_cualitativa.md"
+REPORT_PATH = RESULTS_DIR / "reports" / "salidas_ejecucion_evaluacion_cualitativa.md"
 
 
 def _raw(name: str) -> str:
@@ -98,20 +98,6 @@ DEMO_CASES: list[dict[str, Any]] = [
         },
     },
     {
-        "id": "level_a_aapl_technical",
-        "level": "A",
-        "expected_depth": "Analisis tecnico basico sin recomendacion de trading.",
-        "input": {
-            "query": "Haz un analisis tecnico basico de AAPL en 3 meses",
-            "intent": "technical_analysis",
-            "tickers": ["AAPL"],
-            "period": "3mo",
-            "interval": "1d",
-            "csv_paths": [_raw("aapl_en_3_meses.csv")],
-            "warnings": [],
-        },
-    },
-    {
         "id": "level_b_nvda_complete",
         "level": "B",
         "expected_depth": "Texto + tabla de metricas + datos para grafica de evolucion.",
@@ -151,6 +137,41 @@ DEMO_CASES: list[dict[str, Any]] = [
             "period": "3mo",
             "interval": "1d",
             "csv_paths": [_raw("aapl_en_3_meses.csv")],
+            "warnings": [],
+        },
+    },
+    {
+        "id": "level_b_btc_2024_profile",
+        "level": "B",
+        "expected_depth": "Perfil historico de Bitcoin con tabla y grafica de evolucion.",
+        "input": {
+            "query": (
+                "Analiza Bitcoin durante 2024 con una tabla de rentabilidad, volatilidad, maximo drawdown, "
+                "maximo y minimo, y datos para una grafica de evolucion"
+            ),
+            "intent": "improved_crypto_profile",
+            "tickers": ["BTC-USD"],
+            "start": "2024-01-01",
+            "end": "2024-12-31",
+            "interval": "1d",
+            "csv_paths": [_raw("datos_de_bitcoin_desde_20240101_hasta_20241231.csv")],
+            "warnings": [],
+        },
+    },
+    {
+        "id": "level_b_eurusd_intraday",
+        "level": "B",
+        "expected_depth": "Analisis intradia de divisa con tabla y grafica principal.",
+        "input": {
+            "query": (
+                "Resume el comportamiento intradia de EUR/USD durante los ultimos 10 dias con datos horarios. "
+                "Incluye tabla de variacion, rango medio, volatilidad horaria y datos para una grafica de evolucion"
+            ),
+            "intent": "improved_intraday_fx_analysis",
+            "tickers": ["EURUSD=X"],
+            "period": "10d",
+            "interval": "1h",
+            "csv_paths": [_raw("eurusd_en_10_das_a_1h.csv")],
             "warnings": [],
         },
     },
@@ -203,6 +224,24 @@ DEMO_CASES: list[dict[str, Any]] = [
             "start": "2020-01-01",
             "interval": "1d",
             "csv_paths": [_raw("descrgame_el_histrico_del_sp_500_desde_2020.csv")],
+            "warnings": [],
+        },
+    },
+    {
+        "id": "level_c_gold_intraday_report",
+        "level": "C",
+        "expected_depth": "Informe intradia de materia prima con metricas, visualizacion y limitaciones.",
+        "input": {
+            "query": (
+                "Prepara un informe detallado del oro durante la ultima semana con datos horarios. "
+                "Separa metricas, tabla de mejores y peores intervalos, datos para una grafica de evolucion, "
+                "volatilidad horaria, rango maximo-minimo y limitaciones del analisis"
+            ),
+            "intent": "professional_intraday_commodity_report",
+            "tickers": ["GC=F"],
+            "period": "1wk",
+            "interval": "1h",
+            "csv_paths": [_raw("quiero_el_oro_en_1_semana_a_1h.csv")],
             "warnings": [],
         },
     },

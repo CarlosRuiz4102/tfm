@@ -2,6 +2,8 @@
 
 Este documento resume el estado actual del proyecto tras el cambio de arquitectura. Ahora el flujo se centra en un LLM que interpreta la consulta, genera código Python, pasa por una capa de seguridad, ejecuta el script y vuelve a usar el LLM para explicar los resultados.
 
+> **Estado del documento:** esta arquitectura sigue siendo la que ejecuta el repositorio actualmente, pero se considera una iteración experimental. La arquitectura objetivo acordada para la siguiente evolución del MVP se describe en `docs/flujo_completo_proyecto_borrador.md`. Se conserva este documento para mantener trazabilidad técnica, explicar las evaluaciones ya realizadas y justificar por qué el codegen dinámico dejará de ser el camino principal.
+
 ## Mapa Conceptual
 
 ```mermaid
@@ -36,7 +38,7 @@ Entre la generación de código y la ejecución hay una capa de control de segur
 
 El proyecto se desarrolló de forma incremental. Primero se buscó validar un flujo mínimo con un LLM de OpenAI o compatible con OpenAI y dos intencionalidades: crecimiento de un activo y comparación entre activos. Después, al comprobar que el flujo funcionaba, el MVP se amplió a seis intencionalidades analíticas. La arquitectura actual corresponde a una etapa posterior: flujo LLM + codegen controlado, con seguridad, ejecución aislada, trazabilidad y preparación para comparar varios modelos.
 
-La fase más reciente consiste en probar queries más complejas sobre los mismos datos históricos, sin ampliar el dataset. Esa fase se documenta con más detalle en `docs/evolución_mvp_tfm.md` y `docs/plan_pruebas_queries_llm.md`.
+La fase más reciente consiste en preparar una evaluación definitiva con queries más complejas sobre los mismos datos históricos, sin ampliar el dataset. Esa fase se documenta con más detalle en `docs/evolucion_mvp_tfm.md`, `docs/evaluacion_cualitativa_llm.md` y `docs/planificacion_evaluacion_tfm.md`.
 
 ## Entrada del Sistema
 

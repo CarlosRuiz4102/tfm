@@ -1,26 +1,57 @@
-# Control de tamano de salidas para interpretacion LLM
+# Control de tamaño de salidas para interpretación LLM
 
-Durante la ejecucion de la muestra A/B/C con Groq se observo una limitacion practica: algunos scripts generados devolvian series completas dentro de `chart_data`. Aunque la ejecucion del codigo terminaba correctamente, la salida enviada al segundo agente era demasiado grande y podia superar el limite de tokens del proveedor.
+## Motivo
 
-## Problema observado
+Las consultas de Nivel B y C pueden producir series temporales extensas para tablas o visualizaciones. Una serie completa resulta útil como artefacto auditable, pero no siempre debe enviarse íntegramente al agente 2: cientos o miles de puntos consumen contexto y pueden superar el límite de tokens del proveedor sin mejorar la explicación final.
 
-En queries de Nivel B y C, el primer agente puede generar datos de visualizacion con cientos o miles de puntos. Esto es util como artefacto de ejecucion, pero no siempre es necesario para que el segundo agente redacte el analisis final. El interpretador necesita entender la forma general de la serie, sus metricas principales y algunos puntos representativos, no recibir todos los valores historicos.
+El agente 2 necesita:
 
-## Ajuste realizado
+- métricas principales;
+- limitaciones;
+- rango temporal;
+- tipo de visualización;
+- una muestra representativa de la serie;
+- referencia al artefacto completo.
 
-Se han aplicado dos medidas:
+No necesita recibir cada observación histórica para redactar una interpretación prudente.
 
-- En `src/llm/prompts.py` se indica al agente de codigo que, si genera `chart_data` o `visualization_data`, limite cada serie larga a un maximo de 120 puntos muestreados.
-- En `src/graph/nodes.py` se compacta la salida antes de enviarla al segundo agente. La salida completa sigue guardada en los artefactos de ejecucion, pero la interpretacion recibe una version resumida de listas y textos largos.
+## Aplicación en el flujo implementado
 
-## Criterio metodologico
+En la arquitectura experimental con codegen se aplican dos medidas:
 
-Este ajuste mantiene la trazabilidad sin penalizar la interpretacion:
+- `src/llm/prompts.py` pide limitar `chart_data` o `visualization_data` a un máximo de 120 puntos muestreados por serie.
+- `src/graph/nodes.py -> _compact_for_interpretation` resume listas y textos extensos antes de llamar al agente 2.
 
-- El usuario o revisor puede consultar la salida completa en los logs.
-- El segundo agente recibe suficiente informacion para redactar una explicacion clara.
-- Se reduce el riesgo de errores por limites de tokens.
-- El Nivel B y C siguen pudiendo pedir graficas, pero la comunicacion entre agentes usa datos visuales compactos.
+La salida completa permanece registrada en `results/logs/stdout_*.json`.
 
-Este punto tambien refuerza la separacion entre primer agente y segundo agente: el primero calcula y estructura; el segundo interpreta una version adecuada para lenguaje natural.
+## Aplicación en la arquitectura objetivo
 
+El criterio continúa siendo necesario cuando el codegen deje de ser el camino principal. En el nuevo flujo:
+
+```text
+Agente 1
+-> receta JSON
+-> motor analítico Python
+-> constructor de AnalysisResult
+-> agente 2
+```
+
+el constructor de `AnalysisResult` deberá:
+
+1. conservar las métricas completas;
+2. limitar los puntos incluidos en `visualizations`;
+3. registrar el número original de observaciones;
+4. conservar la serie completa como artefacto local cuando sea necesario;
+5. enviar al agente 2 únicamente la versión compactada.
+
+## Justificación metodológica
+
+Esta decisión mejora:
+
+- eficiencia de contexto;
+- estabilidad frente a límites de tokens;
+- trazabilidad;
+- claridad de la interfaz entre fases;
+- comparabilidad entre proveedores LLM.
+
+La compactación no elimina información: separa el artefacto completo utilizado para auditoría de la representación resumida adecuada para interpretación lingüística.

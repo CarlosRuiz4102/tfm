@@ -129,34 +129,17 @@ Puede incluir evolucion normalizada, drawdown, retornos diarios o mensuales, vol
 | Fallos observados |  |
 | Comentario humano |  |
 
-## Bateria propuesta por niveles
+## Bateria definitiva por niveles
 
-### Nivel A: seis queries simples
+La bateria ejecutable esta cerrada y equilibrada:
 
-| ID | Consulta | Datos esperados | Primer agente debe generar | Segundo agente debe explicar | Fallo que detecta |
-|---|---|---|---|---|---|
-| `level_a_nvda_growth` | Cuanto ha crecido Nvidia en los ultimos 5 anos | NVDA, periodo 5y | Precio inicial/final, crecimiento absoluto y porcentual | Lectura breve del crecimiento historico | Responder sin periodo, sin porcentaje o con recomendacion |
-| `level_a_nvda_amd_compare` | Compara Nvidia y AMD en 2 anos | NVDA/AMD, periodo 2y | Rentabilidad total por activo y ranking simple | Cual subio mas y con que cautela | Comparar precios absolutos en vez de rentabilidad |
-| `level_a_aapl_overview` | Dame una vision general de AAPL en 3 meses | AAPL, periodo 3mo | Precio inicial/final, maximo, minimo y volumen si existe | Tendencia general sin tecnicismos | Omitir rango o inventar noticias |
-| `level_a_qqq_spy_returns` | Analiza los retornos de QQQ y SPY en 2024 | QQQ/SPY, 2024 | Retorno total y retorno medio diario | Diferencia de rendimiento historico | No comparar ambos activos |
-| `level_a_qqq_spy_risk` | Analiza el riesgo historico de QQQ y SPY en 2024 | QQQ/SPY, 2024 | Volatilidad y peor/mejor dia | Que activo fue mas variable | Confundir riesgo con rentabilidad |
-| `level_a_aapl_technical` | Haz un analisis tecnico basico de AAPL en 3 meses | AAPL, periodo 3mo | Media movil 20/50 si hay datos suficientes y ultimo cierre | Posicion del cierre frente a medias | Convertirlo en recomendacion de trading |
+- 5 queries de Nivel A.
+- 5 queries de Nivel B.
+- 5 queries de Nivel C.
 
-### Nivel B: tres queries mejoradas
+El catalogo completo, con texto de cada consulta, datos locales y objetivo, se mantiene en `docs/bateria_evaluacion_15_queries.md`. La definicion que consume el programa vive en `scripts/generate_qualitative_demo_report.py`, dentro de `DEMO_CASES`.
 
-| ID | Consulta | Datos esperados | Primer agente debe generar | Segundo agente debe explicar | Fallo que detecta |
-|---|---|---|---|---|---|
-| `level_b_nvda_complete` | Hazme un analisis mas completo de Nvidia en los ultimos 5 anos con tabla y una grafica de evolucion | NVDA, periodo 5y | Tabla de rentabilidad, extremos, volatilidad y datos para grafica de cierre | Crecimiento, variabilidad y limites | No incluir estructura para grafica |
-| `level_b_qqq_spy_clear_compare` | Comparame QQQ y SPY en 2024 de forma clara, con tabla y grafica normalizada | QQQ/SPY, 2024 | Tabla comparativa y serie normalizada a 100 | Rentabilidad relativa y riesgo asumido | Usar precios absolutos no comparables |
-| `level_b_aapl_risk_return` | Quiero entender retorno y riesgo de AAPL en 3 meses con una explicacion sencilla | AAPL, periodo 3mo | Retorno, volatilidad, drawdown y precio final | Explicacion sencilla de retorno frente a riesgo | Dar una explicacion demasiado tecnica o incompleta |
-
-### Nivel C: tres queries profesionales
-
-| ID | Consulta | Datos esperados | Primer agente debe generar | Segundo agente debe explicar | Fallo que detecta |
-|---|---|---|---|---|---|
-| `level_c_qqq_spy_professional` | Haz un analisis profesional de QQQ y SPY en 2024 con tabla, grafica normalizada, drawdown y conclusion para usuario no tecnico | QQQ/SPY, 2024 | Tabla, serie normalizada, drawdown, volatilidad y correlacion | Comparacion completa con lenguaje accesible | Ignorar una grafica o no explicar correlacion |
-| `level_c_nvda_amd_multicriteria` | Compara NVDA y AMD en 2 anos con ranking por rentabilidad, riesgo y drawdown, y separa metricas, visualizaciones y limitaciones | NVDA/AMD, periodo 2y | Ranking multicriterio, tabla, datos de evolucion y drawdown | Por que un activo domina o no domina segun criterio | Reducir todo a rentabilidad |
-| `level_c_sp500_report` | Prepara un informe detallado del S&P 500 desde 2020 con crecimiento, volatilidad, maximo drawdown, mejores y peores periodos, y resumen ejecutivo | ^GSPC, desde 2020 | Tabla de metricas, drawdown, extremos, retornos por periodo si procede | Resumen ejecutivo, lectura historica y limitaciones | Presentar el informe como prediccion |
+Ademas de acciones e indices diarios, la bateria incluye Bitcoin, EUR/USD horario y oro horario. Esto permite observar si el flujo mantiene su comportamiento con distintas clases de activo e intervalos temporales.
 
 ## Registro de diferencias entre modelos
 
@@ -170,4 +153,3 @@ Para cada modelo se recomienda registrar:
 - Si aparecieron recomendaciones de inversion, predicciones o datos no observados.
 
 La comparacion final debe formularse como evidencia observada, no como una clasificacion absoluta.
-

@@ -105,15 +105,15 @@ Los perfiles actuales son:
 
 | Perfil técnico | Modelo / proveedor | Estado |
 |---|---|---|
-| `university` | `openai/gpt-oss-20b` servido mediante vLLM universitario | Modelo abierto de la familia gpt-oss, usado en la depuración principal por su capacidad de razonamiento, seguimiento de instrucciones y generación de código Python. |
-| `groq` | `llama-3.3-70b-versatile` en Groq | Modelo Llama 3.3 70B Instruct, validado con la batería compleja por su razonamiento general y baja latencia. |
-| `gemini` | `gemini-2.5-flash` en Gemini | Modelo Flash de Gemini 2.5, validado en pruebas puntuales por su rapidez y razonamiento; limitado por cuota. |
+| `university` | `openai/gpt-oss-20b` servido mediante vLLM universitario | Modelo abierto de la familia gpt-oss disponible mediante un endpoint compatible con OpenAI. |
+| `groq` | `llama-3.3-70b-versatile` en Groq | Modelo Llama 3.3 70B Instruct disponible mediante la infraestructura de Groq. |
+| `gemini` | `gemini-2.5-flash` en Gemini | Modelo Flash de Gemini 2.5 disponible mediante la API de Gemini. |
 
 Esta ampliación es importante porque el TFM no depende conceptualmente de un único proveedor. El mismo flujo puede ejecutarse con distintos modelos, manteniendo la misma entrada, los mismos contratos y la misma capa de ejecución.
 
 ## Fase Actual: Queries Más Complejas
 
-La fase actual consiste en aumentar la dificultad de las consultas sin descargar datos nuevos.
+La fase actual consiste en preparar una evaluación definitiva que aumente la dificultad de las consultas sin descargar datos nuevos.
 
 La idea no es ampliar el dataset, sino hacer que los mensajes enviados al LLM sean más exigentes:
 
@@ -124,7 +124,7 @@ La idea no es ampliar el dataset, sino hacer que los mensajes enviados al LLM se
 - comprobar si el modelo mantiene el formato JSON;
 - observar si el código generado sigue siendo ejecutable.
 
-Esta fase debe tratarse como periodo de pruebas y resultados. Todavía requiere refinamiento, repetición de experimentos y una presentación más sistemática en la memoria.
+Esta fase debe tratarse como planificación experimental hasta seleccionar una pasada definitiva. El protocolo y los aprendizajes técnicos reutilizables se recogen en `docs/planificacion_evaluacion_tfm.md`.
 
 ## Lectura Para La Memoria
 

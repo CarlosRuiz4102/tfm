@@ -71,12 +71,12 @@ UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
 UNIVERSITY_MODEL=openai/gpt-oss-20b
 \end{verbatim}
 
-\section{Batería de queries A/B/C}
+\section{Batería de consultas A/B/C}
 
-La batería cualitativa se diseñó para comprobar que el sistema no solo termina la ejecución, sino que adapta la profundidad del análisis a la consulta. Las seis primeras queries corresponden al Nivel A y representan peticiones habituales sin formato especial. Las tres siguientes elevan la exigencia al Nivel B, y las tres últimas obligan a una salida de Nivel C.
+La batería cualitativa se diseñó para comprobar que el sistema no solo termina la ejecución, sino que adapta la profundidad del análisis a la consulta. Las seis primeras consultas corresponden al Nivel A y representan peticiones habituales sin formato especial. Las tres siguientes elevan la exigencia al Nivel B, y las tres últimas obligan a una salida de Nivel C.
 
 \begin{longtable}{p{0.11\textwidth} p{0.49\textwidth} p{0.11\textwidth} p{0.21\textwidth}}
-\caption{Batería cualitativa de queries por nivel de profundidad.}
+\caption{Batería cualitativa de consultas por nivel de profundidad.}
 \label{tab:anexo_bateria_queries_abc}\\
 \toprule
 \textbf{ID} & \textbf{Consulta} & \textbf{Nivel} & \textbf{Objetivo de evaluación} \\
@@ -102,43 +102,29 @@ C3 & Analiza SPY desde 2020 con retornos anuales, drawdown, medias móviles y li
 Para forzar al sistema a respetar una estructura concreta se incorporó una query adicional de estrés visual:
 
 \begin{quote}
-Compara QQQ y SPY durante 2024 como si fuera un informe para un cliente no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: 1) una tabla resumen con rentabilidad total, volatilidad anualizada, máximo drawdown, mejor mes y peor mes; 2) una tabla ranking mensual indicando que activo ganó cada mes; 3) datos para una gráfica normalizada base 100 de ambos activos; 4) datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
+Compara QQQ y SPY durante 2024 como si fuera un informe para un cliente no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: 1) una tabla resumen con rentabilidad total, volatilidad anualizada, máximo drawdown, mejor mes y peor mes; 2) una tabla de clasificación mensual indicando qué activo ganó cada mes; 3) datos para una gráfica normalizada base 100 de ambos activos; 4) datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
 \end{quote}
 
 Esta consulta se eligió porque comprueba simultáneamente comprensión, selección de métricas, generación de código, control de formato, datos para visualización e interpretación final sin recomendación de inversión.
 
-\section{Evidencias generadas}
+\section{Documentación estable}
 
-Durante el desarrollo se dejaron evidencias en Markdown, JSON y figuras para facilitar la revisión posterior:
+La documentación Markdown estable conserva el diseño, la metodología y los aprendizajes reutilizables. Los informes producidos por ejecuciones concretas se tratan como artefactos temporales y se regenerarán cuando se realice la evaluación definitiva:
 
 \begin{itemize}
     \item \nolinkurl{docs/evolucion_mvp_tfm.md}: evolución incremental del MVP desde dos intencionalidades hasta el flujo actual con codegen controlado.
     \item \nolinkurl{docs/arquitectura_llm_codegen.md}: descripción técnica del flujo LLM, nodos, prompts, seguridad y ejecución.
     \item \nolinkurl{docs/llm_api_setup.md}: configuración de perfiles Groq, Gemini y servidor vLLM universitario.
-    \item \nolinkurl{docs/plan_pruebas_queries_llm.md}: planificación y lectura de pruebas con queries más complejas.
+    \item \nolinkurl{docs/planificacion_evaluacion_tfm.md}: protocolo de evaluación definitiva, familias de consultas, aprendizajes técnicos y líneas de trabajo futuro.
     \item \nolinkurl{docs/control_tamano_salidas_visualizacion.md}: justificación de la compactación de salidas visuales largas antes de la interpretación final.
     \item \nolinkurl{docs/evaluacion_cualitativa_llm.md}: metodología cualitativa, criterios, niveles A/B/C y rúbrica.
-    \item \nolinkurl{docs/salidas_ejecucion_evaluacion_cualitativa.md}: salidas completas de la evaluación cualitativa.
-    \item \nolinkurl{docs/salidas_demo_cliente_evaluacion_cualitativa.md}: salidas demostrativas para cliente generadas desde CSV históricos.
-    \item \nolinkurl{docs/salidas_ejecucion_llm_real_muestra_abc.md}: muestra real A/B/C con LLM.
-    \item \nolinkurl{docs/salidas_ejecucion_llm_real_nivel_c.md}: ejecución real de un caso Nivel C.
-    \item \nolinkurl{docs/salida_query_exigente_visual_llm.md}: prueba visual exigente con Gemini.
-    \item \nolinkurl{docs/salida_query_exigente_visual_llm_groq.md}: prueba visual exigente con Groq.
-    \item \nolinkurl{docs/evaluacion_amplitud_tfm_llms.md}: informe consolidado de amplitud del TFM.
-    \item \nolinkurl{docs/registro_resultados_llm_20260528.md}: registro de la actualización tras liberar cuota diaria de Groq.
-    \item \nolinkurl{docs/salidas_ejecucion_groq_20260528.md}: repetición de Groq tras liberar cuota diaria.
-    \item \nolinkurl{docs/resumen_evaluacion_amplitud_tfm.md}: síntesis ejecutiva de resultados.
-    \item \nolinkurl{results/evaluations/progressive_llm_scope_20260528_180822.json}: salida JSON completa de la pasada progresiva actualizada.
-    \item \nolinkurl{results/evaluations/progressive_llm_scope_20260528_180641.json}: salida JSON específica de la repetición de Groq.
-    \item \nolinkurl{results/evaluations/progressive_llm_scope_20260527_173646.json}: salida JSON de la pasada previa conservada como referencia.
-    \item \nolinkurl{docs/figures/evaluacion_amplitud_llm/}: visualizaciones usadas en la memoria.
 \end{itemize}
 
 \section{Plantilla de revisión manual}
 
 La siguiente plantilla se usa para revisar cada ejecución sin presentar la evaluación como una métrica matemática absoluta:
 
-\begin{table}[p]
+\begin{table}[H]
 \centering
 \small
 \begin{tabularx}{\textwidth}{p{0.25\textwidth} p{0.21\textwidth} X}
@@ -160,10 +146,11 @@ Trazabilidad consulta-código-resultados & Excelente / Correcto / Parcial / Defi
 \caption{Plantilla de revisión manual cualitativa.}
 \label{tab:plantilla_revision_manual}
 \end{table}
+\clearpage
 
 \section{Documentación interna de apoyo}
 
-Durante el desarrollo se conservaron notas técnicas, informes de EDA, fichas de evaluación LLM y documentos metodológicos en Markdown. Estos documentos no sustituyen a la memoria, pero sirvieron como evidencias auxiliares para reconstruir decisiones de diseño, resultados experimentales y limitaciones observadas. En particular, se utilizaron el informe de evaluación cualitativa, las salidas de demostración para cliente, la batería progresiva A/B/C y el informe de amplitud multi-modelo para reforzar las secciones de metodología, implementación, integración LLM, resultados y trabajo futuro.
+Durante el desarrollo se conservaron notas técnicas y documentos metodológicos en Markdown. Estos documentos no sustituyen a la memoria, pero permiten reconstruir decisiones de diseño, preparar la evaluación final y registrar limitaciones conocidas sin mezclar esos contenidos con salidas provisionales.
 
 \begin{table}[H]
 \centering
@@ -176,10 +163,7 @@ Durante el desarrollo se conservaron notas técnicas, informes de EDA, fichas de
 \nolinkurl{docs/arquitectura_llm_codegen.md} & Diseño del sistema, nodos, contrato de codegen y trazabilidad. \\
 \nolinkurl{docs/control_tamano_salidas_visualizacion.md} & Compactación de salidas largas y gestión de contexto en Nivel B/C. \\
 \nolinkurl{docs/evaluacion_cualitativa_llm.md} & Criterios de buen análisis, niveles A/B/C y plantilla de revisión. \\
-\nolinkurl{docs/plan_pruebas_queries_llm.md} & Evolución de fallos observados, mejoras técnicas y batería progresiva. \\
-\nolinkurl{docs/registro_resultados_llm_20260528.md} & Actualización de resultados tras repetir Groq con cuota disponible. \\
-\nolinkurl{docs/evaluacion_amplitud_tfm_llms.md} & Evidencia principal de comparación multi-modelo y detalle por ejecución. \\
-\nolinkurl{docs/resumen_evaluacion_amplitud_tfm.md} & Lectura ejecutiva de resultados y síntesis para conclusiones. \\
+\nolinkurl{docs/planificacion_evaluacion_tfm.md} & Protocolo definitivo, aprendizajes técnicos, familias de consultas y trabajo futuro. \\
 \bottomrule
 \end{tabularx}
 \caption{Relación entre documentación Markdown y secciones de la memoria.}

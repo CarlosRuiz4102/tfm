@@ -14,10 +14,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.generate_qualitative_demo_report import DEMO_CASES
+from src.config import RESULTS_DIR
 from src.execution.market_data import load_close_prices, load_market_data, make_json_safe
 
 
-REPORT_PATH = ROOT / "docs" / "salidas_demo_cliente_evaluacion_cualitativa.md"
+REPORT_PATH = RESULTS_DIR / "reports" / "salidas_demo_cliente_evaluacion_cualitativa.md"
 
 
 def _pct(value: float | None) -> str:
@@ -247,6 +248,7 @@ def main() -> int:
             ]
         )
 
+    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Informe escrito en: {REPORT_PATH}")
     return 0

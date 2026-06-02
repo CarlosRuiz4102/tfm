@@ -2,7 +2,7 @@
 
 \section{Enfoque de desarrollo}
 
-El desarrollo se ha reorganizado hacia un flujo más simple y trazable. El sistema trabaja con dos responsabilidades principales: interpretar la consulta y generar código; ejecutar ese código y explicar el resultado.
+El desarrollo se ha reorganizado hacia un flujo más simple y trazable. El sistema separa la interpretación de la consulta, la generación y ejecución controlada del código y la explicación del resultado.
 
 La metodología sigue una lógica incremental:
 
@@ -19,7 +19,7 @@ La metodología sigue una lógica incremental:
 \section{Evolución incremental del MVP}
 \label{sec:evolucion_mvp}
 
-El desarrollo del prototipo no se planteó como una implementación cerrada desde el inicio, sino como una sucesión de MVPs. La primera versión tuvo como objetivo validar que el flujo completo podía funcionar de extremo a extremo. Para ello se trabajó con un LLM de OpenAI o compatible con OpenAI y con dos intencionalidades básicas: crecimiento de un activo y comparación entre activos. Esta fase permitió comprobar la viabilidad inicial de la cadena formada por consulta, interpretación, cálculo y respuesta.
+El desarrollo del prototipo no se planteó como una implementación cerrada desde el inicio, sino como una sucesión de versiones del MVP. La primera versión tuvo como objetivo validar que el flujo completo podía funcionar de extremo a extremo. Para ello se trabajó con un LLM de OpenAI o compatible con OpenAI y con dos intencionalidades básicas: crecimiento de un activo y comparación entre activos. Esta fase permitió comprobar la viabilidad inicial de la cadena formada por consulta, interpretación, cálculo y respuesta.
 
 Una vez validado ese flujo mínimo, el segundo MVP amplió la cobertura funcional de dos a seis intencionalidades analíticas: crecimiento de precio, comparación de activos, visión descriptiva de un activo, análisis de retornos, análisis de riesgo histórico y análisis técnico básico. Esta ampliación obligó a revisar contratos de entrada y salida, estructura de los planes analíticos, gestión de datos y formato de las respuestas.
 
@@ -27,7 +27,7 @@ Posteriormente, el proyecto evolucionó hacia la arquitectura actual, centrada e
 
 \section{Criterios de validación}
 
-La validación del prototipo se apoya en tres niveles. El primero comprueba entradas mínimas: query no vacía, tickers, rutas CSV existentes y fechas en formato correcto. El segundo revisa que el código generado cumpla un contrato básico: función \texttt{main()}, uso de \texttt{json.dumps}, imports permitidos y salida JSON. El tercero comprueba que la respuesta final evita predicciones, recomendaciones de inversión y datos externos no presentes en la ejecución.
+La validación del prototipo se apoya en tres niveles. El primero comprueba entradas mínimas: consulta no vacía, tickers, rutas CSV existentes y fechas en formato correcto. El segundo revisa que el código generado cumpla un contrato básico: función \texttt{main()}, uso de \texttt{json.dumps}, importaciones permitidas y salida JSON. El tercero comprueba que la respuesta final evita predicciones, recomendaciones de inversión y datos externos no presentes en la ejecución.
 
 \section{Criterios cualitativos de calidad del análisis}
 
@@ -51,7 +51,7 @@ La profundidad del análisis se adapta a lo que solicita el usuario. Se definen 
 
 Esta graduación evita sobrecargar consultas simples y, al mismo tiempo, permite evaluar si el sistema es capaz de aumentar la riqueza del análisis cuando el usuario lo solicita. En series temporales financieras, los gráficos de línea son adecuados para mostrar evolución en el tiempo; en comparaciones entre activos con escalas distintas se prioriza la normalización, y se evita abusar de demasiadas series o ejes dobles para no inducir lecturas confusas \cite{atlassianlinecharts}.
 
-En las queries de Nivel B y C, el primer agente puede producir datos extensos para visualizaciones. Para evitar que esas series completas saturen el contexto del segundo agente, el workflow conserva la salida íntegra como artefacto auditable y envía al LLM interpretador una versión compactada. Esta decisión mantiene la trazabilidad técnica y, a la vez, reduce el riesgo de errores por exceso de contexto.
+En las consultas de Nivel B y C, el primer agente puede producir datos extensos para visualizaciones. Para evitar que esas series completas saturen el contexto del segundo agente, el workflow conserva la salida íntegra como artefacto auditable y envía al LLM interpretador una versión compactada. Esta decisión mantiene la trazabilidad técnica y, a la vez, reduce el riesgo de errores por exceso de contexto.
 
 \section{Evaluación con proveedores LLM}
 
