@@ -62,10 +62,21 @@ def _code_from_text(text: str) -> str:
         raise
 
 
+def _is_json_only_answer(text: str) -> bool:
+    cleaned = text.strip()
+    if not cleaned or cleaned[0] not in "{[":
+        return False
+    try:
+        json.loads(cleaned)
+    except json.JSONDecodeError:
+        return False
+    return True
+
+
 def build_llm_analysis(query_input: FinancialQueryInput) -> tuple[AnalysisPlan, list[str]]:
     llm_config = LLMConfig.from_env()
     if not llm_config.is_configured:
-        raise LLMClientError("Falta configurar LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
+        raise LLMClientError("Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para usar openai/gpt-oss-20b sobre vLLM.")
 
     try:
         client = create_llm_client(llm_config)
@@ -84,15 +95,19 @@ def build_llm_analysis(query_input: FinancialQueryInput) -> tuple[AnalysisPlan, 
                 messages = messages + [
                     messages[-1].__class__(
                         "user",
-                        "La respuesta anterior no fue JSON valido. Reintenta y devuelve exclusivamente un objeto JSON valido.",
+                        "La respuesta anterior no fue JSON valido. Devuelve de nuevo exclusivamente un objeto JSON valido.",
                     )
                 ]
         if payload is None:
             raise LLMClientError(str(last_error))
+        analysis_level = str(payload.get("analysis_level") or "A").strip().upper()
+        if analysis_level not in {"A", "B", "C"}:
+            analysis_level = "A"
         return (
             AnalysisPlan(
-                interpreted_intent=str(payload.get("interpreted_intent") or "").strip(),
-                analysis_type=str(payload.get("analysis_type") or "").strip(),
+                analysis_level=analysis_level,
+                analytical_goal=str(payload.get("analytical_goal") or query_input.query).strip(),
+                analysis_type=str(payload.get("analysis_type") or "historical_financial_analysis").strip(),
                 metrics=_as_str_list(payload.get("metrics"), []),
                 required_columns=_as_str_list(payload.get("required_columns"), []),
                 data_requirements=_as_str_list(payload.get("data_requirements"), []),
@@ -109,7 +124,7 @@ def build_llm_analysis(query_input: FinancialQueryInput) -> tuple[AnalysisPlan, 
 def build_llm_code(query_input: FinancialQueryInput, plan: AnalysisPlan) -> tuple[str, list[str]]:
     llm_config = LLMConfig.from_env()
     if not llm_config.is_configured:
-        raise LLMClientError("Falta configurar LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
+        raise LLMClientError("Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para usar openai/gpt-oss-20b sobre vLLM.")
 
     try:
         client = create_llm_client(llm_config)
@@ -128,7 +143,7 @@ def build_llm_code(query_input: FinancialQueryInput, plan: AnalysisPlan) -> tupl
                 messages = messages + [
                     messages[-1].__class__(
                         "user",
-                        "La respuesta anterior no fue JSON valido. Reintenta con un objeto JSON estricto "
+                        "La respuesta anterior no fue JSON valido. Devuelve de nuevo un objeto JSON estricto "
                         "con un unico campo code. No uses markdown. No expliques nada.",
                     )
                 ]
@@ -149,7 +164,7 @@ def repair_llm_code(
 ) -> tuple[str, list[str]]:
     llm_config = LLMConfig.from_env()
     if not llm_config.is_configured:
-        raise LLMClientError("Falta configurar LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
+        raise LLMClientError("Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para usar openai/gpt-oss-20b sobre vLLM.")
 
     try:
         client = create_llm_client(llm_config)
@@ -168,7 +183,7 @@ def repair_llm_code(
                 messages = messages + [
                     messages[-1].__class__(
                         "user",
-                        "La reparacion anterior no fue JSON valido. Reintenta con un objeto JSON estricto "
+                        "La reparacion anterior no fue JSON valido. Devuelve de nuevo un objeto JSON estricto "
                         "con un unico campo code.",
                     )
                 ]
@@ -184,16 +199,36 @@ def repair_llm_code(
 def build_llm_interpretation(output: dict, plan: AnalysisPlan) -> tuple[str, list[str]]:
     llm_config = LLMConfig.from_env()
     if not llm_config.is_configured:
-        raise LLMClientError("Falta configurar LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
+        raise LLMClientError("Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para usar openai/gpt-oss-20b sobre vLLM.")
 
     try:
         client = create_llm_client(llm_config)
         if client is None:
             raise LLMClientError("No se pudo crear el cliente LLM para interpretacion.")
-        response = client.complete_text(build_interpretation_messages(output, plan))
-        answer = response.content.strip()
-        if not answer:
-            raise LLMClientError("El LLM devolvio una respuesta vacia.")
-        return answer, []
+        messages = build_interpretation_messages(output, plan)
+        last_answer = ""
+        for attempt in range(MAX_LLM_ATTEMPTS):
+            response = client.complete_text(messages)
+            answer = response.content.strip()
+            if not answer:
+                raise LLMClientError("El LLM devolvio una respuesta vacia.")
+            if not _is_json_only_answer(answer):
+                warnings = []
+                if attempt:
+                    warnings.append("Se regenero la interpretacion porque la respuesta anterior era JSON puro.")
+                return answer, warnings
+            last_answer = answer
+            messages = messages + [
+                messages[-1].__class__(
+                    "user",
+                    "La respuesta anterior fue JSON puro. Devuelve una interpretacion textual en espanol, "
+                    "con frases completas, basada solo en execution_output y analysis_plan. No devuelvas JSON, "
+                    "no uses bloques de codigo y no recalcules metricas.",
+                )
+            ]
+        raise LLMClientError(
+            "El LLM devolvio JSON puro en vez de una interpretacion textual. "
+            f"Ultima respuesta: {last_answer[:300]}"
+        )
     except LLMClientError as exc:
         raise LLMClientError(f"No se pudo obtener interpretacion LLM: {exc}") from exc

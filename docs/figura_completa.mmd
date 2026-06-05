@@ -1,0 +1,58 @@
+flowchart TD
+
+A["Usuario Pregunta: Cuanto ha crecido Nvidia en 5 anos"] --> B["run_mvp.py Carga --example growth_nvda"]
+B --> C["FinancialQueryInput query, tickers, csv_paths period, interval, warnings"]
+C --> D["WorkflowState inicial status = created analysis_plan = None generated_code = None final_answer = vacio"]
+
+D --> E["ingest_node"]
+E --> F["validate_input<br/>Comprueba query, ticker<br/>CSV y fechas"]
+F --> G{"Entrada valida?"}
+
+G -- "No" --> G1["status = invalid<br/>error_message"]
+G1 --> G2["invalid_request_node<br/>final_answer con error"]
+
+G -- "Si" --> H["status = ingested"]
+H --> I["llm_analysis_node<br/>Agente 1"]
+I --> J["AnalysisPlan<br/>Nivel A<br/>metricas: retorno_total, cagr<br/>columna: Close"]
+J --> K["status = planned"]
+
+K --> L["code_generation_node<br/>Agente 2"]
+L --> M["generated_code<br/>Script Python generado"]
+M --> N["status = code_generated"]
+
+N --> O["code_security_node"]
+O --> P["validate_generated_code<br/>main, json.dumps<br/>imports permitidos<br/>sin open, eval, exec, red"]
+P --> Q{"Codigo valido?"}
+
+Q -- "No" --> Q1["repair_llm_code<br/>intento de reparacion"]
+Q1 --> Q2{"Reparacion valida?"}
+Q2 -- "No" --> Q3["status = code_rejected"]
+Q3 --> Q4["execution_error_node<br/>final_answer con error"]
+Q2 -- "Si" --> R["status = code_validated"]
+
+Q -- "Si" --> R
+
+R --> S["code_execution_node"]
+S --> T["Construye payload<br/>query + tickers + csv_paths<br/>input + analysis_plan"]
+T --> U["run_generated_code<br/>ejecuta script en proceso separado"]
+
+U --> V["Artefactos"]
+V --> V1["script_path<br/>codigo ejecutado"]
+V --> V2["payload_path<br/>entrada del script"]
+V --> V3["stdout_path<br/>resultado JSON"]
+V --> V4["stderr_path<br/>errores"]
+
+U --> W{"returncode == 0?"}
+W -- "No" --> W1["status = execution_failed"]
+W1 --> W2["execution_error_node<br/>final_answer con error"]
+
+W -- "Si" --> X["execution_output<br/>retorno_total = 12.7333<br/>cagr = 0.6893"]
+X --> Y["status = executed"]
+
+Y --> Z["interpretation_node<br/>Agente 3"]
+Z --> AA["execution_output + analysis_plan"]
+AA --> AB["final_answer<br/>interpretacion final"]
+AB --> AC["status = completed"]
+
+AC --> AD["WorkflowState final"]
+AD --> AE["Respuesta final al usuario"]

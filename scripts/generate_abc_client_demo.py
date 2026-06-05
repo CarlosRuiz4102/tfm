@@ -13,12 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.generate_qualitative_demo_report import DEMO_CASES
+from scripts.generate_abc_demo_report import DEMO_CASES
 from src.config import RESULTS_DIR
 from src.execution.market_data import load_close_prices, load_market_data, make_json_safe
 
 
-REPORT_PATH = RESULTS_DIR / "reports" / "salidas_demo_cliente_evaluacion_cualitativa.md"
+REPORT_PATH = RESULTS_DIR / "reports" / "salidas_demo_cliente_bateria_abc.md"
 
 
 def _pct(value: float | None) -> str:
@@ -91,7 +91,7 @@ def _build_case_output(case: dict[str, Any]) -> dict[str, Any]:
 
     normalized = close.divide(close.iloc[0]).multiply(100)
     output: dict[str, Any] = {
-        "analysis_type": payload.get("intent"),
+        "analysis_type": "historical_financial_analysis",
         "level": case["level"],
         "metrics": metrics_by_ticker,
         "summary": "",
@@ -101,7 +101,7 @@ def _build_case_output(case: dict[str, Any]) -> dict[str, Any]:
         output["correlation"] = make_json_safe(correlation)
 
     query = payload["query"].lower()
-    if case["level"] in {"B", "C"} or "grafica" in query or "normalizada" in query:
+    if case["level"] in {"B", "C"} or "serie" in query or "normalizada" in query:
         if len(close.columns) > 1:
             output["chart_data"]["normalized_to_100"] = {
                 ticker: _series_points(normalized[ticker])
@@ -176,9 +176,9 @@ def _summary_for_client(case: dict[str, Any], output: dict[str, Any]) -> str:
             text += " La correlacion se incluye como contexto para entender si ambos activos se movieron de forma parecida."
 
     if level == "A":
-        text += " Lectura: es una salida breve porque la consulta no exige visualizaciones ni formato avanzado."
+        text += " Lectura: es una salida breve porque la consulta no exige series estructuradas ni formato avanzado."
     elif level == "B":
-        text += " Lectura: se acompana de datos para una grafica principal porque el usuario pide un analisis mas completo."
+        text += " Lectura: se acompana de datos estructurados porque el usuario pide un analisis mas completo."
     else:
         text += " Lectura: se incluyen metricas y datos visuales adicionales porque el usuario pide un analisis profesional o multicriterio."
 
@@ -216,7 +216,7 @@ def main() -> int:
         "Este documento muestra una ejecución local reproducible sobre los CSV reales del proyecto.",
         "Se usa para visualizar como quedarian las salidas que recibira el cliente en los niveles A, B y C.",
         "",
-        "> Nota: la ejecucion LLM real con el endpoint universitario se intento, pero no completo dentro del tiempo disponible. Por eso este documento no compara modelos; muestra la salida calculada desde datos reales y redactada con una plantilla local para validar la presentacion.",
+        "> Nota: este documento no compara modelos; muestra la salida calculada desde datos reales y redactada con una plantilla local para validar la presentacion.",
         "",
         "## Resumen de casos",
         "",
@@ -240,7 +240,7 @@ def main() -> int:
                 "",
                 output["summary"],
                 "",
-                "### Datos para visualizacion o trazabilidad",
+                "### Datos estructurados o trazabilidad",
                 "",
                 "```json",
                 _json_block({key: value for key, value in output.items() if key not in {"summary"}}),

@@ -9,7 +9,6 @@ class FinancialQueryInput:
     query: str
     tickers: list[str]
     csv_paths: list[str]
-    intent: str = ""
     start: str | None = None
     end: str | None = None
     period: str | None = None
@@ -24,7 +23,6 @@ class FinancialQueryInput:
             warnings = [warnings] if warnings else []
         return cls(
             query=data["query"],
-            intent=str(data.get("intent") or ""),
             tickers=list(data.get("tickers") or []),
             csv_paths=[str(path) for path in data.get("csv_paths") or []],
             start=data.get("start"),
@@ -41,7 +39,8 @@ class FinancialQueryInput:
 
 @dataclass
 class AnalysisPlan:
-    interpreted_intent: str
+    analysis_level: str
+    analytical_goal: str
     analysis_type: str
     metrics: list[str]
     required_columns: list[str]
@@ -93,7 +92,6 @@ class WorkflowState:
     user_query: str
     normalized_query: dict[str, Any]
     csv_paths: list[str]
-    detected_intent: str | None = None
     analysis_plan: dict[str, Any] | None = None
     generated_code: str | None = None
     execution_stdout: str = ""
@@ -112,7 +110,6 @@ class WorkflowState:
             user_query=query_input.query,
             normalized_query=query_input.to_dict(),
             csv_paths=list(query_input.csv_paths),
-            detected_intent=query_input.intent or None,
             warnings=list(query_input.warnings),
         )
 

@@ -47,6 +47,10 @@ def case_id_from_path(path: Path) -> str:
     return path.stem
 
 
+def query_label_from_meta(meta: dict) -> str | None:
+    return meta.get("analysis_label") or meta.get("query_label")
+
+
 def to_long(case_id: str, csv_path: Path, meta: dict, wide: pd.DataFrame) -> pd.DataFrame:
     records = []
     tickers = sorted({str(ticker) for ticker, _ in wide.columns})
@@ -62,7 +66,7 @@ def to_long(case_id: str, csv_path: Path, meta: dict, wide: pd.DataFrame) -> pd.
         sub.insert(0, "period", meta.get("period"))
         sub.insert(0, "end", meta.get("end"))
         sub.insert(0, "start", meta.get("start"))
-        sub.insert(0, "intent", meta.get("intent"))
+        sub.insert(0, "query_label", query_label_from_meta(meta))
         sub.insert(0, "query", meta.get("query"))
         sub.insert(0, "source_file", csv_path.name)
         sub.insert(0, "case_id", case_id)
@@ -100,7 +104,7 @@ def summarize_case(case_id: str, csv_path: Path, meta: dict, wide: pd.DataFrame)
         "case_id": case_id,
         "source_file": csv_path.name,
         "query": meta.get("query"),
-        "intent": meta.get("intent"),
+        "query_label": query_label_from_meta(meta),
         "tickers": ", ".join(tickers),
         "interval": meta.get("interval"),
         "start_param": meta.get("start"),
@@ -119,8 +123,8 @@ def summarize_case(case_id: str, csv_path: Path, meta: dict, wide: pd.DataFrame)
 
 def summarize_series(long_df: pd.DataFrame) -> pd.DataFrame:
     rows = []
-    for (case_id, source_file, query, intent, interval, ticker), group in long_df.groupby(
-        ["case_id", "source_file", "query", "intent", "interval", "ticker"],
+    for (case_id, source_file, query, query_label, interval, ticker), group in long_df.groupby(
+        ["case_id", "source_file", "query", "query_label", "interval", "ticker"],
         dropna=False,
     ):
         group = group.sort_values("datetime")
@@ -134,7 +138,7 @@ def summarize_series(long_df: pd.DataFrame) -> pd.DataFrame:
                 "case_id": case_id,
                 "source_file": source_file,
                 "query": query,
-                "intent": intent,
+                "query_label": query_label,
                 "interval": interval,
                 "ticker": ticker,
                 "observations": int(len(group)),
@@ -181,7 +185,7 @@ def build_report(
 ) -> str:
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     tickers = sorted(long_df["ticker"].dropna().unique().tolist())
-    intents = case_summary["intent"].value_counts(dropna=False).rename_axis("intent").reset_index(name="cases")
+    query_labels = case_summary["query_label"].value_counts(dropna=False).rename_axis("query_label").reset_index(name="cases")
     intervals = case_summary["interval"].value_counts(dropna=False).rename_axis("interval").reset_index(name="cases")
     date_start = pd.to_datetime(long_df["datetime"], utc=True).min()
     date_end = pd.to_datetime(long_df["datetime"], utc=True).max()
@@ -212,7 +216,7 @@ def build_report(
         "-" * 70,
         "Fuente primaria: CSV descargados previamente con yfinance y versionados",
         "en data/raw. Cada CSV dispone de un fichero .metadata.json con query,",
-        "intencion, tickers, intervalo y parametros de descarga.",
+        "etiqueta de consulta, tickers, intervalo y parametros de descarga.",
         "",
         f"Catalogo de queries: {CATALOG_PATH.relative_to(ROOT)}",
         f"Casos definidos en catalogo: {len(catalog)}",
@@ -237,7 +241,7 @@ def build_report(
             case_summary,
             [
                 "source_file",
-                "intent",
+                "query_label",
                 "tickers",
                 "interval",
                 "rows",
@@ -248,10 +252,10 @@ def build_report(
             ],
         ),
         "",
-        "5. Distribucion de intenciones e intervalos",
+        "5. Distribucion de etiquetas e intervalos",
         "-" * 70,
-        "Intenciones:",
-        format_table(intents, ["intent", "cases"]),
+        "Etiquetas:",
+        format_table(query_labels, ["query_label", "cases"]),
         "",
         "Intervalos:",
         format_table(intervals, ["interval", "cases"]),
@@ -314,7 +318,7 @@ def build_report(
         "El conjunto de datos cubre acciones individuales, ETFs, indice amplio,",
         "criptoactivo, divisa y futuro de materia prima. Esto permite probar si el",
         "sistema entiende consultas con distintos tipos de activo, horizontes",
-        "temporales e intenciones analiticas.",
+        "temporales y objetivos analiticos.",
         "",
         "Para la memoria, este EDA justifica:",
         "- la seleccion de casos de prueba variados;",
@@ -433,7 +437,7 @@ La tabla siguiente resume filas, rango observado, porcentaje de nulos y duplicad
         notebook_cell(
             "code",
             """case_summary[[
-    "source_file", "intent", "tickers", "interval", "rows",
+    "source_file", "query_label", "tickers", "interval", "rows",
     "start_observed", "end_observed", "missing_pct", "duplicated_dates"
 ]]""",
         ),

@@ -20,15 +20,15 @@ El código generado se ejecuta como proceso externo, con registro de salida est�
 
 \section{Privacidad y datos}
 
-Los datos utilizados son series históricas de mercado y no contienen datos personales. Aun así, las claves de API de proveedores LLM se consideran información sensible y se almacenan exclusivamente en el fichero local \texttt{.env}, excluido del control de versiones.
+Los datos utilizados son series históricas de mercado y no contienen datos personales. Aun así, las claves de API del modelo se consideran información sensible y se almacenan exclusivamente en el fichero local \texttt{.env}, excluido del control de versiones.
 
-En una versión productiva, sería necesario revisar las condiciones de uso de los proveedores de datos y de modelos, así como las políticas de retención de información enviada a APIs externas.
+En una versión productiva, sería necesario revisar las condiciones de uso del proveedor de datos y del modelo, así como las políticas de retención de información enviada a APIs externas.
 
 \section{Sostenibilidad, costes y recursos}
 
-El enfoque incremental reduce costes computacionales. El MVP no entrena modelos desde cero y puede ejecutarse en CPU sobre datos ya descargados. La capa LLM se concentra principalmente en interpretación y permite comparar proveedores sin entrenar ni ajustar pesos.
+El enfoque incremental reduce costes computacionales. El MVP no entrena modelos desde cero y puede ejecutarse en CPU sobre datos ya descargados. La capa LLM se concentra en planificación, generación de código e interpretación, sin entrenar ni ajustar pesos.
 
-Esta estrategia también mejora la sostenibilidad del desarrollo: evita ejecuciones innecesarias de modelos grandes, reduce dependencia de infraestructura GPU y permite comparar proveedores antes de elegir una configuración de uso continuado.
+Esta estrategia también mejora la sostenibilidad del desarrollo: evita ejecuciones innecesarias de modelos grandes, reduce dependencia de infraestructura GPU propia y permite mantener una configuración de uso continuado más controlada.
 
 \section{Limitaciones de uso}
 

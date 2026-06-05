@@ -1,6 +1,5 @@
 {
   "query": "Compara Nvidia y AMD en 2 años",
-  "intent": "compare_assets",
   "tickers": [
     "NVDA",
     "AMD"

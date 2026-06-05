@@ -1,6 +1,5 @@
 {
   "query": "QQQ y SPY desde 2024-01-01 hasta 2024-12-31",
-  "intent": "historical_download",
   "tickers": [
     "QQQ",
     "SPY"

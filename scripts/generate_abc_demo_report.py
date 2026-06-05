@@ -17,7 +17,7 @@ from src.graph.build_graph import build_workflow
 from src.schemas import FinancialQueryInput
 
 
-REPORT_PATH = RESULTS_DIR / "reports" / "salidas_ejecucion_evaluacion_cualitativa.md"
+REPORT_PATH = RESULTS_DIR / "reports" / "salidas_ejecucion_bateria_abc.md"
 
 
 def _raw(name: str) -> str:
@@ -28,10 +28,9 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_a_nvda_growth",
         "level": "A",
-        "expected_depth": "Texto breve + metricas basicas.",
+        "expected_depth": "A1: crecimiento simple con precio inicial/final y retorno acumulado.",
         "input": {
             "query": "Cuanto ha crecido Nvidia en los ultimos 5 anos",
-            "intent": "price_growth",
             "tickers": ["NVDA"],
             "period": "5y",
             "interval": "1d",
@@ -42,10 +41,9 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_a_nvda_amd_compare",
         "level": "A",
-        "expected_depth": "Comparacion simple con rentabilidad y ranking basico.",
+        "expected_depth": "A2: comparacion simple con rentabilidad acumulada por activo.",
         "input": {
             "query": "Compara Nvidia y AMD en 2 anos",
-            "intent": "compare_assets",
             "tickers": ["NVDA", "AMD"],
             "period": "2y",
             "interval": "1d",
@@ -56,10 +54,9 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_a_aapl_overview",
         "level": "A",
-        "expected_depth": "Vision general breve con metricas basicas.",
+        "expected_depth": "A3: vision descriptiva breve con rango de precios y tendencia observada.",
         "input": {
             "query": "Dame una vision general de AAPL en 3 meses",
-            "intent": "asset_overview",
             "tickers": ["AAPL"],
             "period": "3mo",
             "interval": "1d",
@@ -70,10 +67,9 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_a_qqq_spy_returns",
         "level": "A",
-        "expected_depth": "Retornos historicos resumidos.",
+        "expected_depth": "A4: retornos historicos resumidos para dos activos.",
         "input": {
             "query": "Analiza los retornos de QQQ y SPY en 2024",
-            "intent": "return_analysis",
             "tickers": ["QQQ", "SPY"],
             "start": "2024-01-01",
             "end": "2024-12-31",
@@ -85,10 +81,9 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_a_qqq_spy_risk",
         "level": "A",
-        "expected_depth": "Riesgo historico basico con volatilidad y extremos.",
+        "expected_depth": "A5: riesgo historico basico con volatilidad, mejor/peor dia y drawdown.",
         "input": {
             "query": "Analiza el riesgo historico de QQQ y SPY en 2024",
-            "intent": "historical_risk_analysis",
             "tickers": ["QQQ", "SPY"],
             "start": "2024-01-01",
             "end": "2024-12-31",
@@ -100,10 +95,9 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_b_nvda_complete",
         "level": "B",
-        "expected_depth": "Texto + tabla de metricas + datos para grafica de evolucion.",
+        "expected_depth": "B1: analisis ampliado de un activo con tabla y datos de evolucion.",
         "input": {
-            "query": "Hazme un analisis mas completo de Nvidia en los ultimos 5 anos con tabla y una grafica de evolucion",
-            "intent": "improved_growth_analysis",
+            "query": "Hazme un analisis mas completo de Nvidia en los ultimos 5 anos con tabla y una serie de evolucion",
             "tickers": ["NVDA"],
             "period": "5y",
             "interval": "1d",
@@ -114,10 +108,9 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_b_qqq_spy_clear_compare",
         "level": "B",
-        "expected_depth": "Comparativa clara con tabla y grafica normalizada.",
+        "expected_depth": "B2: comparativa con tabla y serie normalizada base 100.",
         "input": {
-            "query": "Comparame QQQ y SPY en 2024 de forma clara, con tabla y grafica normalizada",
-            "intent": "improved_asset_comparison",
+            "query": "Comparame QQQ y SPY en 2024 de forma clara, con tabla y serie normalizada",
             "tickers": ["QQQ", "SPY"],
             "start": "2024-01-01",
             "end": "2024-12-31",
@@ -129,10 +122,9 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_b_aapl_risk_return",
         "level": "B",
-        "expected_depth": "Explicacion sencilla de retorno y riesgo.",
+        "expected_depth": "B3: retorno-riesgo con explicacion didactica y metricas estructuradas.",
         "input": {
             "query": "Quiero entender retorno y riesgo de AAPL en 3 meses con una explicacion sencilla",
-            "intent": "improved_risk_return_analysis",
             "tickers": ["AAPL"],
             "period": "3mo",
             "interval": "1d",
@@ -143,13 +135,12 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_b_btc_2024_profile",
         "level": "B",
-        "expected_depth": "Perfil historico de Bitcoin con tabla y grafica de evolucion.",
+        "expected_depth": "B4: perfil de activo volatil con rentabilidad, volatilidad y drawdown.",
         "input": {
             "query": (
                 "Analiza Bitcoin durante 2024 con una tabla de rentabilidad, volatilidad, maximo drawdown, "
-                "maximo y minimo, y datos para una grafica de evolucion"
+                "maximo y minimo, y datos para una serie de evolucion"
             ),
-            "intent": "improved_crypto_profile",
             "tickers": ["BTC-USD"],
             "start": "2024-01-01",
             "end": "2024-12-31",
@@ -161,13 +152,12 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_b_eurusd_intraday",
         "level": "B",
-        "expected_depth": "Analisis intradia de divisa con tabla y grafica principal.",
+        "expected_depth": "B5: analisis intradia con rango, volatilidad horaria y serie de evolucion.",
         "input": {
             "query": (
                 "Resume el comportamiento intradia de EUR/USD durante los ultimos 10 dias con datos horarios. "
-                "Incluye tabla de variacion, rango medio, volatilidad horaria y datos para una grafica de evolucion"
+                "Incluye tabla de variacion, rango medio, volatilidad horaria y datos para una serie de evolucion"
             ),
-            "intent": "improved_intraday_fx_analysis",
             "tickers": ["EURUSD=X"],
             "period": "10d",
             "interval": "1h",
@@ -178,13 +168,12 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_c_qqq_spy_professional",
         "level": "C",
-        "expected_depth": "Informe profesional con tabla, normalizacion, drawdown y conclusion.",
+        "expected_depth": "C1: informe comparativo con tabla, normalizacion, drawdown y limitaciones.",
         "input": {
             "query": (
-                "Haz un analisis profesional de QQQ y SPY en 2024 con tabla, grafica normalizada, "
+                "Haz un analisis profesional de QQQ y SPY en 2024 con tabla, serie normalizada, "
                 "drawdown y conclusion para usuario no tecnico"
             ),
-            "intent": "professional_asset_comparison",
             "tickers": ["QQQ", "SPY"],
             "start": "2024-01-01",
             "end": "2024-12-31",
@@ -196,13 +185,12 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_c_nvda_amd_multicriteria",
         "level": "C",
-        "expected_depth": "Ranking multicriterio por rentabilidad, riesgo y drawdown.",
+        "expected_depth": "C2: ranking multicriterio con rentabilidad, riesgo, drawdown y lectura separada.",
         "input": {
             "query": (
                 "Compara NVDA y AMD en 2 anos con ranking por rentabilidad, riesgo y drawdown, "
-                "y separa metricas, visualizaciones y limitaciones"
+                "y separa metricas, datos estructurados y limitaciones"
             ),
-            "intent": "professional_multicriteria_comparison",
             "tickers": ["NVDA", "AMD"],
             "period": "2y",
             "interval": "1d",
@@ -213,13 +201,12 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_c_sp500_report",
         "level": "C",
-        "expected_depth": "Informe detallado de indice con resumen ejecutivo.",
+        "expected_depth": "C3: informe de indice amplio con resumen ejecutivo, extremos y drawdown.",
         "input": {
             "query": (
                 "Prepara un informe detallado del S&P 500 desde 2020 con crecimiento, volatilidad, "
                 "maximo drawdown, mejores y peores periodos, y resumen ejecutivo"
             ),
-            "intent": "professional_index_report",
             "tickers": ["^GSPC"],
             "start": "2020-01-01",
             "interval": "1d",
@@ -230,14 +217,13 @@ DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "level_c_gold_intraday_report",
         "level": "C",
-        "expected_depth": "Informe intradia de materia prima con metricas, visualizacion y limitaciones.",
+        "expected_depth": "C4: informe intradia con mejores/peores intervalos, volumen y limitaciones.",
         "input": {
             "query": (
                 "Prepara un informe detallado del oro durante la ultima semana con datos horarios. "
-                "Separa metricas, tabla de mejores y peores intervalos, datos para una grafica de evolucion, "
+                "Separa metricas, tabla de mejores y peores intervalos, datos para una serie de evolucion, "
                 "volatilidad horaria, rango maximo-minimo y limitaciones del analisis"
             ),
-            "intent": "professional_intraday_commodity_report",
             "tickers": ["GC=F"],
             "period": "1wk",
             "interval": "1h",
@@ -249,8 +235,8 @@ DEMO_CASES: list[dict[str, Any]] = [
         "id": "stress_visual_qqq_spy_monthly",
         "level": "C",
         "expected_depth": (
-            "Query exigente con formato impuesto: tabla resumen, ranking mensual, "
-            "grafica normalizada y grafica de drawdown."
+            "C5: query de estres con formato impuesto: tabla resumen, ranking mensual, "
+            "serie normalizada y serie de drawdown."
         ),
         "input": {
             "query": (
@@ -259,11 +245,10 @@ DEMO_CASES: list[dict[str, Any]] = [
                 "1) una tabla resumen con rentabilidad total, volatilidad anualizada, maximo drawdown, "
                 "mejor mes y peor mes; "
                 "2) una tabla ranking mensual indicando que activo gano cada mes; "
-                "3) datos para una grafica normalizada base 100 de ambos activos; "
-                "4) datos para una grafica de drawdown. "
+                "3) datos para una serie normalizada base 100 de ambos activos; "
+                "4) datos para una serie de drawdown. "
                 "Cierra con una conclusion clara, sin recomendar comprar ni vender."
             ),
-            "intent": "stress_visual_client_report",
             "tickers": ["QQQ", "SPY"],
             "start": "2024-01-01",
             "end": "2024-12-31",
@@ -312,7 +297,7 @@ def _write_report(results: list[dict[str, Any]], output_path: Path) -> None:
     config = LLMConfig.from_env()
     completed = sum(1 for item in results if item["status"] == "completed")
     lines = [
-        "# Salidas de ejecucion de evaluacion cualitativa LLM",
+        "# Salidas de ejecucion de la bateria A/B/C",
         "",
         f"Generado: {datetime.now().isoformat(timespec='seconds')}",
         "",

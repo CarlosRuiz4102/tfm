@@ -1,55 +1,67 @@
-﻿\chapter{Integración de modelos de lenguaje}
+\chapter{Integración de modelos de lenguaje}
 
 \section{Papel del LLM en el sistema}
 
-El trabajo incorpora modelos de lenguaje como parte central del flujo. El LLM no se limita a redactar la respuesta final: primero interpreta la consulta y construye una intencionalidad estructurada; después genera código Python a partir de dicha interpretación y del mensaje original; finalmente interpreta las métricas devueltas por la ejecución.
+El sistema incorpora modelos de lenguaje como componentes especializados dentro de un flujo de análisis financiero histórico. El modelo no se utiliza como fuente directa de precios, como asesor financiero ni como mecanismo de predicción. Su función es transformar lenguaje natural en planificación analítica, generar código bajo contrato y redactar una explicación final a partir de resultados ya calculados.
 
-Esta organización permite aprovechar la flexibilidad del modelo sin ejecutar sus salidas de forma ciega. Entre generación y ejecución existe una capa de control de seguridad que revisa el script antes de lanzarlo.
-
-\section{Cliente compatible con OpenAI}
-
-La integración se ha preparado mediante un cliente compatible con APIs tipo OpenAI. Esta decisión permite alternar entre proveedores sin modificar el workflow principal. El sistema utiliza variables de entorno para seleccionar perfil, modelo, URL base y clave de API.
-
-En esta memoria, cuando se comentan resultados ya ejecutados, se hace referencia al modelo \nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} servido mediante vLLM en el entorno universitario. Este modelo abierto de la familia gpt-oss se usa por su capacidad de razonamiento, seguimiento de instrucciones y generación de código Python. El nombre \texttt{university} queda reservado como identificador técnico del perfil de configuración dentro del código, no como nombre académico del modelo.
-
-La configuración operativa de los proveedores se dejó descrita en \nolinkurl{docs/llm_api_setup.md}. Esa documentación distingue entre el identificador técnico del perfil, el proveedor utilizado y el modelo concreto, lo que evita mezclar resultados del workflow con detalles locales de configuración. Esta separación fue especialmente útil al repetir evaluaciones con Groq, Gemini y el servidor vLLM universitario sin cambiar la arquitectura del sistema.
-
-\section{Configuraciones evaluadas}
-
-Se han preparado tres configuraciones principales:
+La arquitectura actual distingue tres agentes:
 
 \begin{itemize}
-    \item \textbf{Groq con \nolinkurl{llama-3.3-70b-versatile}} \cite{groqllama33docs}: proveedor externo compatible con OpenAI. El modelo corresponde a Llama 3.3 70B Instruct y se utiliza por su razonamiento general, seguimiento de instrucciones y baja latencia en las pruebas.
-    \item \textbf{Gemini con \nolinkurl{gemini-2.5-flash}} \cite{google2025gemini25flashdocs}: proveedor secundario para estudiar portabilidad y calidad comparativa. El modelo Flash de Gemini 2.5 se utiliza por su rapidez, capacidad de razonamiento y equilibrio entre latencia y calidad.
-    \item \textbf{\nolinkurl{openai/gpt-oss-20b} sobre vLLM universitario} \cite{openai2025gptossmodelcard}: modelo abierto de la familia gpt-oss ejecutado en el servidor compatible con OpenAI Chat Completions habilitado en el entorno universitario. Se usa como modelo principal por su capacidad de razonamiento, seguimiento de instrucciones y generación de código.
+    \item \textbf{Agente 1: planificación}. Interpreta la petición del usuario, identifica el nivel de análisis A/B/C y define métricas, columnas, tablas o datos visuales que deben obtenerse.
+    \item \textbf{Agente 2: generación de código}. Transforma el plan analítico en un script Python autocontenido, limitado por un contrato de entrada, salida e importaciones permitidas.
+    \item \textbf{Agente 3: interpretación}. Recibe únicamente resultados calculados y redacta una explicación en español, separando datos históricos, lectura y limitaciones, sin recomendaciones de inversión.
 \end{itemize}
 
-\section{Gestión de errores de API}
+Esta división evita que una única respuesta generativa mezcle planificación, cálculo y redacción. El modelo puede adaptar el sistema a consultas distintas, pero las cifras que llegan al usuario proceden de una ejecución programática sobre CSV locales.
 
-El diseño registra errores de red, cuota, indisponibilidad, credenciales o formato de respuesta. Si una llamada LLM falla, el sistema devuelve un error explícito para que la evaluación no mezcle resultados reales de modelo con respuestas programáticas.
+\section{Contrato de prompts}
 
-La gestión de errores se concentra en el cliente compatible con OpenAI y en la capa de pipeline. El cliente encapsula las excepciones de la API en una excepción propia, \texttt{LLMClientError}, de modo que el resto del workflow no depende de detalles internos de cada proveedor. Esta abstracción permite tratar de forma homogénea fallos de conectividad, claves ausentes, límites de cuota, tiempos de espera agotados o respuestas vacías, aunque el origen técnico sea diferente en Groq, Gemini o el servidor vLLM universitario.
+Los prompts se diseñan como contratos operativos. El agente planificador debe devolver JSON con el nivel A/B/C, el objetivo analítico, el tipo de análisis, las métricas requeridas, las columnas necesarias y los requisitos de salida. No calcula cifras y no redacta conclusiones.
 
-Además, no todos los errores LLM tienen el mismo significado dentro del sistema. En la fase de análisis, un fallo impide construir el plan inicial y el caso termina como error controlado. En la fase de generación de código, el error puede deberse a una respuesta no válida, a JSON mal formado o a un script que no cumple el contrato mínimo. En la fase de interpretación final, en cambio, puede existir una ejecución correcta y métricas calculadas, pero fallar la redacción final del modelo. Por este motivo el estado del workflow distingue entre peticiones inválidas, código rechazado, fallo de ejecución y casos \texttt{completed\_with\_error}.
+El agente generador devuelve un único campo \texttt{code}. El script generado debe leer un payload JSON por \texttt{argv[1]}, cargar los datos mediante utilidades autorizadas, calcular las métricas necesarias y escribir un único JSON por \texttt{stdout}. No puede descargar datos externos, crear procesos, usar rutas no recibidas ni imprimir texto libre. Si la consulta pide tablas o datos visuales, el script debe devolverlos como estructuras JSON, no como imágenes.
 
-Para reducir fallos por formato, el pipeline solicita JSON estricto en las fases de análisis y generación de código. Si la respuesta no puede parsearse, se realizan hasta tres intentos con un mensaje de corrección que pide devolver exclusivamente un objeto JSON válido. En la generación de código, además, se comprueba que el script contenga una función \texttt{main()} y que escriba un único JSON mediante \texttt{json.dumps}. Si el código generado no supera la validación de seguridad o falla durante la ejecución, el sistema puede pedir una reparación al LLM usando el error observado como contexto. Esta reparación queda registrada mediante avisos para no ocultar que el caso necesitó una segunda intervención del modelo.
+El agente interpretador recibe la salida ejecutada y el plan. Su prompt prohíbe recalcular, completar cifras ausentes o añadir información externa. La respuesta debe ajustar su profundidad al nivel A/B/C, explicar las métricas observadas y declarar limitaciones cuando existan datos insuficientes.
 
-Los prompts, el contrato de salida y el tratamiento de errores se revisaron a partir de ejecuciones reales documentadas en Markdown. En esas pruebas se observó que algunos fallos no se debían a una mala comprensión financiera, sino a detalles operativos: JSON incompleto, código no ejecutable, lectura incorrecta de CSV o salidas demasiado extensas. Por ello se combinaron reintentos de formato, reparación de código y compactación de salidas antes de la interpretación final.
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{p{0.20\textwidth}p{0.30\textwidth}X}
+\toprule
+\textbf{Agente} & \textbf{Entrada principal} & \textbf{Salida exigida} \\
+\midrule
+Planificación & Consulta validada, tickers, fechas, CSV y reglas A/B/C. & Plan JSON con nivel, objetivo, métricas, columnas, requisitos de datos y requisitos de salida. \\
+Generación de código & Consulta original, entrada normalizada y plan analítico. & JSON con \texttt{code}; el script calcula sobre CSV locales y devuelve resultados estructurados. \\
+Interpretación & Salida ejecutada y plan analítico. & Respuesta final en español, fiel a los resultados, prudente y sin recomendación de inversión. \\
+\bottomrule
+\end{tabularx}
+\caption{Responsabilidades de los tres agentes LLM.}
+\label{tab:tres_agentes_llm}
+\end{table}
 
-En las evaluaciones reales se observaron varios tipos de fallo útiles para el análisis del TFM:
+\section{Niveles A/B/C}
+
+El nivel de análisis no se recibe como etiqueta externa. Lo decide el agente de planificación a partir de la consulta:
 
 \begin{itemize}
-    \item \textbf{Errores de cuota}: por ejemplo, respuestas \texttt{429} cuando un proveedor supera el límite diario de uso. Estos casos no indican que el razonamiento del modelo sea incorrecto, sino que la comparación experimental queda condicionada por disponibilidad.
-    \item \textbf{Errores de conexión}: pueden aparecer si la ejecución se lanza sin acceso de red real o si el proveedor no responde. En la documentación de resultados se marcan como diagnóstico de entorno y no como evidencia de rendimiento del modelo.
-    \item \textbf{Errores de formato}: se producen cuando el modelo entiende la tarea, pero devuelve texto o código fuera del JSON esperado. Estos fallos justifican los reintentos y la validación posterior.
-    \item \textbf{Errores por contexto o tamaño de salida}: algunas consultas visuales generan estructuras largas, por ejemplo series temporales completas. Para mitigarlo, antes de la interpretación final se compactan listas y textos extensos, manteniendo la salida completa como artefacto auditable.
+    \item \textbf{Nivel A}: petición directa, sin formato especial. Requiere métricas esenciales y una respuesta breve.
+    \item \textbf{Nivel B}: análisis más completo, comparación clara, tabla o una salida visual principal. Requiere varias métricas y estructura tabular cuando proceda.
+    \item \textbf{Nivel C}: petición profesional, multicriterio o con formato impuesto. Requiere varias familias de métricas, tablas, datos visuales si se solicitan y limitaciones explícitas.
 \end{itemize}
 
-Esta gestión de errores es importante metodológicamente. La memoria no presenta únicamente tasas de acierto, sino también las condiciones bajo las que falla el sistema. Separar errores de proveedor, errores de formato, errores de seguridad y errores de ejecución permite interpretar mejor los resultados y evita atribuir al modelo un problema que en realidad pertenece a la cuota, a la conectividad o al contrato técnico de salida.
+Esta graduación permite exigir más al modelo sin convertir todas las consultas en informes extensos. También facilita la evaluación: un fallo puede localizarse en la planificación del nivel, en el código generado, en la ejecución o en la interpretación.
 
-\section{Gestión de credenciales}
+\section{Cliente compatible con Chat Completions}
 
-Las claves de Groq con \nolinkurl{llama-3.3-70b-versatile} \cite{groqllama33docs}, Gemini con \nolinkurl{gemini-2.5-flash} \cite{google2025gemini25flashdocs} y del servidor vLLM universitario que sirve \nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} se gestionan mediante variables de entorno en el fichero local \texttt{.env}. Este archivo no se versiona y no debe compartirse. El repositorio incluye configuraciones de ejemplo, pero una ejecución real con API solo es posible cuando el entorno local contiene una clave válida.
+La integración usa un cliente compatible con la interfaz de Chat Completions. OpenAI denomina \textit{Chat Completions} al endpoint que genera una respuesta del modelo a partir de una lista de mensajes que forman una conversación \cite{openaiChatCompletionsApi}. En este proyecto, la expresión describe el formato de interacción basado en mensajes y la forma de invocar el modelo desde el cliente.
 
+El modelo principal del sistema es \texttt{openai/gpt-oss-20b} servido sobre vLLM. vLLM actúa como servidor de inferencia compatible con la interfaz de mensajes, mientras que el modelo evaluado y documentado sigue siendo \texttt{openai/gpt-oss-20b}. Esta distinción evita confundir el modelo con la infraestructura que lo expone.
 
+\section{Gestión de errores}
 
+El flujo registra errores de configuración, red, cuota, formato JSON, validación de código, ejecución e interpretación. Cada tipo de error se conserva en el estado del workflow para distinguir problemas de entorno, problemas del modelo y problemas del contrato técnico.
+
+Si el agente de planificación o generación devuelve JSON no parseable, el sistema solicita una nueva respuesta estructurada. Si el código falla o no supera la validación de seguridad, puede pedirse una reparación al modelo, pero el script reparado vuelve a pasar por los mismos controles antes de ejecutarse. Esta decisión evita que la reparación sea una vía para saltarse el contrato.
+
+\section{Credenciales y despliegue}
+
+Las credenciales se gestionan mediante variables de entorno locales. El fichero de configuración real no debe versionarse ni compartirse. La configuración mínima requiere la URL del servidor vLLM, una clave del endpoint y el nombre \texttt{openai/gpt-oss-20b}. El código acepta también aliases compatibles con OpenAI para reutilizar el SDK, pero la configuración de referencia del proyecto es vLLM.

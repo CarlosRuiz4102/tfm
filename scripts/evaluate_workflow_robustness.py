@@ -69,7 +69,6 @@ def _build_cases() -> list[dict[str, Any]]:
             "variant_growth_btc",
             {
                 "query": "Cuánto ha crecido Bitcoin en 2024",
-                "intent": "price_growth",
                 "tickers": ["BTC-USD"],
                 "start": "2024-01-01",
                 "end": "2024-12-31",
@@ -83,7 +82,6 @@ def _build_cases() -> list[dict[str, Any]]:
             "variant_overview_sp500",
             {
                 "query": "Resume el comportamiento del S&P 500 desde 2020",
-                "intent": "asset_overview",
                 "tickers": ["^GSPC"],
                 "start": "2020-01-01",
                 "end": None,
@@ -97,7 +95,6 @@ def _build_cases() -> list[dict[str, Any]]:
             "variant_returns_btc",
             {
                 "query": "Analiza los retornos de Bitcoin en 2024",
-                "intent": "return_analysis",
                 "tickers": ["BTC-USD"],
                 "start": "2024-01-01",
                 "end": "2024-12-31",
@@ -111,7 +108,6 @@ def _build_cases() -> list[dict[str, Any]]:
             "variant_risk_btc",
             {
                 "query": "Analiza el riesgo historico de Bitcoin en 2024",
-                "intent": "historical_risk_analysis",
                 "tickers": ["BTC-USD"],
                 "start": "2024-01-01",
                 "end": "2024-12-31",
@@ -125,7 +121,6 @@ def _build_cases() -> list[dict[str, Any]]:
             "variant_technical_eurusd",
             {
                 "query": "Haz análisis técnico de EUR/USD a 1h",
-                "intent": "technical_analysis",
                 "tickers": ["EURUSD=X"],
                 "start": None,
                 "end": None,
@@ -139,7 +134,6 @@ def _build_cases() -> list[dict[str, Any]]:
             "variant_technical_gold",
             {
                 "query": "Haz análisis técnico del oro en 1 semana",
-                "intent": "technical_analysis",
                 "tickers": ["GC=F"],
                 "start": None,
                 "end": None,
@@ -168,7 +162,6 @@ def _build_cases() -> list[dict[str, Any]]:
             "stress_returns_insufficient_data",
             {
                 "query": "Analiza retornos con una sola fila",
-                "intent": "return_analysis",
                 "tickers": ["TINY"],
                 "start": None,
                 "end": None,
@@ -182,7 +175,6 @@ def _build_cases() -> list[dict[str, Any]]:
             "stress_technical_insufficient_data",
             {
                 "query": "Analiza técnico con una sola fila",
-                "intent": "technical_analysis",
                 "tickers": ["TINY"],
                 "start": None,
                 "end": None,
@@ -223,7 +215,6 @@ def _run_case(case: dict[str, Any]) -> dict[str, Any]:
     return {
         "name": case["name"],
         "group": case["group"],
-        "input_intent_hint": case["payload"].get("intent"),
         "expected_status": case["expected_status"],
         "status": state.status,
         "execution_returncode": state.execution_returncode,

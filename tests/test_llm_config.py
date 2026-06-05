@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from src.config import LLMConfig
 from src.llm.client import _repair_mojibake, create_llm_client
+from src.llm.pipeline import _is_json_only_answer
 
 
 class LLMConfigTests(unittest.TestCase):
@@ -43,50 +44,61 @@ class LLMConfigTests(unittest.TestCase):
 
         self.assertIsNone(create_llm_client(config))
 
-    def test_llm_config_reads_groq_profile(self) -> None:
+    def test_llm_config_reads_openai_environment(self) -> None:
         env = {
-            "LLM_PROFILE": "groq",
-            "GROQ_API_KEY": "test-groq-key",
+            "OPENAI_API_KEY": "test-openai-key",
+            "OPENAI_MODEL": "gpt-test-model",
         }
         with patch.dict("os.environ", env, clear=True):
             config = LLMConfig.from_env()
 
         self.assertTrue(config.is_configured)
-        self.assertEqual(config.profile, "groq")
-        self.assertEqual(config.base_url, "https://api.groq.com/openai/v1")
-        self.assertEqual(config.api_key, "test-groq-key")
-        self.assertEqual(config.model, "llama-3.3-70b-versatile")
+        self.assertEqual(config.profile, "openai")
+        self.assertIsNone(config.base_url)
+        self.assertEqual(config.api_key, "test-openai-key")
+        self.assertEqual(config.model, "gpt-test-model")
 
-    def test_llm_config_reads_gemini_profile(self) -> None:
+    def test_llm_config_uses_default_openai_model(self) -> None:
         env = {
-            "LLM_PROFILE": "gemini",
-            "GEMINI_API_KEY": "test-gemini-key",
-            "GEMINI_MODEL": "gemini-test-model",
+            "OPENAI_API_KEY": "test-openai-key",
         }
         with patch.dict("os.environ", env, clear=True):
             config = LLMConfig.from_env()
 
         self.assertTrue(config.is_configured)
-        self.assertEqual(config.profile, "gemini")
-        self.assertEqual(config.base_url, "https://generativelanguage.googleapis.com/v1beta/openai/")
-        self.assertEqual(config.api_key, "test-gemini-key")
-        self.assertEqual(config.model, "gemini-test-model")
+        self.assertEqual(config.profile, "openai")
+        self.assertEqual(config.api_key, "test-openai-key")
+        self.assertEqual(config.model, "openai/gpt-oss-20b")
 
-    def test_llm_config_reads_university_profile(self) -> None:
+    def test_llm_config_reads_vllm_environment(self) -> None:
         env = {
-            "LLM_PROFILE": "university",
-            "UNIVERSITY_BASE_URL": "https://university.example/openai/v1",
+            "VLLM_BASE_URL": "https://vllm.example.test/v1",
+            "VLLM_API_KEY": "test-vllm-key",
+            "VLLM_MODEL": "openai/gpt-oss-20b",
+        }
+        with patch.dict("os.environ", env, clear=True):
+            config = LLMConfig.from_env()
+
+        self.assertTrue(config.is_configured)
+        self.assertEqual(config.profile, "openai")
+        self.assertEqual(config.base_url, "https://vllm.example.test/v1")
+        self.assertEqual(config.api_key, "test-vllm-key")
+        self.assertEqual(config.model, "openai/gpt-oss-20b")
+
+    def test_llm_config_reads_university_vllm_aliases(self) -> None:
+        env = {
+            "UNIVERSITY_BASE_URL": "https://university-vllm.example.test/v1",
             "UNIVERSITY_API_KEY": "test-university-key",
-            "UNIVERSITY_MODEL": "university-model",
+            "UNIVERSITY_MODEL": "openai/gpt-oss-20b",
         }
         with patch.dict("os.environ", env, clear=True):
             config = LLMConfig.from_env()
 
         self.assertTrue(config.is_configured)
-        self.assertEqual(config.profile, "university")
-        self.assertEqual(config.base_url, "https://university.example/openai/v1")
+        self.assertEqual(config.profile, "openai")
+        self.assertEqual(config.base_url, "https://university-vllm.example.test/v1")
         self.assertEqual(config.api_key, "test-university-key")
-        self.assertEqual(config.model, "university-model")
+        self.assertEqual(config.model, "openai/gpt-oss-20b")
 
     def test_repairs_mojibake_from_llm_response(self) -> None:
         text = "El precio pasÃ³ de 13.34â€¯USD. AnÃ¡lisis tÃ©cnico."
@@ -94,6 +106,10 @@ class LLMConfigTests(unittest.TestCase):
         repaired = _repair_mojibake(text)
 
         self.assertEqual(repaired, "El precio pasó de 13.34 USD. Análisis técnico.")
+
+    def test_detects_json_only_interpretation_answer(self) -> None:
+        self.assertTrue(_is_json_only_answer('{"retorno_total": 12.7, "cagr": 0.68}'))
+        self.assertFalse(_is_json_only_answer("Nvidia crecio un 1273.33% segun los datos historicos."))
 
 
 if __name__ == "__main__":

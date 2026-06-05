@@ -2,49 +2,74 @@
 
 \section{Arquitectura general}
 
-El sistema se ha diseñado como un workflow modular que transforma una consulta financiera estructurada en una respuesta analítica basada en código generado por LLM y ejecutado de forma controlada. La arquitectura separa de forma explícita las fases de validación, análisis LLM, generación de código, control de seguridad, ejecución e interpretación.
+La arquitectura se diseña para evitar que el modelo de lenguaje responda directamente a una pregunta financiera sin cálculo verificable. El flujo separa tres responsabilidades generativas y varias capas deterministas de control.
 
-El estado compartido conserva la consulta normalizada, la interpretación estructurada, el código generado, la salida estándar, la salida de error, el código de retorno, los artefactos y la respuesta final. Esta estructura permite mantener trazabilidad entre la entrada inicial y el resultado entregado al usuario.
+El usuario formula una consulta en lenguaje natural. El sistema valida que existan tickers, fechas o periodo, intervalo y rutas a CSV locales. Después intervienen tres agentes LLM: el primero planifica el análisis, el segundo genera código Python y el tercero interpreta resultados ya calculados.
 
-La separación entre agentes es una decisión central del diseño. El primer agente actúa como preparador de datos: entiende la petición, decide qué cálculos son necesarios y genera un script que produce resultados estructurados. El segundo agente actúa como intérprete: recibe resultados ya calculados y los convierte en una explicación para el usuario. Esta división evita que el sistema dependa solo de una respuesta textual del modelo y permite revisar por separado consulta, código, ejecución, métricas e interpretación.
-
-La arquitectura se documentó también como artefacto interno de apoyo, recogido en el Anexo~\ref{tab:documentacion_markdown_memoria}. Ese documento sirvió para fijar el mapa conceptual del flujo, la responsabilidad de cada nodo y la decisión de tratar la generación de código como una etapa intermedia validable, no como una respuesta final. La memoria recoge esa lógica de forma resumida y la formaliza en la Figura~\ref{fig:arquitectura_nodos_workflow}.
+Entre la generación de código y la interpretación final se sitúa una capa de validación y ejecución controlada. Esta capa revisa el contrato del script, limita operaciones permitidas, ejecuta sobre datos históricos locales y captura la salida JSON. Así, las cifras no proceden de texto libre del modelo, sino de código ejecutado sobre datos trazables.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.96\textwidth]{figures/arquitectura_nodos_workflow.pdf}
-\caption{Arquitectura del flujo LLM con generación de código y ejecución controlada.}
-\label{fig:arquitectura_nodos_workflow}
+\includegraphics[width=0.96\textwidth]{figures/figura_5_1_usuario_final_v1.pdf}
+\caption{Arquitectura general del sistema desde la consulta del usuario hasta la respuesta trazable.}
+\label{fig:arquitectura_usuario_final}
 \end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{L{0.23\textwidth}L{0.30\textwidth}Y}
+\toprule
+\textbf{Bloque} & \textbf{Responsabilidad} & \textbf{Salida esperada} \\
+\midrule
+Entrada validada & Comprobar consulta, activos, fechas, intervalo y CSV. & Estructura de entrada procesable. \\
+Agente 1 & Planificar: interpretar la consulta, elegir nivel A/B/C y definir métricas y salidas. & Plan analítico JSON, sin cifras inventadas. \\
+Agente 2 & Generar código Python ajustado al contrato. & Script autocontenido que calcula sobre CSV locales. \\
+Validación y ejecución & Revisar seguridad, ejecutar y capturar salida. & JSON con métricas, tablas, datos visuales si proceden y limitaciones. \\
+Agente 3 & Explicar resultados ya calculados. & Respuesta final en español, prudente y sin recomendación de inversión. \\
+\bottomrule
+\end{tabularx}
+\caption{Responsabilidades principales de la arquitectura.}
+\label{tab:responsabilidades_arquitectura_general}
+\end{table}
+
+La trazabilidad es una propiedad transversal. El sistema conserva la pregunta, el plan, el código generado, la salida ejecutada, los errores y la respuesta final. Esta información permite repetir pruebas y localizar en qué fase aparece un problema.
 
 \section{Nodos del flujo}
 
-El flujo se compone de los siguientes nodos:
+El flujo implementado puede entenderse como una cadena de nodos:
 
 \begin{itemize}
-    \item \textbf{Validación mínima}: comprueba la consulta, los tickers, las fechas y la existencia de CSV.
-    \item \textbf{LLM central / análisis}: interpreta la consulta, identifica la intencionalidad financiera y define qué debe calcularse.
-    \item \textbf{Generación de código}: recibe la interpretación y el mensaje original del usuario para producir un script Python.
-    \item \textbf{Control de seguridad}: valida contrato del script, importaciones permitidas y salida JSON.
-    \item \textbf{Ejecución controlada}: lanza el script en un proceso separado, captura stdout, stderr y artefactos.
-    \item \textbf{LLM central / interpretación}: lee métricas y redacta una conclusión comprensible para el usuario.
+    \item \textbf{Validación de entrada}: rechaza consultas vacías, fechas inválidas, ausencia de tickers o CSV inexistentes.
+    \item \textbf{Agente 1: planificación}: identifica nivel A/B/C, objetivo analítico, métricas, columnas necesarias y salidas esperadas.
+    \item \textbf{Agente 2: generación de código}: produce un script Python completo que lee un payload, calcula y emite JSON.
+    \item \textbf{Validación de seguridad}: comprueba estructura, importaciones, lectura de entrada y salida JSON antes de ejecutar.
+    \item \textbf{Reparación asistida}: si el script falla o se rechaza, puede pedirse una versión corregida que vuelve a validarse.
+    \item \textbf{Ejecución controlada}: ejecuta el script en proceso separado sobre datos locales.
+    \item \textbf{Compactación}: reduce salidas largas antes de enviarlas al agente interpretador, manteniendo la salida completa como evidencia.
+    \item \textbf{Agente 3: interpretación}: redacta la respuesta final usando únicamente resultados ya calculados.
 \end{itemize}
 
-La documentación interna de arquitectura ayudó a mantener una correspondencia directa entre estos nodos y los módulos reales del repositorio. En particular, el flujo separa los nodos que dependen del proveedor LLM de los nodos deterministas de validación, seguridad y ejecución. Esta separación facilita cambiar de modelo sin modificar la lógica principal del workflow y permite analizar los fallos por origen.
+Esta separación permite diagnosticar fallos con precisión. Un caso puede detenerse por entrada inválida, configuración LLM, planificación incompleta, código no seguro, error de ejecución o fallo de interpretación.
 
 \section{Contrato del código generado}
 
-El contrato del código generado es la interfaz entre la parte generativa del sistema y la parte determinista. Su función es convertir una salida libre del LLM en un artefacto que pueda revisarse, ejecutarse y comparar de forma sistemática. Sin este contrato, cada script podría tener una estructura distinta, imprimir texto no parseable, depender de recursos externos o mezclar cálculo con explicación, lo que haría difícil auditar el resultado.
+El contrato del código generado es la interfaz entre el modelo y la capa determinista. El script debe:
 
-El código generado no debe redactar la respuesta final. Su responsabilidad es calcular métricas y devolver una salida estructurada. El contrato mínimo exige una función \texttt{main()}, lectura de los datos de entrada recibidos por \texttt{argv[1]}, escritura de un único JSON por \texttt{stdout} y uso exclusivo de importaciones permitidas. Estas reglas permiten que el sistema trate todos los scripts generados de la misma forma: primero los valida, después los ejecuta en un proceso separado y finalmente interpreta su salida JSON.
+\begin{itemize}
+    \item definir \texttt{main()};
+    \item leer el payload mediante \texttt{Path(sys.argv[1]).read\_text};
+    \item usar cargadores internos para los CSV;
+    \item limitarse a importaciones permitidas;
+    \item calcular métricas sobre datos históricos locales;
+    \item devolver un único JSON por \texttt{stdout};
+    \item incluir limitaciones cuando una métrica no pueda calcularse.
+\end{itemize}
 
-Por tanto, el primer agente no se evalúa por lo convincente que suene una explicación, sino por si prepara datos suficientes para la consulta. Del mismo modo, el segundo agente no se evalúa por calcular nuevas métricas, sino por interpretar fielmente lo que el script ha devuelto. La respuesta final solo se considera sólida cuando ambos componentes funcionan de forma coherente.
-
-El sentido práctico de este contrato es reducir el riesgo de tres problemas habituales en sistemas LLM con generación de código: ejecución de instrucciones no deseadas, respuestas imposibles de procesar automáticamente y pérdida de trazabilidad entre consulta, código, métricas y explicación final. Por ello, el contrato no es solo una restricción técnica, sino una decisión metodológica: obliga a que el modelo produzca cálculo verificable antes de producir lenguaje natural.
+El script no redacta la respuesta final. Su responsabilidad es producir resultados estructurados: métricas, tablas, datos visuales en JSON si se solicitan y avisos de limitación. El agente de interpretación se encarga después de convertir esa salida en lenguaje natural.
 
 \section{Gestión de errores}
 
-Los errores se separan por origen: entrada inválida, error LLM, código rechazado, error de ejecución y error de interpretación. Esta separación facilita depuración y revisión humana posterior, porque permite saber si el problema procede de los datos, del proveedor LLM, del código generado o del entorno de ejecución.
+Los errores se separan por origen: entrada, configuración del modelo, formato JSON, seguridad del código, ejecución e interpretación. El sistema no oculta estos fallos bajo una respuesta aparente. Si no puede completar una fase, devuelve un estado controlado y conserva el detalle del error.
 
-
-
+Esta gestión es especialmente importante en un sistema con generación de código. Un fallo de cuota o red no significa mala planificación financiera; un código rechazado no equivale a una mala interpretación; y una ejecución correcta puede requerir todavía una respuesta final más clara. Separar los estados permite evaluar el sistema como ingeniería, no sólo como conversación.

@@ -1,7 +1,6 @@
 [
   {
     "query": "Cuanto ha crecido Nvidia en 5 anos",
-    "intent": "price_growth",
     "tickers": [
       "NVDA"
     ],
@@ -14,7 +13,6 @@
   },
   {
     "query": "Compara Nvidia y AMD en 2 anos",
-    "intent": "compare_assets",
     "tickers": [
       "NVDA",
       "AMD"
@@ -28,7 +26,6 @@
   },
   {
     "query": "Dame una vision general de AAPL en 3 meses",
-    "intent": "asset_overview",
     "tickers": [
       "AAPL"
     ],
@@ -41,7 +38,6 @@
   },
   {
     "query": "Analiza los retornos de QQQ y SPY en 2024",
-    "intent": "return_analysis",
     "tickers": [
       "QQQ",
       "SPY"
@@ -55,7 +51,6 @@
   },
   {
     "query": "Descargame el historico del S&P 500 desde 2020",
-    "intent": "historical_download",
     "tickers": [
       "^GSPC"
     ],
@@ -68,7 +63,6 @@
   },
   {
     "query": "Quiero el oro en 1 semana a 1h",
-    "intent": "historical_download",
     "tickers": [
       "GC=F"
     ],
@@ -81,7 +75,6 @@
   },
   {
     "query": "Datos de Bitcoin desde 2024-01-01 hasta 2024-12-31",
-    "intent": "historical_download",
     "tickers": [
       "BTC-USD"
     ],
@@ -94,7 +87,6 @@
   },
   {
     "query": "QQQ y SPY desde 2024-01-01 hasta 2024-12-31",
-    "intent": "historical_download",
     "tickers": [
       "QQQ",
       "SPY"
@@ -108,7 +100,6 @@
   },
   {
     "query": "AAPL en 3 meses",
-    "intent": "historical_download",
     "tickers": [
       "AAPL"
     ],
@@ -121,7 +112,6 @@
   },
   {
     "query": "EUR/USD en 10 dias a 1h",
-    "intent": "historical_download",
     "tickers": [
       "EURUSD=X"
     ],

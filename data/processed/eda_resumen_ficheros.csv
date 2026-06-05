@@ -1,9 +1,9 @@
-case_id,source_file,query,intent,tickers,interval,start_param,end_param,period_param,rows,columns,start_observed,end_observed,missing_cells,missing_pct,duplicated_dates,close_columns
-aapl_en_3_meses,aapl_en_3_meses.csv,AAPL en 3 meses,historical_download,AAPL,1d,,,3mo,60,6,2025-12-17,2026-03-16,0,0.0,0,1
-compara_nvidia_y_amd_en_2_aos,compara_nvidia_y_amd_en_2_aos.csv,Compara Nvidia y AMD en 2 años,compare_assets,"AMD, NVDA",1d,,,2y,500,12,2024-03-18,2026-03-16,0,0.0,0,2
-cunto_ha_crecido_nvidia_en_5_aos,cunto_ha_crecido_nvidia_en_5_aos.csv,Cuánto ha crecido Nvidia en 5 años,price_growth,NVDA,1d,,,5y,1255,6,2021-03-17,2026-03-16,0,0.0,0,1
-datos_de_bitcoin_desde_20240101_hasta_20241231,datos_de_bitcoin_desde_20240101_hasta_20241231.csv,Datos de Bitcoin desde 2024-01-01 hasta 2024-12-31,historical_download,BTC-USD,1d,2024-01-01,2024-12-31,,365,6,2024-01-01,2024-12-30,0,0.0,0,1
-descrgame_el_histrico_del_sp_500_desde_2020,descrgame_el_histrico_del_sp_500_desde_2020.csv,Descárgame el histórico del S&P 500 desde 2020,historical_download,^GSPC,1d,2020-01-01,,,1558,6,2020-01-02,2026-03-16,0,0.0,0,1
-eurusd_en_10_das_a_1h,eurusd_en_10_das_a_1h.csv,EUR/USD en 10 días a 1h,historical_download,EURUSD=X,1h,,,10d,224,6,2026-03-04,2026-03-17,0,0.0,0,1
-qqq_y_spy_desde_20240101_hasta_20241231,qqq_y_spy_desde_20240101_hasta_20241231.csv,QQQ y SPY desde 2024-01-01 hasta 2024-12-31,historical_download,"QQQ, SPY",1d,2024-01-01,2024-12-31,,251,12,2024-01-02,2024-12-30,0,0.0,0,2
-quiero_el_oro_en_1_semana_a_1h,quiero_el_oro_en_1_semana_a_1h.csv,Quiero el oro en 1 semana a 1h,historical_download,GC=F,1h,,,1wk,116,6,2026-03-10,2026-03-17,0,0.0,0,1
+case_id,source_file,query,tickers,interval,start_param,end_param,period_param,rows,columns,start_observed,end_observed,missing_cells,missing_pct,duplicated_dates,close_columns
+aapl_en_3_meses,aapl_en_3_meses.csv,AAPL en 3 meses,AAPL,1d,,,3mo,60,6,2025-12-17,2026-03-16,0,0.0,0,1
+compara_nvidia_y_amd_en_2_aos,compara_nvidia_y_amd_en_2_aos.csv,Compara Nvidia y AMD en 2 años,"AMD, NVDA",1d,,,2y,500,12,2024-03-18,2026-03-16,0,0.0,0,2
+cunto_ha_crecido_nvidia_en_5_aos,cunto_ha_crecido_nvidia_en_5_aos.csv,Cuánto ha crecido Nvidia en 5 años,NVDA,1d,,,5y,1255,6,2021-03-17,2026-03-16,0,0.0,0,1
+datos_de_bitcoin_desde_20240101_hasta_20241231,datos_de_bitcoin_desde_20240101_hasta_20241231.csv,Datos de Bitcoin desde 2024-01-01 hasta 2024-12-31,BTC-USD,1d,2024-01-01,2024-12-31,,365,6,2024-01-01,2024-12-30,0,0.0,0,1
+descrgame_el_histrico_del_sp_500_desde_2020,descrgame_el_histrico_del_sp_500_desde_2020.csv,Descárgame el histórico del S&P 500 desde 2020,^GSPC,1d,2020-01-01,,,1558,6,2020-01-02,2026-03-16,0,0.0,0,1
+eurusd_en_10_das_a_1h,eurusd_en_10_das_a_1h.csv,EUR/USD en 10 días a 1h,EURUSD=X,1h,,,10d,224,6,2026-03-04,2026-03-17,0,0.0,0,1
+qqq_y_spy_desde_20240101_hasta_20241231,qqq_y_spy_desde_20240101_hasta_20241231.csv,QQQ y SPY desde 2024-01-01 hasta 2024-12-31,"QQQ, SPY",1d,2024-01-01,2024-12-31,,251,12,2024-01-02,2024-12-30,0,0.0,0,2
+quiero_el_oro_en_1_semana_a_1h,quiero_el_oro_en_1_semana_a_1h.csv,Quiero el oro en 1 semana a 1h,GC=F,1h,,,1wk,116,6,2026-03-10,2026-03-17,0,0.0,0,1

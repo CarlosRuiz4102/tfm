@@ -4,7 +4,7 @@
 
 El sistema trabaja con datos financieros históricos descargados previamente mediante \texttt{yfinance}~\cite{yfinance} y almacenados en ficheros CSV. Yahoo Finance publica información de mercado, fichas de activos y series históricas para acciones, fondos cotizados, índices, divisas, criptomonedas y materias primas. La librería \texttt{yfinance} permite acceder de forma programática a parte de esta información disponible en Yahoo Finance~\cite{yahoofinancehistorical}, incluyendo campos habituales como apertura, máximo, mínimo, cierre, cierre ajustado y volumen. En este trabajo se utiliza como herramienta práctica de descarga para un contexto académico, no como proveedor garantizado para producción.
 
-Cada CSV se conserva junto a un fichero de metadatos en formato JSON. Este metadato registra la consulta original, la intención analítica, los símbolos financieros implicados, el intervalo temporal y los parámetros de descarga. La decisión permite separar la fase de obtención de datos de la fase de análisis: el MVP no depende de que la API externa esté disponible durante cada ejecución, sino que opera sobre un conjunto de datos congelado y revisable.
+Cada CSV se conserva junto a un fichero de metadatos en formato JSON. Este metadato registra la consulta original, el objetivo analítico, los símbolos financieros implicados, el intervalo temporal y los parámetros de descarga. La decisión permite separar la fase de obtención de datos de la fase de análisis: el MVP no depende de que la API externa esté disponible durante cada ejecución, sino que opera sobre un conjunto de datos congelado y revisable.
 
 La Tabla~\ref{tab:datos_obtenidos} muestra los datos obtenidos y utilizados como base del TFM. No se incluyen todos los nombres de fichero en la tabla para evitar una presentación demasiado técnica; los nombres completos se mantienen en \texttt{data/raw} y en el resumen procesado \texttt{data/processed/eda\_resumen\_ficheros.csv}.
 
@@ -18,7 +18,7 @@ La Tabla~\ref{tab:datos_obtenidos} muestra los datos obtenidos y utilizados como
 NVDA cinco años & NVDA & 2021--2026, diario & Crecimiento de precio y validación de respuestas de Nivel A. \\
 NVDA frente a AMD & NVDA, AMD & 2024--2026, diario & Comparación entre activos y cálculo de rentabilidad relativa. \\
 AAPL tres meses & AAPL & 2025--2026, diario & Visión descriptiva de un activo y análisis técnico básico. \\
-QQQ frente a SPY & QQQ, SPY & 2024, diario & Retorno, riesgo, drawdown y visualizaciones comparativas. \\
+QQQ frente a SPY & QQQ, SPY & 2024, diario & Retorno, riesgo, drawdown y comparación estructurada. \\
 S\&P 500 desde 2020 & \texttt{\^{}GSPC} & 2020--2026, diario & Serie amplia de mercado para pruebas de histórico largo. \\
 Bitcoin 2024 & BTC-USD & 2024, diario & Activo cripto con alta variabilidad. \\
 EUR/USD horario & EURUSD=X & 10 días, 1h & Ejemplo de divisa con frecuencia intradía. \\
@@ -33,7 +33,7 @@ La variedad de activos permite comprobar que el sistema no está limitado a una 
 
 \section{Catálogo de consultas y proceso de descarga}
 
-El punto de partida del conjunto de datos es el catálogo \texttt{data/catalog/query\_cases.json}. Cada entrada define la consulta de referencia, la intención esperada, los tickers, el rango temporal o período relativo, el intervalo de observación y los posibles avisos. Este catálogo actúa como contrato entre la fase de preparación de datos y el flujo de análisis.
+El punto de partida del conjunto de datos es un catálogo de consultas de referencia. Cada entrada define la consulta, los tickers, el rango temporal o período relativo, el intervalo de observación y los posibles avisos. Este catálogo actúa como contrato entre la fase de preparación de datos y el flujo de análisis.
 
 El proceso utilizado para construir el conjunto de datos puede resumirse en cuatro pasos:
 
@@ -41,10 +41,10 @@ El proceso utilizado para construir el conjunto de datos puede resumirse en cuat
     \item Definir o revisar la consulta en el catálogo, por ejemplo una comparativa entre QQQ y SPY o una descarga de NVDA a cinco años.
     \item Transformar esa consulta en parámetros de descarga: lista de tickers, \texttt{start}, \texttt{end}, \texttt{period} e \texttt{interval}.
     \item Descargar las series con \texttt{yfinance} y guardar el resultado en \texttt{data/raw} como CSV, junto a un \texttt{.metadata.json} con los parámetros usados.
-    \item Ejecutar \texttt{scripts/generate\_data\_eda.py} para normalizar los CSV, generar tablas procesadas y producir el informe exploratorio auxiliar.
+    \item Normalizar los CSV, generar tablas procesadas y producir resúmenes exploratorios auxiliares.
 \end{enumerate}
 
-En el repositorio actual, los CSV crudos ya están congelados. Por tanto, para reproducir la parte documentada de esta memoria no es necesario volver a llamar a Yahoo Finance: basta con conservar \texttt{data/raw} y ejecutar el script de EDA si se quieren regenerar las tablas procesadas. Si se quisiera ampliar el conjunto de datos, el procedimiento correcto sería añadir primero la consulta al catálogo y después generar un nuevo CSV con su metadato asociado.
+En el repositorio actual, los CSV crudos ya están congelados. Por tanto, para reproducir la parte documentada de esta memoria no es necesario volver a llamar a Yahoo Finance: basta con conservar los datos crudos y regenerar las tablas procesadas si fuera necesario. Si se quisiera ampliar el conjunto de datos, el procedimiento correcto sería añadir primero la consulta al catálogo y después generar un nuevo CSV con su metadato asociado.
 
 Cada consulta se transforma en una representación estructurada antes de entrar en el flujo LLM. El siguiente bloque muestra un ejemplo simplificado:
 
@@ -52,12 +52,11 @@ Cada consulta se transforma en una representación estructurada antes de entrar 
 \begin{verbatim}
 {
   "query": "Compárame QQQ y SPY en 2024 de forma clara,
-            con tabla y gráfica normalizada",
+            con tabla comparativa y serie normalizada",
   "tickers": ["QQQ", "SPY"],
   "csv_paths": [
     "data/raw/qqq_y_spy_desde_20240101_hasta_20241231.csv"
   ],
-  "intent": "compare_assets",
   "start": "2024-01-01",
   "end": "2024-12-31",
   "period": null,
@@ -77,7 +76,7 @@ La Tabla~\ref{tab:formato_consulta} resume el significado de los campos principa
 \textbf{Elemento} & \textbf{Descripción} & \textbf{Ejemplo} \\
 \midrule
 Consulta original & Texto introducido o definido como caso de prueba. & Comparar Nvidia y AMD. \\
-Intención analítica & Tipo de análisis que debe ejecutarse. & Comparación de activos. \\
+Objetivo analítico & Tipo de análisis que debe ejecutarse. & Comparación de activos. \\
 Símbolos financieros & Activos sobre los que se realiza el análisis. & NVDA, AMD. \\
 Rango temporal & Período relativo o fechas de inicio y fin. & Dos años. \\
 Intervalo & Frecuencia de los datos históricos. & Diario. \\
@@ -112,11 +111,11 @@ La Tabla~\ref{tab:estructura_csv} resume los campos usados por el sistema. La co
 \label{tab:estructura_csv}
 \end{table}
 
-La estructura multinivel también explica por qué el proyecto incluye una capa de normalización. El script de EDA transforma cada combinación caso--ticker en formato largo, con columnas explícitas para \texttt{case\_id}, \texttt{source\_file}, \texttt{ticker}, \texttt{interval}, fecha y campos OHLCV. Este formato facilita auditar métricas por serie y evita que el código generado por el LLM tenga que resolver por sí solo todas las variantes de cabecera.
+La estructura multinivel también explica por qué el proyecto incluye una capa de normalización. El proceso exploratorio transforma cada combinación caso--ticker en formato largo, con columnas explícitas para identificador de caso, fichero fuente, ticker, intervalo, fecha y campos OHLCV. Este formato facilita auditar métricas por serie y evita que el código generado por el LLM tenga que resolver por sí solo todas las variantes de cabecera.
 
 \section{Análisis exploratorio de datos}
 
-El análisis exploratorio se realizó con \texttt{scripts/generate\_data\_eda.py}. Este script lee los CSV descargados con \texttt{yfinance}, interpreta las cabeceras multinivel, normaliza los datos a formato largo y genera tres salidas procesadas: \texttt{eda\_dataset\_largo.csv}, \texttt{eda\_resumen\_ficheros.csv} y \texttt{eda\_resumen\_series.csv}. Además, produce un informe textual en \texttt{docs/eda\_datos\_tfm.txt}.
+El análisis exploratorio lee los CSV descargados con \texttt{yfinance}, interpreta las cabeceras multinivel, normaliza los datos a formato largo y genera resúmenes procesados por fichero y por serie.
 
 El análisis confirma que el conjunto contiene 5.080 filas normalizadas, con un rango observado entre el 2 de enero de 2020 y el 17 de marzo de 2026. Los intervalos considerados son diario (\texttt{1d}) e intradía horario (\texttt{1h}).
 
@@ -183,14 +182,33 @@ AAPL, 3 meses & -7.00 \% & 24.15 \% & -10.07 \% \\
 
 \section{Calidad, cobertura y limitaciones}
 
-La ausencia de nulos en el precio de cierre es relevante porque las métricas principales del MVP dependen directamente de esta columna. También se comprobó la ausencia de duplicados por fecha en los ficheros analizados. Estas condiciones permiten ejecutar las intenciones actuales sin introducir imputaciones adicionales.
+La ausencia de nulos en el precio de cierre es relevante porque las métricas principales del MVP dependen directamente de esta columna. También se comprobó la ausencia de duplicados por fecha en los ficheros analizados. Estas condiciones permiten ejecutar las consultas actuales sin introducir imputaciones adicionales.
 
 Como limitación, las descargas basadas en períodos relativos, por ejemplo tres meses o cinco años, dependen de la fecha en la que se generó el CSV. Para una versión final completamente cerrada sería recomendable fijar fechas explícitas de inicio y fin en todos los casos. También debe considerarse que los datos proceden de Yahoo Finance mediante \texttt{yfinance}. Al tratarse de una herramienta abierta no afiliada ni avalada por Yahoo, su uso se considera adecuado para un contexto académico y experimental, pero en un entorno productivo habría que estudiar licencias, disponibilidad, estabilidad del proveedor y derechos de uso de los datos descargados~\cite{yfinance}.
 
-\section{Trazabilidad documental y artefactos reproducibles}
+\section{Material generado por el flujo y trazabilidad}
 
-La conservación de notebooks, informes Markdown y tablas procesadas es profesional siempre que se presente como trazabilidad metodológica y no como material informal. En este trabajo se mantienen como evidencias auxiliares para reconstruir decisiones de diseño, parámetros de descarga, estructura de los CSV y resultados intermedios.
+Además de los CSV históricos, el proyecto genera material intermedio durante cada ejecución. Este material es importante porque permite revisar cómo una consulta en lenguaje natural se transforma en una respuesta final. En un TFM no basta con indicar que el sistema responde: también debe poder explicarse qué entendió el modelo, qué cálculo se preparó, qué datos se usaron y qué resultado recibió el agente que redacta la explicación.
 
-Los cuadernos auxiliares tienen funciones diferenciadas. El primero se utilizó como laboratorio para probar nuevos símbolos financieros, períodos e intervalos antes de incorporarlos al conjunto definitivo. El segundo documenta la relación entre consultas de referencia y CSV esperados. El tercero funciona como referencia principal del análisis exploratorio formal, apoyado por \texttt{scripts/generate\_data\_eda.py} y por las tablas agregadas usadas en esta memoria.
+La Tabla~\ref{tab:artefactos_flujo_agentes} resume los artefactos conceptuales del flujo. La nomenclatura exacta puede evolucionar con la implementación, pero la separación de responsabilidades es estable: el agente planificador define el análisis, el agente generador produce código, la capa de ejecución produce resultados verificables y el agente interpretador convierte esos resultados en lenguaje natural.
 
-También se revisaron los documentos Markdown generados durante la evolución del proyecto. El documento de arquitectura sirvió para consolidar la descripción del flujo LLM con generación de código controlada; los documentos de evaluación cualitativa y amplitud se emplearon para definir los niveles A/B/C; y las salidas de ejecución se reservaron como evidencias de apoyo para el capítulo de resultados y los anexos. Esta separación evita mezclar notas de desarrollo con resultados finales, pero mantiene la trazabilidad de las decisiones metodológicas.
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{L{0.19\textwidth}L{0.27\textwidth}L{0.27\textwidth}Y}
+\toprule
+\textbf{Fase} & \textbf{Recibe} & \textbf{Genera} & \textbf{Utilidad en la memoria} \\
+\midrule
+Entrada normalizada & Consulta, tickers, rango temporal y rutas CSV. & \texttt{FinancialQueryInput} o estructura equivalente. & Fija qué datos puede usar el sistema y evita ambigüedades en la ejecución. \\
+Agente planificador & Entrada normalizada y reglas de niveles A/B/C. & Plan de análisis con objetivo, métricas, salidas solicitadas y restricciones. & Permite evaluar si el modelo entendió la consulta antes de calcular nada. \\
+Agente generador & Consulta original, entrada normalizada y plan analítico. & Script Python autocontenido ajustado al contrato. & Permite adaptar el cálculo a cada consulta sin perder validación. \\
+Capa de ejecución & Código validado y datos históricos preparados. & Métricas, tablas y datos estructurados derivados de los CSV. & Separa cálculo reproducible de redacción en lenguaje natural. \\
+Agente interpretador & Consulta original, plan y resultados estructurados. & Respuesta final comprensible, prudente y sin recomendación de inversión. & Permite valorar claridad, fidelidad a los datos y reconocimiento de limitaciones. \\
+Trazabilidad & Artefactos anteriores y estado de ejecución. & Registro revisable de entrada, plan, cálculo, errores y respuesta. & Facilita auditoría, depuración y comparación entre modelos. \\
+\bottomrule
+\end{tabularx}
+\caption{Material generado por el flujo y papel de cada agente.}
+\label{tab:artefactos_flujo_agentes}
+\end{table}
+
+Esta lectura también ayuda a distinguir material de trabajo de resultados finales. Las tablas procesadas y las notas auxiliares se conservan como evidencias para reconstruir decisiones de diseño, parámetros de descarga, estructura de los CSV, criterios de evaluación y salidas intermedias. No se presentan como conclusiones por sí mismas, sino como soporte metodológico para que el flujo sea reproducible y revisable.

@@ -50,7 +50,7 @@ class OpenAICompatibleLLMClient:
         if config.provider != "openai-compatible":
             raise LLMClientError(f"Proveedor LLM no soportado todavia: {config.provider}")
         if not config.is_configured:
-            raise LLMClientError("Faltan LLM_API_KEY/LLM_MODEL o un perfil LLM valido.")
+            raise LLMClientError("Faltan VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para usar openai/gpt-oss-20b sobre vLLM.")
         self.config = config
 
         try:

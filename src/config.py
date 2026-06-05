@@ -18,26 +18,7 @@ RESULTS_DIR = ROOT_DIR / "results"
 RESULTS_CODE_DIR = RESULTS_DIR / "code"
 RESULTS_LOGS_DIR = RESULTS_DIR / "logs"
 
-LLM_PROFILES = {
-    "groq": {
-        "base_url": "https://api.groq.com/openai/v1",
-        "api_key_env": "GROQ_API_KEY",
-        "model_env": "GROQ_MODEL",
-        "default_model": "llama-3.3-70b-versatile",
-    },
-    "gemini": {
-        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        "api_key_env": "GEMINI_API_KEY",
-        "model_env": "GEMINI_MODEL",
-        "default_model": "gemini-2.5-flash",
-    },
-    "university": {
-        "base_url_env": "UNIVERSITY_BASE_URL",
-        "api_key_env": "UNIVERSITY_API_KEY",
-        "model_env": "UNIVERSITY_MODEL",
-        "default_model": "",
-    },
-}
+DEFAULT_OPENAI_MODEL = "openai/gpt-oss-20b"
 
 if load_dotenv is not None:
     load_dotenv(ROOT_DIR / ".env")
@@ -89,24 +70,27 @@ class LLMConfig:
 
     @classmethod
     def from_env(cls) -> "LLMConfig":
-        profile = os.getenv("LLM_PROFILE", "").strip().lower()
-        profile_config = LLM_PROFILES.get(profile, {})
-        profile_api_key = os.getenv(profile_config.get("api_key_env", ""), "")
-        profile_model = os.getenv(profile_config.get("model_env", ""), "")
-        verify_ssl_value = os.getenv(f"{profile.upper()}_VERIFY_SSL") or os.getenv("LLM_VERIFY_SSL")
+        verify_ssl_value = os.getenv("OPENAI_VERIFY_SSL") or os.getenv("LLM_VERIFY_SSL")
 
         return cls(
             provider=os.getenv("LLM_PROVIDER", "openai-compatible"),
-            profile=profile,
-            base_url=os.getenv("LLM_BASE_URL")
+            profile="openai",
+            base_url=os.getenv("VLLM_BASE_URL")
+            or os.getenv("UNIVERSITY_BASE_URL")
+            or os.getenv("LLM_BASE_URL")
             or os.getenv("OPENAI_BASE_URL")
-            or os.getenv(profile_config.get("base_url_env", ""), "")
-            or profile_config.get("base_url"),
-            api_key=os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY") or profile_api_key,
-            model=os.getenv("LLM_MODEL")
+            or None,
+            api_key=os.getenv("VLLM_API_KEY")
+            or os.getenv("UNIVERSITY_API_KEY")
+            or os.getenv("LLM_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or "",
+            model=os.getenv("VLLM_MODEL")
+            or os.getenv("UNIVERSITY_MODEL")
+            or os.getenv("LLM_MODEL")
+            or os.getenv("OPENAI_MODEL")
             or os.getenv("MODEL_NAME")
-            or profile_model
-            or profile_config.get("default_model", ""),
+            or DEFAULT_OPENAI_MODEL,
             temperature=_env_float("LLM_TEMPERATURE", 0.1),
             max_tokens=_env_int("LLM_MAX_TOKENS", 4096),
             timeout_seconds=_env_int("LLM_TIMEOUT_SECONDS", 120),
@@ -118,12 +102,10 @@ class LLMConfig:
         api_key = self.api_key.strip()
         model = self.model.strip()
         placeholder_keys = {
-            "your_groq_key_here",
-            "your_gemini_key_here",
-            "your_university_key_here",
-            "tu_clave_groq",
-            "tu_clave_gemini",
-            "tu_clave_universidad",
+            "your_openai_key_here",
+            "your_vllm_key_here",
+            "tu_clave_openai",
+            "tu_clave_vllm",
         }
         return bool(api_key) and api_key not in placeholder_keys and bool(model)
 

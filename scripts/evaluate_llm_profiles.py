@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from datetime import datetime
@@ -26,7 +25,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 
 EVALUATION_DIR = RESULTS_DIR / "evaluations"
-DEFAULT_PROFILES = ["groq", "gemini", "university"]
+DEFAULT_MODEL_LABELS = ["openai"]
 INVESTMENT_RECOMMENDATION_TERMS = {
     "compra",
     "comprar",
@@ -36,10 +35,6 @@ INVESTMENT_RECOMMENDATION_TERMS = {
     "deberias invertir",
     "deberías invertir",
 }
-
-
-def _set_profile_env(profile: str) -> None:
-    os.environ["LLM_PROFILE"] = profile
 
 
 def _quality_checks(answer: str, warnings: list[str], status: str) -> dict[str, Any]:
@@ -64,17 +59,15 @@ def _quality_checks(answer: str, warnings: list[str], status: str) -> dict[str, 
     }
 
 
-def _run_case(profile: str, example_name: str) -> dict[str, Any]:
-    _set_profile_env(profile)
+def _run_case(model_label: str, example_name: str) -> dict[str, Any]:
     started = time.perf_counter()
     workflow = build_workflow()
     state = workflow.invoke(FinancialQueryInput.from_dict(SAMPLE_INPUTS[example_name]))
     elapsed = time.perf_counter() - started
     warnings = list(state.warnings)
     return {
-        "profile": profile,
+        "model_label": model_label,
         "example": example_name,
-        "input_intent_hint": SAMPLE_INPUTS[example_name].get("intent"),
         "status": state.status,
         "execution_returncode": state.execution_returncode,
         "warnings": warnings,
@@ -104,15 +97,12 @@ def _write_results(payload: dict[str, Any]) -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Evalua perfiles LLM sobre los ejemplos del MVP.")
+    parser = argparse.ArgumentParser(description="Evalua el modelo OpenAI configurado sobre los ejemplos del MVP.")
     parser.add_argument(
-        "--profiles",
+        "--models",
         nargs="+",
-        default=DEFAULT_PROFILES,
-        help=(
-            "Perfiles LLM: groq=llama-3.3-70b-versatile, "
-            "gemini=gemini-2.5-flash, university=openai/gpt-oss-20b sobre vLLM."
-        ),
+        default=DEFAULT_MODEL_LABELS,
+        help="Etiquetas de ejecucion para el modelo OpenAI configurado.",
     )
     parser.add_argument("--examples", nargs="+", default=["all"], help="Ejemplos concretos o 'all'.")
     parser.add_argument("--no-write", action="store_true", help="No guarda JSON en results/evaluations.")
@@ -123,13 +113,13 @@ def main() -> int:
     started_at = datetime.now().isoformat(timespec="seconds")
     results: list[dict[str, Any]] = []
 
-    for profile in args.profiles:
+    for model_label in args.models:
         for example in examples:
-            result = _run_case(profile, example)
+            result = _run_case(model_label, example)
             results.append(result)
             execution_mode = "llm/error" if result["quality_checks"]["llm_error"] else "llm/directo"
             print(
-                f"{profile:13} {example:18} {result['status']:10} "
+                f"{model_label:13} {example:18} {result['status']:10} "
                 f"{result['elapsed_seconds']:6.2f}s {execution_mode}"
             )
             if result["warnings"]:
@@ -140,7 +130,7 @@ def main() -> int:
 
     payload = {
         "started_at": started_at,
-        "profiles": args.profiles,
+        "models": args.models,
         "examples": examples,
         "results": results,
     }

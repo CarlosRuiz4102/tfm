@@ -46,22 +46,22 @@
 
 \chapter*{Resumen}
 \addcontentsline{toc}{chapter}{Resumen}
-Este Trabajo Fin de M\'aster propone el desarrollo incremental de un sistema orientado al an\'alisis financiero hist\'orico con modelos de lenguaje. El sistema parte de una consulta estructurada, datos de mercado almacenados en CSV y metadatos como tickers o fechas. A partir de esa entrada, el prototipo valida la solicitud, utiliza un LLM para interpretar la intenci\'on, genera c\'odigo Python ejecutable, valida dicho c\'odigo, lo lanza en un proceso controlado y transforma la salida en una respuesta interpretable mediante APIs compatibles con OpenAI.
+Este Trabajo Fin de M\'aster propone el desarrollo incremental de un sistema orientado al an\'alisis financiero hist\'orico con modelos de lenguaje. El sistema parte de una consulta de usuario, datos de mercado almacenados en CSV y metadatos como tickers, fechas o intervalo temporal. A partir de esa entrada, el prototipo valida la solicitud, utiliza un agente planificador para definir el an\'alisis, un agente generador para producir c\'odigo Python ejecutable, valida dicho c\'odigo, lo lanza en un proceso controlado y transforma la salida estructurada en una respuesta comprensible mediante un agente interpretador.
 
-El MVP actual soporta seis intenciones anal\'iticas: crecimiento de precio, comparaci\'on de activos, visi\'on descriptiva de un activo, an\'alisis de retornos, an\'alisis de riesgo hist\'orico y an\'alisis t\'ecnico. La evaluaci\'on combina pruebas funcionales, escenarios de error controlado y una comparativa entre proveedores LLM. Los resultados muestran que el sistema puede mantener el c\'alculo financiero bajo control program\'atico y utilizar modelos de lenguaje como capa principal de interpretaci\'on final.
+El MVP actual soporta varias familias de consultas, desde an\'alisis simples de crecimiento hasta comparativas con tablas, datos estructurados y explicaciones para usuario final. La evaluaci\'on combina pruebas funcionales, escenarios de error controlado y una bater\'ia A/B/C equilibrada con cinco consultas por nivel. Los resultados muestran que el sistema puede mantener el c\'alculo financiero bajo control program\'atico, conservar trazabilidad sobre los artefactos y limitar la respuesta al an\'alisis hist\'orico, sin predicci\'on futura ni recomendaci\'on de inversi\'on.
 
 \vspace{0.5cm}
-\noindent\textbf{Palabras clave:} an\'alisis financiero, modelos de lenguaje, generaci\'on de c\'odigo, ejecuci\'on controlada, APIs compatibles con OpenAI.
+\noindent\textbf{Palabras clave:} an\'alisis financiero, modelos de lenguaje, generaci\'on de c\'odigo, ejecuci\'on controlada, clientes LLM compatibles.
 \clearpage
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-This Master's Thesis proposes the incremental development of a language-model-driven system for historical financial analysis. The system starts from a structured query, market data stored in CSV files and metadata such as tickers or dates. From this input, the prototype validates the request, uses an LLM to interpret the user's intent, generates executable Python code, validates that code, runs it in a controlled process and transforms the output into an interpretable response through OpenAI-compatible APIs.
+This Master's Thesis proposes the incremental development of a language-model-driven system for historical financial analysis. The system starts from a user query, market data stored in CSV files and metadata such as tickers, dates or time interval. From this input, the prototype validates the request, uses a first LLM agent to plan the analysis, a second agent to generate executable Python code, validates that code, runs it in a controlled process and transforms the structured output into an interpretable response through a third interpretation agent.
 
-The current MVP supports six analytical intents: price growth, asset comparison, descriptive view of an asset, returns analysis, historical risk analysis and technical analysis. The evaluation combines functional tests, controlled error scenarios and a comparison between several LLM providers. The results show that the system can keep financial computation under programmatic control while using language models as the main final interpretation layer.
+The current MVP supports several families of queries, ranging from simple growth analysis to comparisons with tables, structured data and final-user explanations. The evaluation combines functional tests, controlled error scenarios and a balanced A/B/C battery with five queries per level. The results show that the system can keep financial computation under programmatic control, preserve traceability over generated artifacts and limit the response to historical analysis, without future prediction or investment recommendation.
 
 \vspace{0.5cm}
-\noindent\textbf{Keywords:} financial analysis, language models, code generation, controlled execution, OpenAI-compatible APIs.
+\noindent\textbf{Keywords:} financial analysis, language models, code generation, controlled execution, compatible LLM clients.
 \clearpage
 
 \tableofcontents

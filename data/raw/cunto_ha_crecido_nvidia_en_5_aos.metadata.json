@@ -1,6 +1,5 @@
 {
   "query": "Cuánto ha crecido Nvidia en 5 años",
-  "intent": "price_growth",
   "tickers": [
     "NVDA"
   ],

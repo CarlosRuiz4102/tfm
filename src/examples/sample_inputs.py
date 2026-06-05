@@ -12,7 +12,6 @@ def _raw(path_name: str) -> str:
 SAMPLE_INPUTS = {
     "growth_nvda": {
         "query": "Cuanto ha crecido Nvidia en 5 anos",
-        "intent": "price_growth",
         "tickers": ["NVDA"],
         "start": None,
         "end": None,
@@ -23,7 +22,6 @@ SAMPLE_INPUTS = {
     },
     "compare_nvda_amd": {
         "query": "Compara Nvidia y AMD en 2 anos",
-        "intent": "compare_assets",
         "tickers": ["NVDA", "AMD"],
         "start": None,
         "end": None,
@@ -34,7 +32,6 @@ SAMPLE_INPUTS = {
     },
     "overview_aapl": {
         "query": "Dame una vision general de AAPL en 3 meses",
-        "intent": "asset_overview",
         "tickers": ["AAPL"],
         "start": None,
         "end": None,
@@ -45,7 +42,6 @@ SAMPLE_INPUTS = {
     },
     "returns_qqq_spy": {
         "query": "Analiza los retornos de QQQ y SPY en 2024",
-        "intent": "return_analysis",
         "tickers": ["QQQ", "SPY"],
         "start": "2024-01-01",
         "end": "2024-12-31",
@@ -56,7 +52,6 @@ SAMPLE_INPUTS = {
     },
     "risk_qqq_spy": {
         "query": "Analiza el riesgo historico de QQQ y SPY en 2024",
-        "intent": "historical_risk_analysis",
         "tickers": ["QQQ", "SPY"],
         "start": "2024-01-01",
         "end": "2024-12-31",
@@ -67,7 +62,6 @@ SAMPLE_INPUTS = {
     },
     "technical_aapl": {
         "query": "Haz un analisis tecnico de AAPL en 3 meses",
-        "intent": "technical_analysis",
         "tickers": ["AAPL"],
         "start": None,
         "end": None,
@@ -82,7 +76,6 @@ SAMPLE_INPUTS = {
             "crecimiento absoluto, crecimiento porcentual, maximo, minimo, volatilidad "
             "diaria y una conclusion breve sin recomendar inversion."
         ),
-        "intent": "complex_growth_report",
         "tickers": ["NVDA"],
         "start": None,
         "end": None,
@@ -97,7 +90,6 @@ SAMPLE_INPUTS = {
             "volatilidad diaria, mejor y peor cierre, drawdown aproximado y ranking final "
             "por comportamiento historico."
         ),
-        "intent": "complex_asset_comparison",
         "tickers": ["NVDA", "AMD"],
         "start": None,
         "end": None,
@@ -112,7 +104,6 @@ SAMPLE_INPUTS = {
             "rango de precios, dias de mayor volumen y si el activo termino por encima "
             "o por debajo del inicio."
         ),
-        "intent": "complex_asset_overview",
         "tickers": ["AAPL"],
         "start": None,
         "end": None,
@@ -127,7 +118,6 @@ SAMPLE_INPUTS = {
             "de 20 y 50 sesiones, volatilidad reciente, ultimo cierre frente a las medias "
             "y una interpretacion prudente."
         ),
-        "intent": "complex_technical_analysis",
         "tickers": ["AAPL"],
         "start": None,
         "end": None,
@@ -142,7 +132,6 @@ SAMPLE_INPUTS = {
             "rentabilidad media diaria, volatilidad diaria, correlacion entre ambos "
             "y una conclusion sobre cual fue mas rentable y cual fue mas volatil."
         ),
-        "intent": "complex_return_risk_comparison",
         "tickers": ["QQQ", "SPY"],
         "start": "2024-01-01",
         "end": "2024-12-31",
@@ -156,7 +145,6 @@ SAMPLE_INPUTS = {
             "Analiza el riesgo de QQQ y SPY en 2024: calcula volatilidad, maximo drawdown, "
             "peor dia, mejor dia y explica las diferencias de riesgo sin hacer recomendaciones."
         ),
-        "intent": "complex_historical_risk_analysis",
         "tickers": ["QQQ", "SPY"],
         "start": "2024-01-01",
         "end": "2024-12-31",
@@ -170,7 +158,6 @@ SAMPLE_INPUTS = {
             "Analiza Bitcoin en 2024 con rentabilidad acumulada, volatilidad, maximo, "
             "minimo, mejor dia, peor dia y un resumen claro de su comportamiento historico."
         ),
-        "intent": "complex_crypto_profile",
         "tickers": ["BTC-USD"],
         "start": "2024-01-01",
         "end": "2024-12-31",
@@ -185,7 +172,6 @@ SAMPLE_INPUTS = {
             "volatilidad historica, drawdown aproximado y divide la respuesta en metricas "
             "y conclusion."
         ),
-        "intent": "complex_index_overview",
         "tickers": ["^GSPC"],
         "start": "2020-01-01",
         "end": None,
@@ -200,7 +186,6 @@ SAMPLE_INPUTS = {
             "cambio porcentual, volatilidad por hora y describe si el movimiento fue "
             "estable o irregular."
         ),
-        "intent": "complex_intraday_fx_analysis",
         "tickers": ["EURUSD=X"],
         "start": None,
         "end": None,
@@ -214,7 +199,6 @@ SAMPLE_INPUTS = {
             "Analiza el oro en 1 semana a 1h calculando cambio total, rango maximo-minimo, "
             "volatilidad horaria, sesiones con mayor volumen y una conclusion historica breve."
         ),
-        "intent": "complex_intraday_commodity_analysis",
         "tickers": ["GC=F"],
         "start": None,
         "end": None,

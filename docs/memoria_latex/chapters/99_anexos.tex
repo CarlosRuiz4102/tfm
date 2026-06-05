@@ -1,8 +1,8 @@
-﻿\chapter{Anexos}
+\chapter{Anexos}
 
 \section{Ejecución del MVP}
 
-El proyecto puede ejecutarse con perfiles LLM mediante los ejemplos incluidos en el repositorio:
+El prototipo puede ejecutarse con ejemplos incluidos en el repositorio:
 
 \begin{verbatim}
 python run_mvp.py --example growth_nvda
@@ -13,167 +13,79 @@ python run_mvp.py --example risk_qqq_spy
 python run_mvp.py --example technical_aapl
 \end{verbatim}
 
-Además de estos ejemplos funcionales, se prepararon scripts específicos para la evaluación cualitativa, la demostración para cliente y la comparación progresiva entre proveedores LLM:
+También puede recibir un JSON de entrada con consulta, tickers, fechas o periodo, intervalo y rutas a CSV locales.
+
+\section{Configuración de API}
+
+Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe subirse al repositorio. La configuración mínima es:
 
 \begin{verbatim}
-python scripts\generate_qualitative_client_demo.py
-python scripts\generate_qualitative_demo_report.py
-python scripts\evaluate_progressive_llm_scope.py ^
-  --profiles groq gemini university
+OPENAI_API_KEY=...
+VLLM_BASE_URL=https://servidor-vllm.example/v1
+VLLM_API_KEY=...
+VLLM_MODEL=openai/gpt-oss-20b
 \end{verbatim}
 
-La última orden puede restringirse a una muestra concreta de dificultad creciente:
+Si el modelo de OpenAI se sirve desde un servidor vLLM compatible con la interfaz de mensajes, puede indicarse una URL base:
 
 \begin{verbatim}
-python scripts\evaluate_progressive_llm_scope.py ^
-  --profiles groq gemini university ^
-  --cases level_a_nvda_growth level_a_qqq_spy_returns ^
-          level_b_qqq_spy_clear_compare ^
-          level_c_qqq_spy_professional ^
-          stress_visual_qqq_spy_monthly
+OPENAI_BASE_URL=https://servidor-vllm.example/v1
+OPENAI_MODEL=openai/gpt-oss-20b
 \end{verbatim}
 
-\section{Configuración de APIs}
-
-Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe subirse al repositorio. El proyecto asume llamadas LLM en el flujo principal, por lo que no hay variables de activación.
-
-Para activar Groq con \nolinkurl{llama-3.3-70b-versatile} \cite{groqllama33docs}, modelo Llama 3.3 70B Instruct orientado a razonamiento general y baja latencia, la configuración es:
-
-\begin{center}
-\nolinkurl{llama-3.3-70b-versatile} \cite{groqllama33docs}
-\end{center}
-
-\begin{verbatim}
-LLM_PROFILE=groq
-GROQ_MODEL=llama-3.3-70b-versatile
-\end{verbatim}
-
-Para activar Gemini con \nolinkurl{gemini-2.5-flash} \cite{google2025gemini25flashdocs}, modelo Flash de Gemini 2.5 orientado a rapidez y razonamiento, la configuración es:
-
-\begin{center}
-\nolinkurl{gemini-2.5-flash} \cite{google2025gemini25flashdocs}
-\end{center}
-
-\begin{verbatim}
-LLM_PROFILE=gemini
-GEMINI_MODEL=gemini-2.5-flash
-\end{verbatim}
-
-Para activar \nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} servido por vLLM en el entorno universitario, modelo abierto de la familia gpt-oss usado por su capacidad de razonamiento, seguimiento de instrucciones y generación de código, el perfil técnico configurado es \texttt{university}:
-
-\begin{center}
-\nolinkurl{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard}
-\end{center}
-
-\begin{verbatim}
-LLM_PROFILE=university
-UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
-UNIVERSITY_MODEL=openai/gpt-oss-20b
-\end{verbatim}
+En este caso, vLLM describe la infraestructura que sirve el modelo; el modelo sigue identificándose como modelo de OpenAI \cite{openai2025gptossmodelcard}.
 
 \section{Batería de consultas A/B/C}
 
-La batería cualitativa se diseñó para comprobar que el sistema no solo termina la ejecución, sino que adapta la profundidad del análisis a la consulta. Las seis primeras consultas corresponden al Nivel A y representan peticiones habituales sin formato especial. Las tres siguientes elevan la exigencia al Nivel B, y las tres últimas obligan a una salida de Nivel C.
+La batería contiene 15 consultas equilibradas: cinco de Nivel A, cinco de Nivel B y cinco de Nivel C. Dentro de cada nivel, los ejemplos aumentan progresivamente su dificultad.
 
-\begin{longtable}{p{0.11\textwidth} p{0.49\textwidth} p{0.11\textwidth} p{0.21\textwidth}}
-\caption{Batería cualitativa de consultas por nivel de profundidad.}
+\small
+\begin{longtable}{p{0.10\textwidth} p{0.50\textwidth} p{0.30\textwidth}}
+\caption{Batería de 15 consultas por nivel de profundidad.}
 \label{tab:anexo_bateria_queries_abc}\\
 \toprule
-\textbf{ID} & \textbf{Consulta} & \textbf{Nivel} & \textbf{Objetivo de evaluación} \\
+\textbf{Nivel} & \textbf{Consulta resumida} & \textbf{Objetivo de evaluación} \\
 \midrule
 \endhead
-A1 & Analiza el crecimiento de NVDA durante los últimos cinco años. & A & Rentabilidad y resumen simple. \\
-A2 & Dime la rentabilidad de AAPL en el período disponible. & A & Cálculo directo y respuesta breve. \\
-A3 & Resume la evolución de SPY en 2024. & A & Visión general sin gráficas obligatorias. \\
-A4 & Compara de forma sencilla QQQ y SPY en 2024. & A & Comparación básica de retornos. \\
-A5 & Indica si AAPL fue volátil en los últimos tres meses disponibles. & A & Uso de volatilidad y drawdown. \\
-A6 & Resume el volumen negociado de NVDA en 2024. & A & Selección de métrica de volumen. \\
-B1 & Hazme un análisis completo de NVDA con una tabla de métricas y una gráfica de precio. & B & Tabla y visualización principal. \\
-B2 & Compárame QQQ y SPY de forma clara con evolución normalizada. & B & Comparación relativa base 100. \\
-B3 & Quiero entender retorno y riesgo de AAPL en el último año. & B & Relación riesgo-retorno. \\
-C1 & Dame un análisis profesional de QQQ y SPY con tabla, gráfica normalizada, drawdown y conclusión. & C & Varias salidas estructuradas. \\
-C2 & Compara NVDA y AMD con rentabilidad, volatilidad, correlación, mejor y peor mes, y explicación para usuario no técnico. & C & Múltiples métricas y adaptación de lenguaje. \\
-C3 & Analiza SPY desde 2020 con retornos anuales, drawdown, medias móviles y limitaciones del análisis. & C & Desglose temporal y limitaciones. \\
+A & Crecimiento de Nvidia en los últimos cinco años. & Crecimiento histórico básico. \\
+A & Comparación simple de Nvidia y AMD en dos años. & Comparación por rentabilidad. \\
+A & Visión general de AAPL en tres meses. & Resumen descriptivo. \\
+A & Retornos de QQQ y SPY en 2024. & Retornos históricos resumidos. \\
+A & Riesgo histórico de QQQ y SPY en 2024. & Riesgo, volatilidad y extremos. \\
+B & Análisis ampliado de Nvidia con tabla y datos de evolución. & Salida estructurada de un activo. \\
+B & Comparación de QQQ y SPY con tabla y serie normalizada. & Comparación relativa base 100. \\
+B & Retorno y riesgo de AAPL con explicación sencilla. & Relación retorno-riesgo. \\
+B & Bitcoin 2024 con rentabilidad, volatilidad y drawdown. & Cobertura de activo volátil. \\
+B & EUR/USD intradía con variación, rango y volatilidad horaria. & Cobertura de divisa horaria. \\
+C & Informe QQQ/SPY con tabla, normalización y drawdown. & Informe comparativo completo. \\
+C & Ranking NVDA/AMD por rentabilidad, riesgo y drawdown. & Comparación multicriterio. \\
+C & Informe detallado del S\&P 500 desde 2020. & Serie larga de índice amplio. \\
+C & Informe horario del oro con mejores/peores intervalos y rango. & Materia prima e intervalo horario. \\
+C & QQQ/SPY 2024 con cuatro bloques obligatorios. & Estrés de formato y planificación. \\
 \bottomrule
 \end{longtable}
+\normalsize
 
-\section{Query de estrés visual}
+\section{Prompts usados por los agentes}
 
-Para forzar al sistema a respetar una estructura concreta se incorporó una query adicional de estrés visual:
+El prompt base define un componente profesional de análisis financiero histórico. Todos los agentes comparten las mismas restricciones: trabajar sólo con datos históricos disponibles en CSV, no predecir, no recomendar inversión y no añadir información externa.
 
-\begin{quote}
-Compara QQQ y SPY durante 2024 como si fuera un informe para un cliente no técnico. Quiero que me muestres los datos exactamente en cuatro bloques: 1) una tabla resumen con rentabilidad total, volatilidad anualizada, máximo drawdown, mejor mes y peor mes; 2) una tabla de clasificación mensual indicando qué activo ganó cada mes; 3) datos para una gráfica normalizada base 100 de ambos activos; 4) datos para una gráfica de drawdown. Cierra con una conclusión clara, sin recomendar comprar ni vender.
-\end{quote}
+\subsection{Agente 1: planificación}
 
-Esta consulta se eligió porque comprueba simultáneamente comprensión, selección de métricas, generación de código, control de formato, datos para visualización e interpretación final sin recomendación de inversión.
+El agente planificador devuelve JSON con nivel A/B/C, objetivo analítico, tipo de análisis, métricas, columnas requeridas, requisitos de datos, requisitos de salida y una justificación breve del nivel elegido. No calcula cifras y no redacta la respuesta final.
 
-\section{Documentación estable}
+\subsection{Agente 2: generación de código}
 
-La documentación Markdown estable conserva el diseño, la metodología y los aprendizajes reutilizables. Los informes producidos por ejecuciones concretas se tratan como artefactos temporales y se regenerarán cuando se realice la evaluación definitiva:
+El agente generador devuelve un JSON con un único campo \texttt{code}. El script debe leer el payload desde \texttt{argv[1]}, cargar datos mediante funciones autorizadas, calcular métricas sobre CSV locales y emitir un único JSON por \texttt{stdout}. Si se solicitan datos visuales, se devuelven como estructuras JSON, no como ficheros de imagen.
 
-\begin{itemize}
-    \item \nolinkurl{docs/evolucion_mvp_tfm.md}: evolución incremental del MVP desde dos intencionalidades hasta el flujo actual con codegen controlado.
-    \item \nolinkurl{docs/arquitectura_llm_codegen.md}: descripción técnica del flujo LLM, nodos, prompts, seguridad y ejecución.
-    \item \nolinkurl{docs/llm_api_setup.md}: configuración de perfiles Groq, Gemini y servidor vLLM universitario.
-    \item \nolinkurl{docs/planificacion_evaluacion_tfm.md}: protocolo de evaluación definitiva, familias de consultas, aprendizajes técnicos y líneas de trabajo futuro.
-    \item \nolinkurl{docs/control_tamano_salidas_visualizacion.md}: justificación de la compactación de salidas visuales largas antes de la interpretación final.
-    \item \nolinkurl{docs/evaluacion_cualitativa_llm.md}: metodología cualitativa, criterios, niveles A/B/C y rúbrica.
-\end{itemize}
+\subsection{Agente 3: interpretación}
 
-\section{Plantilla de revisión manual}
+El agente interpretador recibe la salida ejecutada y el plan. Su tarea es explicar los resultados en español, ajustando la profundidad al nivel A/B/C y separando datos históricos, lectura y limitaciones. No recalcula ni incorpora datos externos.
 
-La siguiente plantilla se usa para revisar cada ejecución sin presentar la evaluación como una métrica matemática absoluta:
+\section{Trazabilidad de una ejecución}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{p{0.25\textwidth} p{0.21\textwidth} X}
-\toprule
-\textbf{Criterio} & \textbf{Valoración} & \textbf{Observaciones} \\
-\midrule
-Comprensión de la consulta & Excelente / Correcto / Parcial / Deficiente & \\
-Selección de métricas y datos & Excelente / Correcto / Parcial / Deficiente & \\
-Código generado & Excelente / Correcto / Parcial / Deficiente & \\
-Tablas y gráficas solicitadas & Excelente / Correcto / Parcial / Deficiente & \\
-Exactitud frente a la salida ejecutada & Excelente / Correcto / Parcial / Deficiente & \\
-Claridad del análisis final & Excelente / Correcto / Parcial / Deficiente & \\
-Utilidad para el usuario & Excelente / Correcto / Parcial / Deficiente & \\
-Reconocimiento de limitaciones & Excelente / Correcto / Parcial / Deficiente & \\
-Ausencia de recomendación de inversión & Excelente / Correcto / Parcial / Deficiente & \\
-Trazabilidad consulta-código-resultados & Excelente / Correcto / Parcial / Deficiente & \\
-\bottomrule
-\end{tabularx}
-\caption{Plantilla de revisión manual cualitativa.}
-\label{tab:plantilla_revision_manual}
-\end{table}
-\clearpage
+Cada ejecución conserva la entrada normalizada, el plan analítico, el código generado, la salida estándar, los errores y la respuesta final. Estos artefactos permiten repetir una prueba, revisar qué entendió cada agente y comprobar si la interpretación final se corresponde con los resultados calculados.
 
-\section{Documentación interna de apoyo}
+\section{Métricas subjetivas futuras}
 
-Durante el desarrollo se conservaron notas técnicas y documentos metodológicos en Markdown. Estos documentos no sustituyen a la memoria, pero permiten reconstruir decisiones de diseño, preparar la evaluación final y registrar limitaciones conocidas sin mezclar esos contenidos con salidas provisionales.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{p{0.35\textwidth} X}
-\toprule
-\textbf{Documento interno} & \textbf{Uso principal en la memoria} \\
-\midrule
-\nolinkurl{docs/evolucion_mvp_tfm.md} & Motivación y metodología incremental del prototipo. \\
-\nolinkurl{docs/arquitectura_llm_codegen.md} & Diseño del sistema, nodos, contrato de codegen y trazabilidad. \\
-\nolinkurl{docs/control_tamano_salidas_visualizacion.md} & Compactación de salidas largas y gestión de contexto en Nivel B/C. \\
-\nolinkurl{docs/evaluacion_cualitativa_llm.md} & Criterios de buen análisis, niveles A/B/C y plantilla de revisión. \\
-\nolinkurl{docs/planificacion_evaluacion_tfm.md} & Protocolo definitivo, aprendizajes técnicos, familias de consultas y trabajo futuro. \\
-\bottomrule
-\end{tabularx}
-\caption{Relación entre documentación Markdown y secciones de la memoria.}
-\label{tab:documentacion_markdown_memoria}
-\end{table}
-
-
-
-
-
-
-
-
+La revisión subjetiva de calidad se mantiene como línea futura. La plantilla prevista incluye comprensión de la consulta, selección de métricas, adecuación del código, fidelidad a resultados, claridad, utilidad, reconocimiento de limitaciones, ausencia de recomendación de inversión y trazabilidad. Antes de usar estas métricas como evidencia principal será necesario reforzar la rúbrica y definir criterios de revisión más estables.

@@ -2,31 +2,26 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
-
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.generate_qualitative_demo_report import DEMO_CASES
+from scripts.generate_abc_demo_report import DEMO_CASES
 from src.config import LLMConfig, RESULTS_DIR
-from src.execution.market_data import load_close_prices
 from src.graph.build_graph import build_workflow
 from src.schemas import FinancialQueryInput
 
 
-DEFAULT_PROFILES = ["groq", "gemini", "university"]
+DEFAULT_MODEL_LABELS = ["openai"]
 DEFAULT_CASE_IDS = [case["id"] for case in DEMO_CASES]
 
 REPORT_PATH = RESULTS_DIR / "reports" / "evaluacion_15_queries_llms.md"
-FIGURES_DIR = RESULTS_DIR / "reports" / "figures" / "evaluacion_amplitud_llm"
 EVALUATION_DIR = RESULTS_DIR / "evaluations"
 
 FORBIDDEN_TERMS = [
@@ -45,8 +40,7 @@ def _case_by_id() -> dict[str, dict[str, Any]]:
     return {case["id"]: case for case in DEMO_CASES}
 
 
-def _run_case(profile: str, case: dict[str, Any]) -> dict[str, Any]:
-    os.environ["LLM_PROFILE"] = profile
+def _run_case(model_label: str, case: dict[str, Any]) -> dict[str, Any]:
     config = LLMConfig.from_env()
     started = time.perf_counter()
     workflow = build_workflow()
@@ -57,7 +51,7 @@ def _run_case(profile: str, case: dict[str, Any]) -> dict[str, Any]:
     warnings = list(state.warnings)
     normalized_answer = final_answer.lower()
     forbidden = [term for term in FORBIDDEN_TERMS if term in normalized_answer]
-    expected_visual = case["level"] in {"B", "C"} or "grafica" in case["input"]["query"].lower()
+    expected_visual = case["level"] in {"B", "C"} or "serie" in case["input"]["query"].lower()
     has_visual_data = isinstance(execution_output, dict) and any(
         key in execution_output for key in ["chart_data", "visualization_data", "drawdown", "normalized_to_100"]
     )
@@ -65,7 +59,7 @@ def _run_case(profile: str, case: dict[str, Any]) -> dict[str, Any]:
         key in execution_output for key in ["table_data", "ranking_mensual", "summary", "metrics"]
     )
     return {
-        "profile": profile,
+        "model_label": model_label,
         "model": config.model,
         "case_id": case["id"],
         "level": case["level"],
@@ -115,76 +109,11 @@ def _status_label(result: dict[str, Any]) -> str:
     return "Falla al iniciar"
 
 
-def _build_visual_assets() -> dict[str, str]:
-    import matplotlib.pyplot as plt
-
-    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    cases = _case_by_id()
-    payload = cases["level_b_qqq_spy_clear_compare"]["input"]
-    close = load_close_prices(payload["csv_paths"], payload["tickers"])
-    normalized = close.divide(close.iloc[0]).multiply(100)
-    drawdown = close.divide(close.cummax()).subtract(1).multiply(100)
-
-    normalized_path = FIGURES_DIR / "qqq_spy_normalizada_2024.png"
-    drawdown_path = FIGURES_DIR / "qqq_spy_drawdown_2024.png"
-
-    ax = normalized.plot(figsize=(9, 4), linewidth=1.8)
-    ax.set_title("QQQ vs SPY 2024 - Evolucion normalizada base 100")
-    ax.set_ylabel("Base 100")
-    ax.set_xlabel("Fecha")
-    ax.grid(True, alpha=0.25)
-    ax.figure.tight_layout()
-    ax.figure.savefig(normalized_path, dpi=160)
-    plt.close(ax.figure)
-
-    ax = drawdown.plot(figsize=(9, 4), linewidth=1.8)
-    ax.set_title("QQQ vs SPY 2024 - Drawdown historico")
-    ax.set_ylabel("Drawdown (%)")
-    ax.set_xlabel("Fecha")
-    ax.grid(True, alpha=0.25)
-    ax.figure.tight_layout()
-    ax.figure.savefig(drawdown_path, dpi=160)
-    plt.close(ax.figure)
-
-    return {
-        "normalized": str(normalized_path),
-        "drawdown": str(drawdown_path),
-    }
-
-
-def _build_completion_chart(results: list[dict[str, Any]]) -> str:
-    import matplotlib.pyplot as plt
-
-    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    frame = pd.DataFrame(results)
-    pivot = frame.assign(completed=frame["status"].eq("completed").astype(int)).pivot_table(
-        index="profile",
-        columns="level",
-        values="completed",
-        aggfunc="sum",
-        fill_value=0,
-    )
-    for level in ["A", "B", "C"]:
-        if level not in pivot.columns:
-            pivot[level] = 0
-    pivot = pivot[["A", "B", "C"]]
-    chart_path = FIGURES_DIR / "completitud_por_modelo_nivel.png"
-    ax = pivot.plot(kind="bar", figsize=(8, 4), rot=0)
-    ax.set_title("Casos completados por perfil y nivel")
-    ax.set_ylabel("Casos completados")
-    ax.set_xlabel("Perfil LLM")
-    ax.grid(axis="y", alpha=0.25)
-    ax.figure.tight_layout()
-    ax.figure.savefig(chart_path, dpi=160)
-    plt.close(ax.figure)
-    return str(chart_path)
-
-
-def _write_json(results: list[dict[str, Any]], profiles: list[str], cases: list[str]) -> Path:
+def _write_json(results: list[dict[str, Any]], models: list[str], cases: list[str]) -> Path:
     EVALUATION_DIR.mkdir(parents=True, exist_ok=True)
     output = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
-        "profiles": profiles,
+        "models": models,
         "cases": cases,
         "results": results,
     }
@@ -193,14 +122,13 @@ def _write_json(results: list[dict[str, Any]], profiles: list[str], cases: list[
     return path
 
 
-def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: dict[str, str]) -> None:
+def _write_report(results: list[dict[str, Any]], json_path: Path) -> None:
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    completion_chart = _build_completion_chart(results)
     completed = sum(1 for result in results if result["status"] == "completed")
     total = len(results)
     quota_limited_profiles = sorted(
         {
-            result["profile"]
+            result["model_label"]
             for result in results
             if "quota" in (result.get("error_message") or "").lower()
             or "resource_exhausted" in (result.get("error_message") or "").lower()
@@ -219,12 +147,12 @@ def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: 
             "no la capacidad intrinseca del modelo."
         )
     lines = [
-        "# Evaluacion de amplitud del TFM con LLMs",
+        "# Evaluacion de amplitud del TFM con OpenAI",
         "",
         f"Generado: {datetime.now().isoformat(timespec='seconds')}",
         "",
         "Este informe evalua si el MVP mantiene el flujo completo al aumentar la dificultad de las queries.",
-        "Se prueban casos simples, mejorados, profesionales y una query de estres visual con varios requisitos de salida.",
+        "Se prueban casos simples, intermedios y profesionales con dificultad ascendente por nivel.",
         "",
         f"JSON completo de resultados: `{json_path}`",
         "",
@@ -232,25 +160,15 @@ def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: 
         "",
         *quick_notes,
         "",
-        "![Completitud por modelo y nivel](" + completion_chart.replace("\\", "/") + ")",
-        "",
-        "## Visualizaciones base de la bateria",
-        "",
-        "Estas graficas se generan localmente desde los CSV reales y sirven como referencia visual para las queries B/C sobre QQQ y SPY.",
-        "",
-        "![QQQ vs SPY normalizada](" + figure_paths["normalized"].replace("\\", "/") + ")",
-        "",
-        "![QQQ vs SPY drawdown](" + figure_paths["drawdown"].replace("\\", "/") + ")",
-        "",
         "## Matriz de resultados",
         "",
-        "| Perfil | Modelo | Query | Nivel | Estado | Lectura | Tiempo |",
+        "| Etiqueta | Modelo | Query | Nivel | Estado | Lectura | Tiempo |",
         "|---|---|---|---:|---|---|---:|",
     ]
     for result in results:
         lines.append(
             "| {profile} | `{model}` | `{case}` | {level} | `{status}` | {label} | {elapsed} s |".format(
-                profile=result["profile"],
+                profile=result["model_label"],
                 model=result["model"],
                 case=result["case_id"],
                 level=result["level"],
@@ -265,13 +183,13 @@ def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: 
             "",
             "## Cobertura por perfil y nivel",
             "",
-            "| Perfil | Nivel A | Nivel B | Nivel C | Total |",
+            "| Etiqueta | Nivel A | Nivel B | Nivel C | Total |",
             "|---|---:|---:|---:|---:|",
         ]
     )
-    profiles = sorted({result["profile"] for result in results})
+    profiles = sorted({result["model_label"] for result in results})
     for profile in profiles:
-        subset = [result for result in results if result["profile"] == profile]
+        subset = [result for result in results if result["model_label"] == profile]
         level_cells = []
         for level in ["A", "B", "C"]:
             level_subset = [result for result in subset if result["level"] == level]
@@ -283,12 +201,12 @@ def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: 
     lines.extend(
         [
             "",
-            "## Analisis por perfil",
+            "## Analisis por etiqueta",
             "",
         ]
     )
     for profile in profiles:
-        subset = [result for result in results if result["profile"] == profile]
+        subset = [result for result in results if result["model_label"] == profile]
         ok = sum(1 for result in subset if result["status"] == "completed")
         partial = sum(1 for result in subset if result["status"] != "completed" and result["analysis_plan"])
         lines.extend(
@@ -309,7 +227,7 @@ def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: 
     for result in results:
         lines.extend(
             [
-                f"### {result['profile']} - {result['case_id']} - Nivel {result['level']}",
+                f"### {result['model_label']} - {result['case_id']} - Nivel {result['level']}",
                 "",
                 f"**Query:** {result['query']}",
                 "",
@@ -353,15 +271,15 @@ def _write_report(results: list[dict[str, Any]], json_path: Path, figure_paths: 
             "- La bateria progresiva permite demostrar aumento de dificultad: Nivel A valida consultas simples, Nivel B obliga a estructura tabular/visual y Nivel C exige formato profesional.",
             "- Los fallos no son ruido: ayudan a documentar limites reales de proveedor, cuota, tamano de salida, formato JSON y reparacion de codigo.",
             "- El ajuste de compactacion de salidas visuales es necesario para que el segundo agente no reciba series completas excesivas.",
-            "- La evaluacion debe presentarse como exploratoria y cualitativa, no como una prueba estadistica definitiva.",
+            "- La evaluacion debe presentarse como exploratoria y tecnica; las metricas subjetivas quedan como trabajo futuro reforzable.",
         ]
     )
     REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Evalua amplitud progresiva del TFM en varios perfiles LLM.")
-    parser.add_argument("--profiles", nargs="+", default=DEFAULT_PROFILES)
+    parser = argparse.ArgumentParser(description="Evalua amplitud progresiva del TFM con el modelo OpenAI configurado.")
+    parser.add_argument("--models", nargs="+", default=DEFAULT_MODEL_LABELS)
     parser.add_argument("--cases", nargs="+", default=DEFAULT_CASE_IDS)
     args = parser.parse_args()
 
@@ -373,14 +291,13 @@ def main() -> int:
         selected_cases.append(cases_by_id[case_id])
 
     results: list[dict[str, Any]] = []
-    for profile in args.profiles:
+    for model_label in args.models:
         for case in selected_cases:
-            print(f"Ejecutando {profile} / {case['id']} ({case['level']})...", flush=True)
-            results.append(_run_case(profile, case))
+            print(f"Ejecutando {model_label} / {case['id']} ({case['level']})...", flush=True)
+            results.append(_run_case(model_label, case))
 
-    figure_paths = _build_visual_assets()
-    json_path = _write_json(results, args.profiles, args.cases)
-    _write_report(results, json_path, figure_paths)
+    json_path = _write_json(results, args.models, args.cases)
+    _write_report(results, json_path)
     print(f"Informe escrito en: {REPORT_PATH}")
     print(f"JSON escrito en: {json_path}")
     return 0

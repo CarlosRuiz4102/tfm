@@ -16,8 +16,9 @@ class WorkflowTests(unittest.TestCase):
         def _fake_analysis(query_input):
             return (
                 AnalysisPlan(
-                    interpreted_intent=query_input.intent or "financial_analysis",
-                    analysis_type=query_input.intent or "financial_analysis",
+                    analysis_level="A",
+                    analytical_goal=f"Analizar historicamente: {query_input.query}",
+                    analysis_type="financial_analysis",
                     metrics=["rows"],
                     required_columns=["Date", "Close"],
                     data_requirements=["CSV historico"],
@@ -45,8 +46,10 @@ def main() -> None:
     tickers = payload["tickers"]
     output = {
         "analysis_type": payload["analysis_plan"]["analysis_type"],
+        "analysis_level": payload["analysis_plan"]["analysis_level"],
         "metrics": {"tickers": tickers, "csv_count": len(payload["csv_paths"])},
         "summary": f"Analisis completado para {', '.join(tickers)}",
+        "limitations": ["Salida simulada para pruebas automatizadas."],
     }
     print(json.dumps(output, ensure_ascii=False))
 
@@ -108,7 +111,7 @@ if __name__ == "__main__":
             state = self.workflow.invoke(FinancialQueryInput.from_dict(SAMPLE_INPUTS["growth_nvda"]))
 
         self.assertEqual(state.status, "completed_with_error")
-        self.assertIn("Falta configurar LLM_API_KEY/LLM_MODEL", state.final_answer)
+        self.assertIn("Falta configurar VLLM_API_KEY/OPENAI_API_KEY", state.final_answer)
 
     def test_invalid_start_date_returns_error(self) -> None:
         payload = dict(SAMPLE_INPUTS["growth_nvda"])

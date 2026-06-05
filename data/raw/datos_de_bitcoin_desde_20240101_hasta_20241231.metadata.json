@@ -1,6 +1,5 @@
 {
   "query": "Datos de Bitcoin desde 2024-01-01 hasta 2024-12-31",
-  "intent": "historical_download",
   "tickers": [
     "BTC-USD"
   ],

@@ -1,6 +1,5 @@
 {
   "query": "AAPL en 3 meses",
-  "intent": "historical_download",
   "tickers": [
     "AAPL"
   ],

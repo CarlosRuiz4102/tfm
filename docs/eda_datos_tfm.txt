@@ -34,7 +34,7 @@ Campos esperados por ticker: Open, High, Low, Close, Adj Close, Volume.
 
 4. Cobertura por fichero
 ----------------------------------------------------------------------
-                                       source_file              intent   tickers interval  rows start_observed end_observed  missing_pct  duplicated_dates
+                                       source_file              analysis_goal   tickers interval  rows start_observed end_observed  missing_pct  duplicated_dates
                                aapl_en_3_meses.csv historical_download      AAPL       1d    60     2025-12-17   2026-03-16          0.0                 0
                  compara_nvidia_y_amd_en_2_aos.csv      compare_assets AMD, NVDA       1d   500     2024-03-18   2026-03-16          0.0                 0
               cunto_ha_crecido_nvidia_en_5_aos.csv        price_growth      NVDA       1d  1255     2021-03-17   2026-03-16          0.0                 0
@@ -47,7 +47,7 @@ datos_de_bitcoin_desde_20240101_hasta_20241231.csv historical_download   BTC-USD
 5. Distribucion de intenciones e intervalos
 ----------------------------------------------------------------------
 Intenciones:
-             intent  cases
+             analysis_goal  cases
 historical_download      6
      compare_assets      1
        price_growth      1
