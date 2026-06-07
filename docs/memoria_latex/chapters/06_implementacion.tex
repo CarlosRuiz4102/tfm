@@ -1,123 +1,179 @@
 \chapter{Implementación}
 
-\section{Estructura del código}
+El capítulo anterior presentó la arquitectura desde una perspectiva funcional. A continuación se explica cómo se han llevado esas decisiones a una aplicación capaz de recibir una consulta, mantener su estado, preparar los datos, realizar los cálculos y conservar los resultados. El propósito no es recorrer cada fichero del proyecto, sino describir los mecanismos técnicos que hacen posible revisar el flujo y conocer qué ha ocurrido en cada caso.
 
-La implementación se organiza en módulos pequeños:
+La aplicación se ha desarrollado en Python y separa sus responsabilidades principales. La orquestación coordina las etapas; los contratos definen qué información se intercambia; las utilidades de carga ofrecen una representación común de los CSV; y la capa de cálculo revisa el código generado antes de utilizar sus resultados. Así, cada componente puede examinarse de forma independiente y la lógica no queda concentrada en un único bloque difícil de mantener.
+
+\section{Organización técnica de la implementación}
+
+La aplicación se divide en varios bloques funcionales. El primero representa la entrada, el plan analítico, los resultados y el estado del caso. El segundo coordina el orden de las validaciones, las intervenciones del modelo y los cálculos. Otro bloque reúne la carga y normalización de los datos financieros. La configuración, los registros y las pruebas completan el entorno necesario para utilizar y revisar el prototipo.
+
+Esta división responde a una necesidad práctica. La consulta del usuario cambia en cada caso, pero las reglas para validar fechas, localizar datos, registrar errores o limitar la ejecución permanecen estables. Mantener estas operaciones fuera de las intervenciones generativas reduce la variabilidad y permite comprobarlas mediante pruebas automatizadas.
 
 \begin{table}[H]
 \centering
-\footnotesize
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.5cm}X}
+\small
+\begin{tabularx}{\textwidth}{L{0.27\textwidth}Y}
 \toprule
-\textbf{Módulo} & \textbf{Responsabilidad} \\
+\textbf{Bloque funcional} & \textbf{Responsabilidad en la implementación} \\
 \midrule
-\texttt{schemas.py} & Define la entrada, el plan interpretado, los artefactos y el estado del workflow. \\
-\texttt{validation.py} & Valida query, tickers, fechas y rutas CSV antes de llamar al LLM. \\
-\texttt{nodes.py} & Implementa los nodos del flujo: análisis LLM, codegen, seguridad, ejecución e interpretación. \\
-\texttt{src/llm/} & Contiene prompts, cliente LLM compatible con Chat Completions y funciones del pipeline LLM. \\
-\texttt{code\_security.py} & Revisa el código generado antes de ejecutarlo. \\
-\texttt{code\_runner.py} & Guarda el script, lanza la ejecución y captura stdout, stderr y artefactos. \\
-\texttt{market\_data.py} & Proporciona funciones auxiliares para leer CSV financieros descargados con \texttt{yfinance}. \\
-\texttt{tests/} & Comprueba el workflow con llamadas LLM simuladas y escenarios de error. \\
+Estructuras y contratos & Representar la entrada, el plan, el estado, los resultados y los artefactos de ejecución. \\
+Orquestación & Coordinar el recorrido, actualizar el estado y decidir cuándo continuar o finalizar. \\
+Tratamiento de datos & Leer los CSV disponibles y transformarlos en una representación homogénea. \\
+Validación y ejecución & Revisar el procedimiento generado, ejecutarlo con límites y recoger su salida. \\
+Configuración y registros & Separar credenciales, parámetros, resultados y evidencias de cada caso. \\
+Pruebas & Comprobar el comportamiento esperado sin depender de llamadas reales al modelo. \\
 \bottomrule
 \end{tabularx}
-\caption{Módulos principales de la implementación.}
+\caption{Bloques funcionales de la implementación.}
+\label{tab:bloques_implementacion}
 \end{table}
 
-\section{Repositorio y organización del trabajo}
+El repositorio refleja esta separación entre código, datos, documentación, pruebas y resultados. Su distribución física es secundaria: lo relevante es que cada bloque tenga una responsabilidad reconocible y que la información pase de una etapa a otra de forma explícita.
 
-El desarrollo se ha gestionado en un repositorio GitHub disponible en \nolinkurl{https://github.com/CarlosRuiz4102/tfm}. El uso de control de versiones permite conservar la evolución del código, la memoria, las evaluaciones y la documentación auxiliar en un único espacio de trabajo. Esta organización facilita revisar qué parte corresponde a datos, qué parte corresponde al flujo LLM, qué parte corresponde a resultados y qué parte corresponde a documentación académica.
+\section{Orquestación y gestión del estado}
 
-La estructura del repositorio separa responsabilidades de forma cercana a una práctica MLOps ligera:
+El recorrido definido en el diseño se implementa como una secuencia de etapas conectadas. Cada una recibe el estado actual, realiza una operación concreta y lo devuelve actualizado. La información no circula mediante variables aisladas ni conversaciones acumuladas, sino a través de un registro común que acompaña al caso desde el inicio hasta su finalización.
+
+El recorrido comienza con la validación de la entrada. Si la consulta y los datos son válidos, continúa hacia la planificación, la generación de código, su revisión, el cálculo y la interpretación. Después de cada paso se comprueba el estado alcanzado. Una entrada incorrecta conduce a una respuesta controlada; un problema durante la generación o validación impide ejecutar el código; y un fallo en los cálculos evita que sus resultados se presenten como correctos.
+
+La orquestación principal utiliza un grafo de estados. Este enfoque permite expresar de forma explícita las transiciones normales y las rutas de error. Además, la implementación conserva una alternativa secuencial con el mismo orden de etapas. Esta segunda opción simplifica las pruebas y evita que el funcionamiento básico dependa por completo de una única biblioteca de orquestación.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{L{0.24\textwidth}L{0.30\textwidth}Y}
+\toprule
+\textbf{Estado} & \textbf{Significado} & \textbf{Decisión asociada} \\
+\midrule
+Creado & La consulta ha sido recibida, pero todavía no se ha validado. & Iniciar las comprobaciones de entrada. \\
+Validado & La petición contiene la información mínima y los datos existen. & Solicitar la planificación analítica. \\
+Planificado & Se dispone de un plan estructurado. & Preparar el procedimiento de cálculo. \\
+Preparado & El análisis ha sido generado y puede revisarse. & Aplicar los controles previos. \\
+Ejecutado & El procedimiento terminó y produjo una salida. & Interpretar únicamente si la ejecución fue correcta. \\
+Completado & Existe una respuesta final basada en resultados calculados. & Finalizar el caso. \\
+Completado con error & Alguna etapa no pudo recuperarse. & Devolver el motivo conservado en el estado. \\
+\bottomrule
+\end{tabularx}
+\caption{Evolución simplificada del estado durante una ejecución.}
+\label{tab:estados_implementacion}
+\end{table}
+
+La tabla presenta una lectura conceptual del recorrido y no reproduce literalmente todos los identificadores internos. En la aplicación se utilizan estados más específicos para distinguir, por ejemplo, una entrada inválida, un código rechazado o un cálculo fallido.
+
+Este registro permite localizar el origen de un problema. Una consulta puede disponer de un plan correcto y fallar al generar el código, o completar los cálculos y encontrar el problema durante la redacción final. Esta diferencia resulta necesaria para evaluar el sistema por etapas y no únicamente por la apariencia de la respuesta.
+
+\section{Contratos y validación de entrada}
+
+La comunicación entre etapas utiliza contratos conocidos. La entrada reúne la consulta en lenguaje natural, los activos solicitados, el periodo o las fechas, el intervalo temporal, las rutas de los datos y los avisos disponibles. A medida que avanza el caso se añaden el plan analítico, el código generado, los resultados, los registros de error y la respuesta final.
+
+El uso de contratos explícitos evita que una etapa tenga que interpretar libremente la salida de la anterior. También permite diferenciar los campos obligatorios de la información opcional. Por ejemplo, una consulta puede utilizar un periodo relativo o un intervalo definido mediante fechas, pero siempre debe contener al menos un activo y un conjunto de datos disponible.
+
+Antes de realizar una llamada al modelo se aplican varias comprobaciones deterministas:
 
 \begin{itemize}
-    \item \texttt{data/}: contiene el catálogo de casos, los CSV históricos congelados y sus metadatos.
-    \item \texttt{src/}: agrupa el código de aplicación, dividido en esquemas, grafo, integración LLM y ejecución controlada.
-    \item Automatizaciones reproducibles: permiten generar EDA, ejecutar evaluaciones y producir informes de apoyo.
-    \item \texttt{tests/}: valida el workflow con respuestas LLM simuladas, evitando depender de APIs externas durante las pruebas básicas.
-    \item Documentación y memoria: conserva la memoria LaTeX, figuras y registros de resultados.
-    \item \texttt{results/}: almacena artefactos generados durante ejecuciones, como código generado, datos de entrada, registros y salidas JSON.
+    \item la consulta no puede estar vacía;
+    \item debe haberse indicado al menos un activo;
+    \item debe existir al menos un fichero de datos;
+    \item las fechas, cuando se utilizan, deben respetar un formato común;
+    \item las rutas recibidas deben corresponder a ficheros existentes.
 \end{itemize}
 
-También se separan configuración y secretos. El fichero \texttt{.env} contiene claves locales y queda excluido del control de versiones, mientras que \texttt{.env.example} documenta las variables necesarias para reproducir la configuración sin exponer credenciales. Del mismo modo, \texttt{.gitignore} excluye entornos virtuales, cachés, registros y resultados generados de gran tamaño, manteniendo versionados los artefactos que aportan trazabilidad académica.
+Estas comprobaciones son sencillas, pero evitan que el modelo intente completar información que el sistema no posee. Cuando alguna condición no se cumple, el flujo termina antes de consumir recursos generativos y devuelve una explicación concreta sobre la información ausente o incorrecta.
 
-Aunque el proyecto no implementa un ciclo MLOps productivo completo con despliegue continuo, sí incorpora prácticas propias de ese enfoque: versionado del código, separación entre datos, código y resultados, evaluaciones repetibles, pruebas automatizadas, conservación de artefactos, documentación de configuraciones y registro explícito de fallos. Para el alcance del TFM, estas prácticas son suficientes para defender que el sistema no se limita a una demo puntual, sino que se ha organizado como un prototipo reproducible y auditable.
+El plan analítico y el resultado del cálculo también siguen formatos definidos. El primero identifica el objetivo, el nivel de profundidad, las métricas y los requisitos de salida. El segundo reúne las cifras, tablas, series y limitaciones obtenidas. El capítulo siguiente explica cómo interviene el modelo; en este punto interesa que la aplicación puede almacenar y trasladar estos contenidos entre etapas.
 
-\section{Contratos de datos}
+\section{Carga y normalización de los datos}
 
-La entrada del sistema se representa mediante \texttt{FinancialQueryInput}. La planificación generada por el LLM se almacena en \texttt{AnalysisPlan}, que contiene objetivo interpretado, tipo de análisis, nivel A/B/C, métricas esperadas, requisitos de datos, requisitos de salida, preferencias de presentación y razonamiento resumido. El estado completo se conserva en \texttt{WorkflowState}.
+Los datos financieros utilizados por el prototipo proceden de CSV descargados previamente. Aunque todos contienen información histórica, su estructura no siempre es idéntica. Algunos ficheros presentan una tabla convencional con una fila de cabecera, mientras que otros conservan el formato ancho y las cabeceras multinivel generadas durante la descarga. Esta diferencia fue una fuente de errores en las primeras iteraciones.
 
-La necesidad de funciones auxiliares de datos apareció durante las pruebas de desarrollo: los CSV generados por \texttt{yfinance} pueden contener cabeceras multinivel y formatos distintos según el activo o el intervalo. Para reducir errores repetidos en el código generado, se incorporaron funciones reutilizables de carga y normalización. Así, el LLM no tiene que resolver desde cero cada variante de lectura de CSV y puede concentrarse en el cálculo solicitado.
+Para no resolver de nuevo la lectura en cada consulta, se incorporó una capa común de carga. Esta identifica el formato disponible, extrae las columnas financieras y produce una tabla normalizada con fecha, activo y variables de mercado. Los campos principales son apertura, máximo, mínimo, cierre, cierre ajustado y volumen, siempre que estén disponibles.
 
-\section{Pipeline LLM}
+Durante la normalización se convierten las fechas a un tipo temporal común y las columnas financieras a valores numéricos. Las filas que no permiten identificar una fecha, un activo o un precio de cierre válido se descartan. Cuando la consulta solicita activos concretos, el resultado se filtra para conservar únicamente esos instrumentos. Si ninguno aparece en los datos, la carga termina con un error explícito.
 
-El pipeline LLM se divide en tres llamadas principales. La primera interpreta la consulta y construye un plan estructurado. La segunda genera código Python usando tanto el plan como el mensaje original del usuario. La tercera interpreta la salida JSON producida por el script y redacta la respuesta final.
+La representación normalizada puede utilizarse de dos formas. Para análisis que requieren máximos, mínimos o volumen se conserva el formato largo, con una fila por fecha y activo. Para operaciones basadas únicamente en precios de cierre se genera una tabla en la que las fechas forman el índice y cada activo ocupa una columna. Esta segunda representación simplifica comparaciones, alineación temporal, rentabilidades y correlaciones.
 
-El prompt de generación de código exige que el script lea un payload por \texttt{argv[1]}, use librerías permitidas y escriba un único JSON en \texttt{stdout}. Esta restricción permite tratar el código generado como un artefacto ejecutable, auditable y validable.
+La capa de datos también transforma tipos especiales en valores compatibles con JSON. Las fechas, los valores procedentes de librerías científicas y los resultados no finitos necesitan una conversión antes de incorporarse a la salida. Centralizar este tratamiento reduce fallos de serialización y evita repetir la misma lógica.
 
-El flujo completo puede resumirse como una cadena de transformación controlada:
+\section{Ejecución controlada y tratamiento de resultados}
 
-\begin{quote}
-\centering
-\texttt{prompt} \(\rightarrow\) \texttt{código Python} \(\rightarrow\) validación de seguridad \(\rightarrow\) ejecución \(\rightarrow\) \texttt{JSON} \(\rightarrow\) interpretación final.
-\end{quote}
+Una vez revisado, el código se lanza en un proceso independiente de la aplicación principal. Recibe la consulta, los activos, las rutas de los CSV y el plan analítico. Esta entrada se conserva entre las evidencias del caso, de manera que pueda comprobarse qué información estaba disponible en el momento del cálculo.
 
-Esta cadena es importante porque el LLM no produce directamente una afirmación financiera final sin pasar antes por cálculos ejecutados. El primer bloque LLM prepara el análisis y genera el script; el entorno de ejecución produce datos estructurados; y el segundo bloque LLM redacta una explicación basada en esa salida.
+El proceso se inicia con un tiempo máximo configurado, actualmente de 60 segundos. La biblioteca de ejecución interrumpe la espera cuando se supera ese límite. En la versión actual todavía conviene reforzar el tratamiento de esta excepción para convertirla siempre en un resultado interno uniforme, igual que ocurre con otros fallos. Cuando el proceso termina, la aplicación conserva por separado la salida producida, los mensajes de error y el código de finalización.
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.5cm}X}
-\toprule
-\textbf{Elemento} & \textbf{Contrato exigido} \\
-\midrule
-Entrada & El script recibe un único payload JSON por \texttt{argv[1]}, con consulta, tickers, fechas, intervalo y rutas CSV. \\
-Lectura de datos & El código debe leer únicamente los CSV proporcionados por el workflow y no descargar datos externos. \\
-Salida & Debe escribir un único objeto JSON en \texttt{stdout}, mediante \texttt{json.dumps}, para que el sistema pueda analizarlo. \\
-Contenido & La salida debe incluir métricas, tablas o series estructuradas necesarias para responder a la consulta. \\
-Artefactos & La ejecución conserva script, salida estándar, salida de error, código de retorno y metadatos de ejecución. \\
-Errores & Si el script falla, el error queda registrado y el workflow puede devolver una explicación controlada o intentar reparación. \\
-\bottomrule
-\end{tabularx}
-\caption{Contrato operativo del código Python generado por el LLM.}
-\label{tab:contrato_codigo_generado}
-\end{table}
+El resultado esperado es un objeto JSON. Cuando la salida respeta este formato, se transforma en una representación interna que puede utilizar la etapa siguiente. Si no puede analizarse, se conserva el texto original dentro de un campo de diagnóstico. Esta recuperación evita perder información, aunque no sustituye a una validación completa del esquema de salida, que sería una mejora conveniente.
 
-\section{Control de seguridad}
+Cada ejecución genera un conjunto mínimo de evidencias:
 
-Antes de ejecutar el script, el módulo \texttt{code\_security.py} analiza el código con el AST de Python. El validador comprueba importaciones permitidas, llamadas bloqueadas como \texttt{eval} o \texttt{exec}, presencia de \texttt{main()} y uso de \texttt{json.dumps}. Si el código no cumple el contrato, el workflow termina con estado de error y no ejecuta el script.
+\begin{itemize}
+    \item el procedimiento que se intentó ejecutar;
+    \item la entrada completa utilizada por ese procedimiento;
+    \item la salida producida durante la ejecución;
+    \item los mensajes de error;
+    \item el código de finalización y el resultado interpretado.
+\end{itemize}
 
-El uso del árbol de sintaxis abstracta permite revisar la estructura del programa antes de ejecutarlo, en lugar de depender solo de búsquedas textuales. La validación comprueba nodos de importación, llamadas a funciones y elementos mínimos del contrato. Con ello se reduce el riesgo de que un script generado por LLM ejecute operaciones fuera del alcance del MVP. Esta capa no convierte el entorno en una sandbox completa, pero sí añade una barrera explícita entre generación y ejecución.
+Estas evidencias ayudan a reconstruir el caso y a comprobar si una cifra procede realmente de los cálculos. También facilitan distinguir un error del modelo de un problema en los datos o en las operaciones realizadas.
+
+Cuando aparecen series largas, se conserva la salida completa y se prepara una versión reducida para la interpretación. Las listas extensas se sustituyen por una muestra del principio y del final, acompañada de su longitud original; los textos demasiado largos también se limitan. La reducción afecta únicamente al contexto enviado al modelo, no a la evidencia almacenada.
+
+\section{Validación, reparación y gestión de errores}
+
+El código generado no se utiliza de forma inmediata. Primero se comprueba que su sintaxis sea válida y que respete varias restricciones. Para ello se analiza su árbol sintáctico, con el que pueden identificarse importaciones y llamadas sin depender únicamente de búsquedas textuales.
+
+La validación limita las bibliotecas que pueden utilizarse y bloquea operaciones ajenas al análisis previsto. También exige una estructura mínima y una salida serializada. Entre las operaciones no admitidas se encuentran la evaluación dinámica de expresiones, la creación de nuevos procesos, el acceso a red y la lectura libre de ficheros no incluidos en la entrada.
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{lX}
+\begin{tabularx}{\textwidth}{L{0.28\textwidth}Y}
 \toprule
 \textbf{Comprobación} & \textbf{Finalidad} \\
 \midrule
-Imports permitidos & Limitar el código a librerías necesarias para análisis de datos y serialización. \\
-Funciones bloqueadas & Evitar llamadas peligrosas o no necesarias, como \texttt{eval} y \texttt{exec}. \\
-Función \texttt{main()} & Forzar una estructura ejecutable y sencilla de auditar. \\
-Salida JSON & Garantizar que el resultado pueda pasar al nodo de interpretación sin ambigüedad. \\
-Errores explícitos & Separar fallos de seguridad, fallos de ejecución y fallos de interpretación. \\
+Sintaxis válida & Evitar la ejecución de un procedimiento que Python no puede interpretar. \\
+Importaciones limitadas & Restringir el entorno a análisis de datos, operaciones matemáticas y serialización. \\
+Operaciones bloqueadas & Impedir accesos o comportamientos que quedan fuera del alcance del prototipo. \\
+Estructura mínima & Facilitar una ejecución uniforme y una revisión posterior. \\
+Salida estructurada & Garantizar que los resultados puedan pasar a la siguiente etapa sin ambigüedad. \\
 \bottomrule
 \end{tabularx}
-\caption{Comprobaciones principales del validador de seguridad.}
-\label{tab:validador_seguridad_ast}
+\caption{Controles aplicados antes de la ejecución.}
+\label{tab:controles_implementacion}
 \end{table}
 
-\section{Reparación y compactación}
+Si el código no supera la validación, el sistema puede solicitar una corrección. La nueva versión debe pasar exactamente por los mismos controles. Del mismo modo, si un código validado falla durante el cálculo, el error observado puede utilizarse para realizar un único intento de reparación y volver a probarlo.
 
-Cuando el código generado no supera la validación o falla durante la ejecución, el workflow puede solicitar al LLM una reparación manteniendo la consulta original, el plan analítico y el detalle del error. La reparación no evita la validación: el código corregido vuelve a pasar por el mismo control de seguridad antes de ejecutarse. Si la reparación tampoco cumple el contrato, el caso se marca como error controlado.
+La recuperación se mantiene acotada para evitar ciclos indefinidos y costes difíciles de comparar. Si la corrección tampoco cumple el contrato o vuelve a fallar, el caso termina con un error controlado. El estado conserva tanto el problema final como los avisos generados durante los intentos anteriores.
 
-En consultas de Nivel B o C, el script puede generar series largas. Estas series son útiles como artefacto completo, pero pueden saturar el contexto del agente de interpretación. Por ello, antes de la interpretación final se compactan listas y textos extensos: se conserva una muestra representativa para el LLM interpretador y la salida completa queda guardada como evidencia auditable. Esta decisión permite mantener trazabilidad sin degradar la respuesta final por exceso de contexto.
+La validación reduce riesgos, pero no equivale a un aislamiento completo. El código se lanza en un proceso separado y con operaciones limitadas, aunque comparte el entorno de trabajo del prototipo. Una aplicación productiva requeriría medidas adicionales, como contenedores efímeros, permisos mínimos, límites de memoria y aislamiento de red.
 
-La decisión práctica fue limitar o resumir datos extensos enviados al agente de interpretación, manteniendo siempre la salida completa en los registros. De este modo, las consultas de Nivel B y C pueden producir datos ricos sin convertir la interpretación final en una llamada demasiado grande para el modelo.
+\section{Configuración, trazabilidad y reproducibilidad}
 
-\section{Pruebas}
+Los parámetros del modelo y las credenciales se mantienen fuera del código mediante variables de entorno. Así puede documentarse la configuración necesaria sin almacenar las claves reales. Entre los valores configurables se encuentran el modelo, la dirección del servicio, el tiempo máximo de respuesta y algunos parámetros de generación.
 
-Las pruebas automatizadas simulan las respuestas LLM para evitar dependencias externas durante su ejecución. De este modo se validan el workflow, el control de seguridad, la ejecución controlada y los errores de entrada sin consumir APIs reales.
+La configuración local también determina el intérprete utilizado y el límite temporal de los cálculos. Mantener estos valores separados facilita adaptar el entorno sin alterar la lógica principal.
 
+Los CSV empleados por la evaluación permanecen estables, mientras que el código y los registros se generan para cada caso. Los informes se construyen después a partir de esos resultados. Esta separación ayuda a reconstruir una prueba y evita confundir los datos de entrada con los productos obtenidos.
 
+El control de versiones conserva la evolución del prototipo y de la memoria, mientras que los secretos, los entornos virtuales y los ficheros temporales quedan excluidos. El objetivo no es reproducir un despliegue productivo completo, sino dejar identificados los datos, la configuración y las evidencias necesarias para revisar las pruebas realizadas.
 
+\section{Pruebas automatizadas}
+
+Las pruebas automatizadas comprueban el recorrido principal sin depender de la disponibilidad del servicio LLM. Para ello se sustituyen temporalmente sus respuestas por planes, códigos e interpretaciones controladas. Así pueden verificarse la orquestación, la validación de entrada y los cálculos de manera rápida y repetible.
+
+Los casos positivos cubren consultas de crecimiento, comparación, visión general, rentabilidad, riesgo y análisis técnico. En todos ellos se comprueba que el flujo alcanza el estado final esperado, que la ejecución termina correctamente y que la respuesta contiene información relacionada con los activos solicitados.
+
+También se incluyen escenarios de error:
+
+\begin{itemize}
+    \item ausencia de credenciales o configuración del modelo;
+    \item fechas con un formato no admitido;
+    \item ficheros de datos inexistentes;
+    \item consultas vacías.
+\end{itemize}
+
+También existen comprobaciones unitarias sobre la lectura de la configuración y sobre algunos formatos de respuesta, como la detección de una interpretación devuelta únicamente en JSON. Sin embargo, la cobertura automatizada todavía no reproduce todas las respuestas mal formadas que puede generar el modelo ni todas las rutas de reparación. Estas situaciones se observan mediante la batería real y constituyen una línea clara para ampliar las pruebas.
+
+Las pruebas automatizadas no sustituyen la evaluación con el modelo real. Su finalidad es comprobar que los componentes deterministas reaccionan de forma previsible y que los errores básicos conducen a una finalización controlada. La batería descrita en la metodología amplía esta verificación al comportamiento generativo.
+
+En conjunto, la implementación transforma el diseño conceptual en un flujo operativo sin delegar todo el control en el modelo. Los contratos, la normalización de datos, las revisiones previas, el proceso separado y la conservación de evidencias forman la base técnica de los agentes LLM. El capítulo siguiente explica qué diferencia a cada uno y cómo se construyen sus instrucciones.

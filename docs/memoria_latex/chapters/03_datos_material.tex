@@ -1,214 +1,151 @@
 \chapter{Datos y material de trabajo}
 
-\section{Fuente de datos y datos obtenidos}
+\section{Alcance del capítulo}
 
-El sistema trabaja con datos financieros históricos descargados previamente mediante \texttt{yfinance}~\cite{yfinance} y almacenados en ficheros CSV. Yahoo Finance publica información de mercado, fichas de activos y series históricas para acciones, fondos cotizados, índices, divisas, criptomonedas y materias primas. La librería \texttt{yfinance} permite acceder de forma programática a parte de esta información disponible en Yahoo Finance~\cite{yahoofinancehistorical}, incluyendo campos habituales como apertura, máximo, mínimo, cierre, cierre ajustado y volumen. En este trabajo se utiliza como herramienta práctica de descarga para un contexto académico, no como proveedor garantizado para producción.
+El sistema analiza series financieras históricas almacenadas en archivos locales. Trabajar con un conjunto de datos conocido y estable permite repetir una misma consulta en condiciones comparables, sin depender de la disponibilidad de un servicio externo ni de los cambios posteriores del mercado.
 
-Cada CSV se conserva junto a un fichero de metadatos en formato JSON. Este metadato registra la consulta original, el objetivo analítico, los símbolos financieros implicados, el intervalo temporal y los parámetros de descarga. La decisión permite separar la fase de obtención de datos de la fase de análisis: el MVP no depende de que la API externa esté disponible durante cada ejecución, sino que opera sobre un conjunto de datos congelado y revisable.
+El material experimental se organiza en tres grupos. El primero reúne los CSV originales y la información asociada a cada descarga. El segundo contiene las tablas preparadas para estudiar la estructura y la calidad de los datos. El tercero corresponde a la batería de 50 consultas utilizada para evaluar el comportamiento del modelo. Este capítulo presenta estos recursos y explica en qué condiciones se emplean; el procedimiento de evaluación y sus resultados se desarrollan más adelante.
 
-La Tabla~\ref{tab:datos_obtenidos} muestra los datos obtenidos y utilizados como base del TFM. No se incluyen todos los nombres de fichero en la tabla para evitar una presentación demasiado técnica; los nombres completos se mantienen en \texttt{data/raw} y en el resumen procesado \texttt{data/processed/eda\_resumen\_ficheros.csv}.
+\section{Procedencia y obtención de los datos}
 
-\begin{table}[H]
+Las series históricas se obtuvieron mediante \texttt{yfinance}~\cite{yfinance}, una herramienta que facilita la descarga de parte de la información publicada en Yahoo Finance~\cite{yahoofinancehistorical}. Los datos incluyen los campos habituales de mercado: precio de apertura, máximo, mínimo, cierre, cierre ajustado y volumen.
+
+El conjunto incorpora acciones, fondos cotizados, un índice bursátil, una criptomoneda, una divisa y una materia prima. La selección es intencional y responde a criterios de variedad, no a un muestreo estadístico del mercado. No se pretende representar de forma exhaustiva todos los instrumentos financieros, sino reunir situaciones suficientemente distintas para comprobar si el flujo se adapta a uno o varios activos, a intervalos diarios y horarios, y a horizontes que van desde una semana hasta varios años.
+
+Cada descarga se conserva como un archivo CSV acompañado de sus metadatos. Esta información incluye la consulta de origen, los símbolos financieros, las fechas o el periodo solicitado y el intervalo de observación. De este modo, los valores numéricos permanecen vinculados a las condiciones en las que fueron obtenidos.
+
+La descarga y el análisis se realizan en momentos distintos. Durante la ejecución de una consulta, el sistema no solicita información nueva a Yahoo Finance, sino que trabaja exclusivamente con los archivos locales seleccionados para ese caso. Esto reduce la variabilidad entre pruebas y permite revisar posteriormente qué información se utilizó en cada análisis.
+
+\section{Inventario y cobertura}
+
+El catálogo inicial contiene diez consultas de descarga, aunque varias comparten el mismo conjunto de datos. Las dos formulaciones relativas a AAPL, por ejemplo, utilizan un único CSV; lo mismo ocurre con las consultas sobre QQQ y SPY. Por este motivo, el conjunto fijo está formado por ocho archivos, de los que se obtienen diez series al separar los casos que incluyen dos símbolos.
+
+La Tabla~\ref{tab:inventario_datos} resume la cobertura observada después de normalizar cada combinación de caso y activo. En total se obtienen 5.080 observaciones.
+
+\begin{table}[htbp]
 \centering
 \small
-\begin{tabularx}{\textwidth}{L{0.22\textwidth}L{0.19\textwidth}L{0.16\textwidth}Y}
+\begin{tabularx}{\textwidth}{L{0.22\textwidth}L{0.16\textwidth}L{0.12\textwidth}L{0.23\textwidth}r}
 \toprule
-\textbf{Caso de datos} & \textbf{Activos} & \textbf{Cobertura} & \textbf{Uso en el MVP} \\
+\textbf{Conjunto} & \textbf{Activos} & \textbf{Intervalo} & \textbf{Rango observado} & \textbf{Obs.} \\
 \midrule
-NVDA cinco años & NVDA & 2021--2026, diario & Crecimiento de precio y validación de respuestas de Nivel A. \\
-NVDA frente a AMD & NVDA, AMD & 2024--2026, diario & Comparación entre activos y cálculo de rentabilidad relativa. \\
-AAPL tres meses & AAPL & 2025--2026, diario & Visión descriptiva de un activo y análisis técnico básico. \\
-QQQ frente a SPY & QQQ, SPY & 2024, diario & Retorno, riesgo, drawdown y comparación estructurada. \\
-S\&P 500 desde 2020 & \texttt{\^{}GSPC} & 2020--2026, diario & Serie amplia de mercado para pruebas de histórico largo. \\
-Bitcoin 2024 & BTC-USD & 2024, diario & Activo cripto con alta variabilidad. \\
-EUR/USD horario & EURUSD=X & 10 días, 1h & Ejemplo de divisa con frecuencia intradía. \\
-Oro horario & GC=F & 1 semana, 1h & Materia prima con frecuencia intradía. \\
+NVDA, cinco años & NVDA & Diario & 17/03/2021--16/03/2026 & 1.255 \\
+NVDA frente a AMD & NVDA, AMD & Diario & 18/03/2024--16/03/2026 & 1.000 \\
+AAPL, tres meses & AAPL & Diario & 17/12/2025--16/03/2026 & 60 \\
+QQQ frente a SPY & QQQ, SPY & Diario & 02/01/2024--30/12/2024 & 502 \\
+S\&P 500 desde 2020 & \texttt{\^{}GSPC} & Diario & 02/01/2020--16/03/2026 & 1.558 \\
+Bitcoin durante 2024 & BTC-USD & Diario & 01/01/2024--30/12/2024 & 365 \\
+EUR/USD, diez días & EURUSD=X & Horario & 04/03/2026--17/03/2026 & 224 \\
+Oro, una semana & GC=F & Horario & 10/03/2026--17/03/2026 & 116 \\
 \bottomrule
 \end{tabularx}
-\caption{Datos obtenidos y finalidad de cada conjunto dentro del MVP.}
-\label{tab:datos_obtenidos}
+\caption{Inventario y cobertura temporal de los datos utilizados.}
+\label{tab:inventario_datos}
 \end{table}
 
-La variedad de activos permite comprobar que el sistema no está limitado a una acción concreta. También fuerza al flujo LLM a trabajar con horizontes distintos, desde consultas diarias de varios años hasta series horarias de pocos días.
+La cobertura real no siempre coincide exactamente con las fechas solicitadas. Los mercados tradicionales no generan observaciones durante fines de semana y festivos, mientras que Bitcoin cotiza de manera continua. Cuando la petición utiliza un periodo relativo, como tres meses o cinco años, las fechas también dependen del momento en que se realizó la descarga. El análisis toma, por tanto, las fechas presentes en cada CSV y no presupone que todos los activos compartan el mismo calendario.
 
-\section{Catálogo de consultas y proceso de descarga}
+En las series horarias, las marcas temporales conservan la referencia UTC. Esta convención permite trabajar con una base temporal común, aunque no elimina las diferencias entre los horarios efectivos de negociación de cada mercado.
 
-El punto de partida del conjunto de datos es un catálogo de consultas de referencia. Cada entrada define la consulta, los tickers, el rango temporal o período relativo, el intervalo de observación y los posibles avisos. Este catálogo actúa como contrato entre la fase de preparación de datos y el flujo de análisis.
+\section{Estructura y normalización}
 
-El proceso utilizado para construir el conjunto de datos puede resumirse en cuatro pasos:
+Los archivos descargados mediante \texttt{yfinance} emplean columnas de tipo OHLCV. La Tabla~\ref{tab:campos_ohlcv} recoge su función dentro del conjunto de datos.
 
-\begin{enumerate}
-    \item Definir o revisar la consulta en el catálogo, por ejemplo una comparativa entre QQQ y SPY o una descarga de NVDA a cinco años.
-    \item Transformar esa consulta en parámetros de descarga: lista de tickers, \texttt{start}, \texttt{end}, \texttt{period} e \texttt{interval}.
-    \item Descargar las series con \texttt{yfinance} y guardar el resultado en \texttt{data/raw} como CSV, junto a un \texttt{.metadata.json} con los parámetros usados.
-    \item Normalizar los CSV, generar tablas procesadas y producir resúmenes exploratorios auxiliares.
-\end{enumerate}
-
-En el repositorio actual, los CSV crudos ya están congelados. Por tanto, para reproducir la parte documentada de esta memoria no es necesario volver a llamar a Yahoo Finance: basta con conservar los datos crudos y regenerar las tablas procesadas si fuera necesario. Si se quisiera ampliar el conjunto de datos, el procedimiento correcto sería añadir primero la consulta al catálogo y después generar un nuevo CSV con su metadato asociado.
-
-Cada consulta se transforma en una representación estructurada antes de entrar en el flujo LLM. El siguiente bloque muestra un ejemplo simplificado:
-
-\begin{small}
-\begin{verbatim}
-{
-  "query": "Compárame QQQ y SPY en 2024 de forma clara,
-            con tabla comparativa y serie normalizada",
-  "tickers": ["QQQ", "SPY"],
-  "csv_paths": [
-    "data/raw/qqq_y_spy_desde_20240101_hasta_20241231.csv"
-  ],
-  "start": "2024-01-01",
-  "end": "2024-12-31",
-  "period": null,
-  "interval": "1d",
-  "warnings": []
-}
-\end{verbatim}
-\end{small}
-
-La Tabla~\ref{tab:formato_consulta} resume el significado de los campos principales.
-
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \small
-\begin{tabularx}{\textwidth}{L{0.25\textwidth}Y L{0.23\textwidth}}
+\begin{tabularx}{\textwidth}{L{0.19\textwidth}L{0.29\textwidth}Y}
 \toprule
-\textbf{Elemento} & \textbf{Descripción} & \textbf{Ejemplo} \\
+\textbf{Campo} & \textbf{Contenido} & \textbf{Uso en el análisis} \\
 \midrule
-Consulta original & Texto introducido o definido como caso de prueba. & Comparar Nvidia y AMD. \\
-Objetivo analítico & Tipo de análisis que debe ejecutarse. & Comparación de activos. \\
-Símbolos financieros & Activos sobre los que se realiza el análisis. & NVDA, AMD. \\
-Rango temporal & Período relativo o fechas de inicio y fin. & Dos años. \\
-Intervalo & Frecuencia de los datos históricos. & Diario. \\
-Avisos & Observaciones detectadas al preparar la entrada. & Sin avisos. \\
+\texttt{Open} & Precio de apertura. & Contextualización de la sesión y cálculos que requieren el inicio del intervalo. \\
+\texttt{High} & Precio máximo. & Estudio de máximos y amplitud del movimiento. \\
+\texttt{Low} & Precio mínimo. & Estudio de mínimos y amplitud del movimiento. \\
+\texttt{Close} & Precio de cierre. & Variable principal para rentabilidad, volatilidad, drawdown y medias móviles. \\
+\texttt{Adj Close} & Cierre ajustado, cuando está disponible. & Se conserva como referencia, aunque \texttt{Close} es la variable principal del trabajo. \\
+\texttt{Volume} & Volumen negociado o informado. & Medida complementaria, no obligatoria para todos los tipos de activo. \\
 \bottomrule
 \end{tabularx}
-\caption{Estructura semántica de una consulta financiera antes de su procesamiento.}
-\label{tab:formato_consulta}
+\caption{Campos financieros presentes en los CSV.}
+\label{tab:campos_ohlcv}
 \end{table}
 
-\section{Estructura de los CSV}
+Cuando un archivo contiene varios símbolos, las columnas presentan dos niveles: uno identifica el activo y otro el campo financiero. Para facilitar su análisis, esta estructura se transforma a un formato largo en el que cada fila corresponde a un activo y un instante concretos. La versión normalizada conserva también el caso de origen, el intervalo de observación y los campos OHLCV.
 
-Los ficheros generados por \texttt{yfinance} contienen columnas de tipo OHLCV: apertura, máximo, mínimo, cierre, cierre ajustado y volumen. Cuando hay más de un ticker, las columnas se guardan con cabeceras multinivel: el primer nivel identifica el símbolo financiero y el segundo nivel identifica el campo de mercado. Por este motivo, los CSV no se leen como tablas planas con una sola fila de cabecera, sino con \texttt{header=[0, 1]}.
+Como resultado de esta transformación se obtienen tres recursos: el conjunto normalizado, un resumen por archivo y otro por serie. Estos materiales facilitan la inspección de los datos y evitan que la evaluación dependa de una interpretación manual de las cabeceras originales.
 
-La Tabla~\ref{tab:estructura_csv} resume los campos usados por el sistema. La columna de cierre es la variable principal, porque de ella dependen las métricas de crecimiento, rentabilidad, volatilidad, drawdown e indicadores técnicos básicos.
+Cada caso de análisis conserva la consulta, los símbolos financieros, las fechas o el periodo, el intervalo y los CSV que puede utilizar. Esta selección establece un límite explícito: el sistema debe trabajar únicamente con esos datos y no puede descargar información adicional durante la ejecución.
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{L{0.18\textwidth}L{0.25\textwidth}Y}
-\toprule
-\textbf{Campo} & \textbf{Uso principal} & \textbf{Observación} \\
-\midrule
-\texttt{Open} & Precio de apertura. & Se conserva como contexto, aunque no es obligatorio en todas las respuestas. \\
-\texttt{High} y \texttt{Low} & Rango máximo y mínimo. & Útiles para revisar amplitud diaria o intradía. \\
-\texttt{Close} & Cálculo financiero central. & Base de rentabilidad, volatilidad, drawdown y medias móviles. \\
-\texttt{Adj Close} & Precio ajustado. & Se conserva si aparece en la descarga original. \\
-\texttt{Volume} & Actividad negociada. & Puede ser cero o menos informativo en divisas y algunos futuros. \\
-\bottomrule
-\end{tabularx}
-\caption{Campos OHLCV presentes en los CSV de mercado.}
-\label{tab:estructura_csv}
-\end{table}
+\section{Análisis exploratorio y calidad}
 
-La estructura multinivel también explica por qué el proyecto incluye una capa de normalización. El proceso exploratorio transforma cada combinación caso--ticker en formato largo, con columnas explícitas para identificador de caso, fichero fuente, ticker, intervalo, fecha y campos OHLCV. Este formato facilita auditar métricas por serie y evita que el código generado por el LLM tenga que resolver por sí solo todas las variantes de cabecera.
+Antes de comenzar la evaluación se realizó un análisis exploratorio para comprobar la cobertura, la consistencia y la utilidad de los datos. En esta fase todavía no se valoran las respuestas del modelo. El propósito es detectar problemas básicos en el material de partida que, de otro modo, podrían confundirse con fallos del sistema.
 
-\section{Análisis exploratorio de datos}
-
-El análisis exploratorio lee los CSV descargados con \texttt{yfinance}, interpreta las cabeceras multinivel, normaliza los datos a formato largo y genera resúmenes procesados por fichero y por serie.
-
-El análisis confirma que el conjunto contiene 5.080 filas normalizadas, con un rango observado entre el 2 de enero de 2020 y el 17 de marzo de 2026. Los intervalos considerados son diario (\texttt{1d}) e intradía horario (\texttt{1h}).
-
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \small
 \begin{tabular}{lr}
 \toprule
 \textbf{Indicador} & \textbf{Resultado} \\
 \midrule
-Casos definidos en catálogo & 10 \\
-CSV analizados & 8 \\
-Series por símbolo y caso & 10 \\
-Filas normalizadas & 5.080 \\
-Nulos en precios de cierre & 0 \\
-Duplicados por fecha & 0 \\
+Consultas en el catálogo de descarga & 10 \\
+CSV históricos & 8 \\
+Series por activo y caso & 10 \\
+Observaciones normalizadas & 5.080 \\
+Rango temporal total & 02/01/2020--17/03/2026 \\
+Valores ausentes en \texttt{Close} & 0 \\
+Fechas duplicadas dentro de cada serie & 0 \\
 \bottomrule
 \end{tabular}
 \caption{Resumen de cobertura y calidad del conjunto de datos.}
-\label{tab:resumen_cobertura_datos}
+\label{tab:calidad_datos}
 \end{table}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{L{0.28\textwidth}L{0.18\textwidth}rL{0.26\textwidth}}
-\toprule
-\textbf{Caso} & \textbf{Tickers} & \textbf{Filas} & \textbf{Rango observado} \\
-\midrule
-AAPL tres meses & AAPL & 60 & 2025-12-17 a 2026-03-16 \\
-NVDA frente a AMD & AMD, NVDA & 500 & 2024-03-18 a 2026-03-16 \\
-NVDA cinco años & NVDA & 1.255 & 2021-03-17 a 2026-03-16 \\
-Bitcoin 2024 & BTC-USD & 365 & 2024-01-01 a 2024-12-30 \\
-S\&P 500 desde 2020 & \texttt{\^{}GSPC} & 1.558 & 2020-01-02 a 2026-03-16 \\
-QQQ frente a SPY & QQQ, SPY & 251 & 2024-01-02 a 2024-12-30 \\
-\bottomrule
-\end{tabularx}
-\caption{Muestra de cobertura temporal obtenida en el EDA.}
-\label{tab:cobertura_eda}
-\end{table}
+La ausencia de valores nulos en el cierre es especialmente importante, ya que esta columna interviene en la mayor parte de las métricas solicitadas. Tampoco se detectaron fechas duplicadas dentro de una misma serie. Por tanto, las rentabilidades, la volatilidad y el drawdown pueden calcularse sin recurrir a métodos de imputación.
 
-Además del resumen agregado, se calcularon métricas descriptivas por serie. La Tabla~\ref{tab:resumen_series_eda} muestra una selección de resultados. Se observan activos con crecimientos muy elevados, como NVDA en cinco años, series con caídas acumuladas significativas, como AMD en la comparativa con NVDA, y activos de menor volatilidad relativa, como SPY. Esta diversidad obliga al sistema a redactar respuestas para escenarios con magnitudes y niveles de riesgo distintos.
+El precio de cierre se utiliza como referencia principal para mantener un criterio uniforme entre todos los activos. Sin embargo, en horizontes largos puede diferir del cierre ajustado por el efecto de dividendos, desdoblamientos u otras operaciones corporativas. Esta elección debe tenerse en cuenta al interpretar rentabilidades históricas, especialmente en acciones y fondos cotizados.
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{L{0.26\textwidth}rrr}
-\toprule
-\textbf{Serie} & \textbf{Retorno total} & \textbf{Volatilidad anual} & \textbf{Máx. caída} \\
-\midrule
-NVDA, 5 años & 1273.33 \% & 51.31 \% & -66.36 \% \\
-BTC-USD, 2024 & 109.76 \% & 44.13 \% & -26.18 \% \\
-NVDA, 2 años & 107.13 \% & 49.42 \% & -36.89 \% \\
-S\&P 500, desde 2020 & 105.64 \% & 20.77 \% & -33.93 \% \\
-QQQ, 2024 & 28.07 \% & 17.99 \% & -13.56 \% \\
-SPY, 2024 & 24.45 \% & 12.63 \% & -8.41 \% \\
-AMD, 2 años & 3.11 \% & 55.10 \% & -58.98 \% \\
-AAPL, 3 meses & -7.00 \% & 24.15 \% & -10.07 \% \\
-\bottomrule
-\end{tabularx}
-\caption{Métricas exploratorias por serie utilizadas para contextualizar los casos de prueba.}
-\label{tab:resumen_series_eda}
-\end{table}
+El volumen, en cambio, requiere una lectura más prudente. En la serie EUR/USD aparece con valor cero en todas las observaciones y también se registran algunos ceros en el S\&P 500 y el oro. Esto no invalida las series de precios, pero impide tratar el volumen como una variable homogénea u obligatoria en todos los casos.
 
-\section{Calidad, cobertura y limitaciones}
+El análisis exploratorio también muestra comportamientos financieros diversos: series de crecimiento prolongado, periodos con caídas acusadas, activos de elevada volatilidad y comparaciones entre instrumentos con perfiles distintos. Esta variedad evita que la evaluación se limite a repetir una misma operación sobre datos muy similares.
 
-La ausencia de nulos en el precio de cierre es relevante porque las métricas principales del MVP dependen directamente de esta columna. También se comprobó la ausencia de duplicados por fecha en los ficheros analizados. Estas condiciones permiten ejecutar las consultas actuales sin introducir imputaciones adicionales.
+Las medidas anualizadas calculadas para los intervalos horarios deben interpretarse como aproximaciones descriptivas. Su valor depende del factor de anualización adoptado y de las horas efectivas de negociación de cada activo. Por ello, se emplean para inspeccionar la coherencia del conjunto, no como una referencia financiera universal.
 
-Como limitación, las descargas basadas en períodos relativos, por ejemplo tres meses o cinco años, dependen de la fecha en la que se generó el CSV. Para una versión final completamente cerrada sería recomendable fijar fechas explícitas de inicio y fin en todos los casos. También debe considerarse que los datos proceden de Yahoo Finance mediante \texttt{yfinance}. Al tratarse de una herramienta abierta no afiliada ni avalada por Yahoo, su uso se considera adecuado para un contexto académico y experimental, pero en un entorno productivo habría que estudiar licencias, disponibilidad, estabilidad del proveedor y derechos de uso de los datos descargados~\cite{yfinance}.
+\section{Batería de consultas}
 
-\section{Material generado por el flujo y trazabilidad}
+A partir de los ocho CSV se construyó una batería de 50 consultas. No se trata de cincuenta descargas diferentes, sino de distintas tareas planteadas sobre un conjunto estable de datos. Los casos combinan operaciones, métricas y formatos de salida diversos, lo que permite estudiar la adaptación del modelo sin que los cambios en la fuente de información alteren la comparación.
 
-Además de los CSV históricos, el proyecto genera material intermedio durante cada ejecución. Este material es importante porque permite revisar cómo una consulta en lenguaje natural se transforma en una respuesta final. En un TFM no basta con indicar que el sistema responde: también debe poder explicarse qué entendió el modelo, qué cálculo se preparó, qué datos se usaron y qué resultado recibió el agente que redacta la explicación.
+Cada caso del catálogo incluye un identificador, el nivel de dificultad, el objetivo, el conjunto de datos, las salidas esperadas y los parámetros necesarios para realizar el análisis. La distribución se muestra en la Tabla~\ref{tab:distribucion_bateria_50}.
 
-La Tabla~\ref{tab:artefactos_flujo_agentes} resume los artefactos conceptuales del flujo. La nomenclatura exacta puede evolucionar con la implementación, pero la separación de responsabilidades es estable: el agente planificador define el análisis, el agente generador produce código, la capa de ejecución produce resultados verificables y el agente interpretador convierte esos resultados en lenguaje natural.
+Las salidas esperadas describen los componentes que debería contener cada análisis, como una rentabilidad, una tabla o una explicación de las limitaciones. No proporcionan de antemano las cifras que debe devolver el sistema. Los valores numéricos se calculan durante la ejecución a partir del CSV correspondiente, lo que permite comprobar después si la respuesta final respeta los resultados obtenidos.
 
 \begin{table}[htbp]
 \centering
 \small
-\begin{tabularx}{\textwidth}{L{0.19\textwidth}L{0.27\textwidth}L{0.27\textwidth}Y}
+\begin{tabularx}{\textwidth}{L{0.13\textwidth}r r Y}
 \toprule
-\textbf{Fase} & \textbf{Recibe} & \textbf{Genera} & \textbf{Utilidad en la memoria} \\
+\textbf{Nivel} & \textbf{Casos} & \textbf{Porcentaje} & \textbf{Características principales} \\
 \midrule
-Entrada normalizada & Consulta, tickers, rango temporal y rutas CSV. & \texttt{FinancialQueryInput} o estructura equivalente. & Fija qué datos puede usar el sistema y evita ambigüedades en la ejecución. \\
-Agente planificador & Entrada normalizada y reglas de niveles A/B/C. & Plan de análisis con objetivo, métricas, salidas solicitadas y restricciones. & Permite evaluar si el modelo entendió la consulta antes de calcular nada. \\
-Agente generador & Consulta original, entrada normalizada y plan analítico. & Script Python autocontenido ajustado al contrato. & Permite adaptar el cálculo a cada consulta sin perder validación. \\
-Capa de ejecución & Código validado y datos históricos preparados. & Métricas, tablas y datos estructurados derivados de los CSV. & Separa cálculo reproducible de redacción en lenguaje natural. \\
-Agente interpretador & Consulta original, plan y resultados estructurados. & Respuesta final comprensible, prudente y sin recomendación de inversión. & Permite valorar claridad, fidelidad a los datos y reconocimiento de limitaciones. \\
-Trazabilidad & Artefactos anteriores y estado de ejecución. & Registro revisable de entrada, plan, cálculo, errores y respuesta. & Facilita auditoría, depuración y comparación entre modelos. \\
+A & 10 & 20\,\% & Consultas directas que sirven como referencia básica. \\
+B & 20 & 40\,\% & Varias métricas, comparaciones y salidas tabulares o visuales. \\
+C & 20 & 40\,\% & Tareas multicriterio, restricciones simultáneas, formatos exigentes y análisis avanzados. \\
+\midrule
+\textbf{Total} & \textbf{50} & \textbf{100\,\%} & Progresión desde operaciones básicas hasta peticiones de mayor exigencia. \\
 \bottomrule
 \end{tabularx}
-\caption{Material generado por el flujo y papel de cada agente.}
-\label{tab:artefactos_flujo_agentes}
+\caption{Distribución de la batería de 50 consultas por nivel.}
+\label{tab:distribucion_bateria_50}
 \end{table}
 
-Esta lectura también ayuda a distinguir material de trabajo de resultados finales. Las tablas procesadas y las notas auxiliares se conservan como evidencias para reconstruir decisiones de diseño, parámetros de descarga, estructura de los CSV, criterios de evaluación y salidas intermedias. No se presentan como conclusiones por sí mismas, sino como soporte metodológico para que el flujo sea reproducible y revisable.
+La distribución concede más peso a los niveles B y C porque concentran las tareas que mejor permiten evaluar la capacidad de adaptación del modelo. En estos casos debe combinar varias métricas, relacionar resultados, respetar formatos y elaborar explicaciones ajustadas al usuario. Los diez ejemplos de nivel A se mantienen como referencia para comprobar que el sistema resuelve correctamente las operaciones básicas, pero se evita que las consultas sencillas dominen el resultado agregado. En conjunto, el 80\,\% de la batería corresponde a tareas intermedias o avanzadas. Este reparto responde al propósito experimental del trabajo y no pretende reproducir la frecuencia con la que cada tipo de consulta aparecería en un entorno real.
+
+Los conjuntos no se utilizan con la misma frecuencia. Bitcoin aparece en ocho casos; QQQ y SPY, también en ocho; AAPL, NVDA a cinco años y NVDA frente a AMD, en siete cada uno; el S\&P 500, en siete; la serie de oro, en cuatro; y EUR/USD, en tres. Uno de los casos avanzados combina los datos de Bitcoin y del S\&P 500, por lo que el número de apariciones de los conjuntos supera en una unidad al número total de consultas. Esta distribución amplía la variedad de tareas, pero también implica que algunos datos tienen más peso que otros en los resultados agregados.
+
+No se establece una partición entre entrenamiento, validación y prueba porque estos datos no se utilizan para ajustar el modelo. Todo el material actúa como conjunto de evaluación del sistema completo. Por este motivo, los resultados describen el comportamiento del prototipo en los 50 casos definidos, pero no permiten inferir por sí solos su rendimiento ante cualquier consulta financiera posible.
+
+\section{Reproducibilidad y limitaciones}
+
+Conservar los CSV y sus metadatos permite reconstruir el material utilizado sin necesidad de descargarlo de nuevo. Las tablas procesadas pueden obtenerse nuevamente a partir de los datos originales, mientras que el catálogo de 50 casos conserva las condiciones empleadas durante la evaluación. Quedan así diferenciados los datos de partida, sus transformaciones y las consultas experimentales.
+
+El conjunto presenta, no obstante, varias limitaciones. Se ha diseñado para validar un prototipo y su tamaño es reducido frente a la diversidad real de activos, mercados y condiciones financieras. Además, algunas descargas emplean periodos relativos, por lo que repetirlas en otra fecha produciría una cobertura diferente. Los metadatos conservan los parámetros de cada petición, pero no incluyen una marca temporal explícita de la descarga; incorporarla reforzaría la trazabilidad de futuras versiones. Por último, los datos proceden de una herramienta abierta no afiliada ni avalada por Yahoo y no deben considerarse un suministro garantizado para producción~\cite{yfinance}.
+
+También quedan fuera del alcance los datos en tiempo real, los datos fundamentales de las empresas, las noticias, los indicadores macroeconómicos y los costes asociados a una operación financiera. Tampoco se homogeneizan monedas ni calendarios de negociación para realizar comparaciones directas entre mercados distintos. En consecuencia, las respuestas del sistema describen y analizan las series históricas disponibles, pero no deben interpretarse como predicciones ni como recomendaciones de inversión.

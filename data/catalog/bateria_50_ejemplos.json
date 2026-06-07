@@ -1,11 +1,11 @@
 {
-  "version": 1,
-  "name": "bateria_50_ejemplos_tfm",
+  "version": 2,
+  "name": "bateria_50_ejemplos",
   "description": "Catalogo de 50 consultas para evaluar el MVP LLM de analisis financiero historico. Los casos reutilizan los CSV locales congelados en data/raw y estan repartidos en niveles A, B y C.",
   "level_distribution": {
-    "A": 15,
+    "A": 10,
     "B": 20,
-    "C": 15
+    "C": 20
   },
   "notes": [
     "Nivel A: consultas directas con pocas metricas y respuesta breve.",
@@ -30,22 +30,7 @@
       }
     },
     {
-      "id": "A02_nvda_maximo_minimo_5y",
-      "level": "A",
-      "objective": "Rango historico simple.",
-      "dataset": "cunto_ha_crecido_nvidia_en_5_aos.csv",
-      "expected_outputs": ["maximo", "minimo", "ultimo cierre", "lectura historica"],
-      "input": {
-        "query": "Dime el maximo, minimo y ultimo cierre de Nvidia en los ultimos 5 anos",
-        "tickers": ["NVDA"],
-        "period": "5y",
-        "interval": "1d",
-        "csv_paths": ["data/raw/cunto_ha_crecido_nvidia_en_5_aos.csv"],
-        "warnings": []
-      }
-    },
-    {
-      "id": "A03_nvda_volatilidad_basica_5y",
+      "id": "A02_nvda_volatilidad_basica_5y",
       "level": "A",
       "objective": "Riesgo historico basico de un activo.",
       "dataset": "cunto_ha_crecido_nvidia_en_5_aos.csv",
@@ -60,7 +45,7 @@
       }
     },
     {
-      "id": "A04_nvda_amd_comparacion_simple",
+      "id": "A03_nvda_amd_comparacion_simple",
       "level": "A",
       "objective": "Comparacion directa de dos activos.",
       "dataset": "compara_nvidia_y_amd_en_2_aos.csv",
@@ -75,22 +60,7 @@
       }
     },
     {
-      "id": "A05_nvda_amd_precio_inicial_final",
-      "level": "A",
-      "objective": "Comparacion basica con precios iniciales y finales.",
-      "dataset": "compara_nvidia_y_amd_en_2_aos.csv",
-      "expected_outputs": ["precio inicial por activo", "precio final por activo", "retorno por activo"],
-      "input": {
-        "query": "Para NVDA y AMD en 2 anos, dame precio inicial, precio final y rentabilidad de cada uno",
-        "tickers": ["NVDA", "AMD"],
-        "period": "2y",
-        "interval": "1d",
-        "csv_paths": ["data/raw/compara_nvidia_y_amd_en_2_aos.csv"],
-        "warnings": []
-      }
-    },
-    {
-      "id": "A06_aapl_vision_general_3mo",
+      "id": "A04_aapl_vision_general_3mo",
       "level": "A",
       "objective": "Vision descriptiva breve de un activo.",
       "dataset": "aapl_en_3_meses.csv",
@@ -105,22 +75,7 @@
       }
     },
     {
-      "id": "A07_aapl_cierre_y_volumen",
-      "level": "A",
-      "objective": "Resumen simple de precio y volumen.",
-      "dataset": "aapl_en_3_meses.csv",
-      "expected_outputs": ["ultimo cierre", "volumen medio", "dia de mayor volumen"],
-      "input": {
-        "query": "Resume AAPL en 3 meses con ultimo cierre, volumen medio y dia de mayor volumen",
-        "tickers": ["AAPL"],
-        "period": "3mo",
-        "interval": "1d",
-        "csv_paths": ["data/raw/aapl_en_3_meses.csv"],
-        "warnings": []
-      }
-    },
-    {
-      "id": "A08_aapl_media_movil_simple",
+      "id": "A05_aapl_media_movil_simple",
       "level": "A",
       "objective": "Indicador tecnico simple.",
       "dataset": "aapl_en_3_meses.csv",
@@ -135,7 +90,7 @@
       }
     },
     {
-      "id": "A09_qqq_spy_retornos_2024",
+      "id": "A06_qqq_spy_retornos_2024",
       "level": "A",
       "objective": "Retornos historicos resumidos para dos ETFs.",
       "dataset": "qqq_y_spy_desde_20240101_hasta_20241231.csv",
@@ -151,23 +106,7 @@
       }
     },
     {
-      "id": "A10_qqq_spy_riesgo_basico_2024",
-      "level": "A",
-      "objective": "Riesgo historico basico para dos ETFs.",
-      "dataset": "qqq_y_spy_desde_20240101_hasta_20241231.csv",
-      "expected_outputs": ["volatilidad", "peor dia", "max drawdown", "comparacion breve"],
-      "input": {
-        "query": "Analiza el riesgo historico de QQQ y SPY en 2024",
-        "tickers": ["QQQ", "SPY"],
-        "start": "2024-01-01",
-        "end": "2024-12-31",
-        "interval": "1d",
-        "csv_paths": ["data/raw/qqq_y_spy_desde_20240101_hasta_20241231.csv"],
-        "warnings": []
-      }
-    },
-    {
-      "id": "A11_sp500_crecimiento_desde_2020",
+      "id": "A07_sp500_crecimiento_desde_2020",
       "level": "A",
       "objective": "Resumen de indice amplio.",
       "dataset": "descrgame_el_histrico_del_sp_500_desde_2020.csv",
@@ -182,7 +121,7 @@
       }
     },
     {
-      "id": "A12_btc_crecimiento_2024",
+      "id": "A08_btc_crecimiento_2024",
       "level": "A",
       "objective": "Crecimiento simple de criptoactivo.",
       "dataset": "datos_de_bitcoin_desde_20240101_hasta_20241231.csv",
@@ -198,7 +137,7 @@
       }
     },
     {
-      "id": "A13_eurusd_cambio_10d_1h",
+      "id": "A09_eurusd_cambio_10d_1h",
       "level": "A",
       "objective": "Cambio historico intradia simple.",
       "dataset": "eurusd_en_10_das_a_1h.csv",
@@ -213,7 +152,7 @@
       }
     },
     {
-      "id": "A14_oro_rango_1wk_1h",
+      "id": "A10_oro_rango_1wk_1h",
       "level": "A",
       "objective": "Rango intradia simple de materia prima.",
       "dataset": "quiero_el_oro_en_1_semana_a_1h.csv",
@@ -224,22 +163,6 @@
         "period": "1wk",
         "interval": "1h",
         "csv_paths": ["data/raw/quiero_el_oro_en_1_semana_a_1h.csv"],
-        "warnings": []
-      }
-    },
-    {
-      "id": "A15_qqq_spy_mejor_activo_2024",
-      "level": "A",
-      "objective": "Identificar el activo con mejor comportamiento en un periodo.",
-      "dataset": "qqq_y_spy_desde_20240101_hasta_20241231.csv",
-      "expected_outputs": ["retorno QQQ", "retorno SPY", "mejor activo del periodo"],
-      "input": {
-        "query": "Entre QQQ y SPY, cual tuvo mejor comportamiento historico en 2024",
-        "tickers": ["QQQ", "SPY"],
-        "start": "2024-01-01",
-        "end": "2024-12-31",
-        "interval": "1d",
-        "csv_paths": ["data/raw/qqq_y_spy_desde_20240101_hasta_20241231.csv"],
         "warnings": []
       }
     },
@@ -777,6 +700,86 @@
         "period": "3mo",
         "interval": "1d",
         "csv_paths": ["data/raw/aapl_en_3_meses.csv"],
+        "warnings": []
+      }
+    },
+    {
+      "id": "C16_btc_riesgo_cola_2024",
+      "level": "C",
+      "objective": "Evaluar riesgo de cola y explicarlo sin convertirlo en una prediccion.",
+      "dataset": "datos_de_bitcoin_desde_20240101_hasta_20241231.csv",
+      "expected_outputs": ["VaR historico 95", "expected shortfall 95", "peores dias", "drawdown", "explicacion prudente"],
+      "input": {
+        "query": "Analiza el riesgo de cola de Bitcoin durante 2024. Calcula VaR historico al 95 %, expected shortfall al 95 %, los 10 peores retornos diarios y el maximo drawdown. Explica las metricas para un usuario no tecnico, diferencia perdida historica de prediccion futura y no recomiendes comprar ni vender",
+        "tickers": ["BTC-USD"],
+        "start": "2024-01-01",
+        "end": "2024-12-31",
+        "interval": "1d",
+        "csv_paths": ["data/raw/datos_de_bitcoin_desde_20240101_hasta_20241231.csv"],
+        "warnings": []
+      }
+    },
+    {
+      "id": "C17_nvda_amd_regimenes_riesgo",
+      "level": "C",
+      "objective": "Comparar la estabilidad de dos activos mediante medidas moviles y periodos diferenciados.",
+      "dataset": "compara_nvidia_y_amd_en_2_aos.csv",
+      "expected_outputs": ["volatilidad movil", "correlacion movil", "periodos de mayor riesgo", "cambios de liderazgo", "limitaciones"],
+      "input": {
+        "query": "Compara NVDA y AMD durante los 2 anos disponibles mediante volatilidad movil de 30 sesiones y correlacion movil de 60 sesiones. Identifica los periodos de mayor riesgo, comprueba si cambia el activo lider por rentabilidad y resume los resultados en una tabla por trimestres. Separa hechos calculados, interpretacion y limitaciones",
+        "tickers": ["NVDA", "AMD"],
+        "period": "2y",
+        "interval": "1d",
+        "csv_paths": ["data/raw/compara_nvidia_y_amd_en_2_aos.csv"],
+        "warnings": []
+      }
+    },
+    {
+      "id": "C18_sp500_episodios_drawdown",
+      "level": "C",
+      "objective": "Reconstruir episodios de caida y recuperacion de un indice.",
+      "dataset": "descrgame_el_histrico_del_sp_500_desde_2020.csv",
+      "expected_outputs": ["tres mayores drawdowns", "fecha de maximo", "fecha de minimo", "duracion de recuperacion", "tabla anual"],
+      "input": {
+        "query": "Estudia el S&P 500 desde 2020 como una sucesion de episodios de drawdown. Identifica las tres mayores caidas no solapadas, con fecha de maximo previo, minimo, profundidad y tiempo hasta recuperar el nivel anterior, indicando si alguna no se recupera dentro de los datos. Incluye una tabla anual y explica las limitaciones sin usar noticias externas",
+        "tickers": ["^GSPC"],
+        "start": "2020-01-01",
+        "interval": "1d",
+        "csv_paths": ["data/raw/descrgame_el_histrico_del_sp_500_desde_2020.csv"],
+        "warnings": []
+      }
+    },
+    {
+      "id": "C19_btc_sp500_comparacion_2024",
+      "level": "C",
+      "objective": "Comparar activos procedentes de dos conjuntos de datos y con calendarios de negociacion distintos.",
+      "dataset": "datos_de_bitcoin_desde_20240101_hasta_20241231.csv + descrgame_el_histrico_del_sp_500_desde_2020.csv",
+      "expected_outputs": ["alineacion temporal", "serie base 100", "rentabilidad", "volatilidad", "drawdown", "correlacion", "limitaciones de calendario"],
+      "input": {
+        "query": "Compara Bitcoin y el S&P 500 durante 2024 utilizando solo las fechas comunes de ambos conjuntos. Incluye serie normalizada base 100, rentabilidad, volatilidad anualizada, maximo drawdown y correlacion de retornos. Explica como afecta que Bitcoin cotice todos los dias y el indice solo en sesiones de mercado, y evita presentar la comparacion como una recomendacion de inversion",
+        "tickers": ["BTC-USD", "^GSPC"],
+        "start": "2024-01-01",
+        "end": "2024-12-31",
+        "interval": "1d",
+        "csv_paths": [
+          "data/raw/datos_de_bitcoin_desde_20240101_hasta_20241231.csv",
+          "data/raw/descrgame_el_histrico_del_sp_500_desde_2020.csv"
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "id": "C20_oro_identidad_instrumento",
+      "level": "C",
+      "objective": "Comprobar que el analisis distingue la serie suministrada del concepto generico de oro.",
+      "dataset": "quiero_el_oro_en_1_semana_a_1h.csv",
+      "expected_outputs": ["identificacion GC=F", "metricas horarias", "tabla por sesion", "alcance de la serie", "sin equiparar a oro fisico"],
+      "input": {
+        "query": "Prepara un informe sobre la serie horaria GC=F de la ultima semana. Identifica con claridad que el analisis se limita al instrumento suministrado y no al precio universal del oro fisico. Incluye cambio total, volatilidad, rango, extremos, tabla por sesion y datos para una serie normalizada. Distingue resultados calculados, interpretacion y aspectos que no pueden inferirse con estos datos",
+        "tickers": ["GC=F"],
+        "period": "1wk",
+        "interval": "1h",
+        "csv_paths": ["data/raw/quiero_el_oro_en_1_semana_a_1h.csv"],
         "warnings": []
       }
     }

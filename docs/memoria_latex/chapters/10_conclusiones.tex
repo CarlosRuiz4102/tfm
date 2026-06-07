@@ -1,15 +1,1 @@
 \chapter{Conclusiones y trabajo futuro}
-
-El trabajo desarrollado demuestra la viabilidad de un sistema LLM para análisis financiero histórico basado en una arquitectura modular, trazable y extensible. El prototipo valida entradas estructuradas, planifica el análisis, genera código Python, revisa su seguridad, ejecuta el script sobre CSV locales y redacta una respuesta final a partir de resultados observados.
-
-La aportación principal no es predecir el mercado, sino conectar lenguaje natural, cálculo reproducible y explicación financiera prudente. Para ello se separan tres agentes: planificación, generación de código e interpretación. Esta división permite revisar el sistema por partes y detectar si un fallo procede de la comprensión de la consulta, del código, de la ejecución o de la redacción final.
-
-Los objetivos planteados se cumplen en una versión funcional y evaluable. Se ha definido un workflow modular, se ha incorporado generación de código mediante LLM, se ha añadido una capa de seguridad previa a la ejecución, se han conservado artefactos auditables y se ha preparado una batería A/B/C con cinco consultas por nivel.
-
-La configuración actual se centra en \texttt{openai/gpt-oss-20b} servido sobre vLLM. vLLM se entiende como infraestructura de despliegue para servir el modelo mediante un endpoint compatible. Esta distinción evita confundir el modelo evaluado con el servidor que lo expone.
-
-El prototipo trabaja con un conjunto acotado de datos históricos ya descargados. No aborda predicción futura, recomendación de inversión, análisis fundamental ni incorporación de noticias. La generación de código mediante LLM queda limitada por contratos, validaciones y revisión posterior, por lo que requiere más pruebas antes de cualquier uso fuera del entorno académico.
-
-Como trabajo futuro se proponen varias líneas: ampliar la batería de estrés, reforzar la validación del código generado, ejecutar varias rondas para reducir variabilidad, incorporar más activos y ventanas temporales, y diseñar métricas subjetivas más sólidas para valorar claridad, utilidad y adecuación de la respuesta al nivel A/B/C. Estas métricas subjetivas deberán apoyarse en una rúbrica más explícita antes de usarse como evidencia principal.
-
-En conjunto, el TFM se encuentra en un punto sólido para memoria: existe un MVP ejecutable, una metodología defendible y una arquitectura que transforma consultas financieras históricas en resultados calculados y explicaciones trazables, manteniendo siempre la separación entre rendimiento histórico observado e interpretación.

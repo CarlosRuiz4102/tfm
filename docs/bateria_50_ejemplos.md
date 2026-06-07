@@ -3,9 +3,9 @@
 Este documento resume la bateria definida en `data/catalog/bateria_50_ejemplos.json`.
 
 - Total de casos: 50
-- Nivel A: 15 consultas directas
+- Nivel A: 10 consultas directas
 - Nivel B: 20 consultas intermedias
-- Nivel C: 15 consultas profesionales o de estres
+- Nivel C: 20 consultas profesionales o de estres
 - Datos usados: CSV locales congelados en `data/raw/`
 
 La bateria esta pensada para revisar primero las consultas y despues ejecutarlas con el workflow LLM + codegen + validacion + ejecucion + interpretacion.
@@ -15,20 +15,15 @@ La bateria esta pensada para revisar primero las consultas y despues ejecutarlas
 | ID | Dataset | Consulta |
 |---|---|---|
 | A01_nvda_crecimiento_5y | cunto_ha_crecido_nvidia_en_5_aos.csv | Cuanto ha crecido Nvidia en los ultimos 5 anos |
-| A02_nvda_maximo_minimo_5y | cunto_ha_crecido_nvidia_en_5_aos.csv | Dime el maximo, minimo y ultimo cierre de Nvidia en los ultimos 5 anos |
-| A03_nvda_volatilidad_basica_5y | cunto_ha_crecido_nvidia_en_5_aos.csv | Resume la volatilidad historica de Nvidia en 5 anos con el peor dia observado |
-| A04_nvda_amd_comparacion_simple | compara_nvidia_y_amd_en_2_aos.csv | Compara Nvidia y AMD en 2 anos y dime cual crecio mas |
-| A05_nvda_amd_precio_inicial_final | compara_nvidia_y_amd_en_2_aos.csv | Para NVDA y AMD en 2 anos, dame precio inicial, precio final y rentabilidad de cada uno |
-| A06_aapl_vision_general_3mo | aapl_en_3_meses.csv | Dame una vision general de AAPL en 3 meses |
-| A07_aapl_cierre_y_volumen | aapl_en_3_meses.csv | Resume AAPL en 3 meses con ultimo cierre, volumen medio y dia de mayor volumen |
-| A08_aapl_media_movil_simple | aapl_en_3_meses.csv | Calcula una media movil simple de 20 sesiones para AAPL en 3 meses y compara el ultimo cierre con esa media |
-| A09_qqq_spy_retornos_2024 | qqq_y_spy_desde_20240101_hasta_20241231.csv | Analiza los retornos de QQQ y SPY en 2024 |
-| A10_qqq_spy_riesgo_basico_2024 | qqq_y_spy_desde_20240101_hasta_20241231.csv | Analiza el riesgo historico de QQQ y SPY en 2024 |
-| A11_sp500_crecimiento_desde_2020 | descrgame_el_histrico_del_sp_500_desde_2020.csv | Resume cuanto ha crecido el S&P 500 desde 2020 |
-| A12_btc_crecimiento_2024 | datos_de_bitcoin_desde_20240101_hasta_20241231.csv | Cuanto crecio Bitcoin durante 2024 |
-| A13_eurusd_cambio_10d_1h | eurusd_en_10_das_a_1h.csv | Cuanto cambio EUR/USD en los ultimos 10 dias con datos horarios |
-| A14_oro_rango_1wk_1h | quiero_el_oro_en_1_semana_a_1h.csv | Dime el rango maximo y minimo del oro en la ultima semana con datos horarios |
-| A15_qqq_spy_mejor_activo_2024 | qqq_y_spy_desde_20240101_hasta_20241231.csv | Entre QQQ y SPY, cual tuvo mejor comportamiento historico en 2024 |
+| A02_nvda_volatilidad_basica_5y | cunto_ha_crecido_nvidia_en_5_aos.csv | Resume la volatilidad historica de Nvidia en 5 anos con el peor dia observado |
+| A03_nvda_amd_comparacion_simple | compara_nvidia_y_amd_en_2_aos.csv | Compara Nvidia y AMD en 2 anos y dime cual crecio mas |
+| A04_aapl_vision_general_3mo | aapl_en_3_meses.csv | Dame una vision general de AAPL en 3 meses |
+| A05_aapl_media_movil_simple | aapl_en_3_meses.csv | Calcula una media movil simple de 20 sesiones para AAPL en 3 meses y compara el ultimo cierre con esa media |
+| A06_qqq_spy_retornos_2024 | qqq_y_spy_desde_20240101_hasta_20241231.csv | Analiza los retornos de QQQ y SPY en 2024 |
+| A07_sp500_crecimiento_desde_2020 | descrgame_el_histrico_del_sp_500_desde_2020.csv | Resume cuanto ha crecido el S&P 500 desde 2020 |
+| A08_btc_crecimiento_2024 | datos_de_bitcoin_desde_20240101_hasta_20241231.csv | Cuanto crecio Bitcoin durante 2024 |
+| A09_eurusd_cambio_10d_1h | eurusd_en_10_das_a_1h.csv | Cuanto cambio EUR/USD en los ultimos 10 dias con datos horarios |
+| A10_oro_rango_1wk_1h | quiero_el_oro_en_1_semana_a_1h.csv | Dime el rango maximo y minimo del oro en la ultima semana con datos horarios |
 
 ## Nivel B
 
@@ -74,3 +69,8 @@ La bateria esta pensada para revisar primero las consultas y despues ejecutarlas
 | C13_eurusd_informe_intradia | eurusd_en_10_das_a_1h.csv | Prepara un informe intradia de EUR/USD durante 10 dias con tabla diaria, rango horario, volatilidad horaria, serie de evolucion y limitaciones |
 | C14_oro_informe_intradia | quiero_el_oro_en_1_semana_a_1h.csv | Prepara un informe detallado del oro durante la ultima semana con datos horarios, metricas, extremos, serie, volatilidad, rango y limitaciones |
 | C15_caso_control_limitaciones | aapl_en_3_meses.csv | Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender |
+| C16_btc_riesgo_cola_2024 | datos_de_bitcoin_desde_20240101_hasta_20241231.csv | Analiza el riesgo de cola de Bitcoin en 2024 con VaR historico, expected shortfall, peores dias y drawdown |
+| C17_nvda_amd_regimenes_riesgo | compara_nvidia_y_amd_en_2_aos.csv | Compara NVDA y AMD mediante volatilidad y correlacion moviles, periodos de riesgo y cambios de liderazgo |
+| C18_sp500_episodios_drawdown | descrgame_el_histrico_del_sp_500_desde_2020.csv | Identifica los tres mayores episodios de drawdown del S&P 500 desde 2020 y sus tiempos de recuperacion |
+| C19_btc_sp500_comparacion_2024 | datos de Bitcoin y S&P 500 | Compara Bitcoin y el S&P 500 en 2024 sobre fechas comunes y explica las diferencias de calendario |
+| C20_oro_identidad_instrumento | quiero_el_oro_en_1_semana_a_1h.csv | Analiza GC=F sin equiparar la serie suministrada con un precio universal del oro fisico |

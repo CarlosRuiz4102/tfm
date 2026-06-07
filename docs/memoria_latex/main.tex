@@ -46,22 +46,27 @@
 
 \chapter*{Resumen}
 \addcontentsline{toc}{chapter}{Resumen}
-Este Trabajo Fin de M\'aster propone el desarrollo incremental de un sistema orientado al an\'alisis financiero hist\'orico con modelos de lenguaje. El sistema parte de una consulta de usuario, datos de mercado almacenados en CSV y metadatos como tickers, fechas o intervalo temporal. A partir de esa entrada, el prototipo valida la solicitud, utiliza un agente planificador para definir el an\'alisis, un agente generador para producir c\'odigo Python ejecutable, valida dicho c\'odigo, lo lanza en un proceso controlado y transforma la salida estructurada en una respuesta comprensible mediante un agente interpretador.
+Este trabajo presenta el dise\~no y desarrollo de un sistema basado en modelos de lenguaje para realizar an\'alisis financiero hist\'orico a partir de consultas formuladas en lenguaje natural. El objetivo no es predecir la evoluci\'on del mercado, sino estudiar c\'omo integrar un LLM en un flujo de trabajo en el que los c\'alculos puedan ejecutarse, revisarse y conservarse como evidencia.
 
-El MVP actual soporta varias familias de consultas, desde an\'alisis simples de crecimiento hasta comparativas con tablas, datos estructurados y explicaciones para usuario final. La evaluaci\'on combina pruebas funcionales, escenarios de error controlado y una bater\'ia A/B/C equilibrada con cinco consultas por nivel. Los resultados muestran que el sistema puede mantener el c\'alculo financiero bajo control program\'atico, conservar trazabilidad sobre los artefactos y limitar la respuesta al an\'alisis hist\'orico, sin predicci\'on futura ni recomendaci\'on de inversi\'on.
+El sistema recibe una consulta junto con informaci\'on estructurada sobre los activos, el periodo analizado y los ficheros CSV disponibles. A partir de esta entrada, un primer agente elabora un plan anal\'itico; un segundo agente genera el c\'odigo Python necesario; y un tercer agente interpreta los resultados calculados. Entre estas etapas se aplican validaciones de entrada, controles sobre el c\'odigo generado y una ejecuci\'on en un proceso separado. El flujo conserva el plan, el script, la salida estructurada y los registros de error, lo que permite localizar en qu\'e etapa se produce un fallo.
+
+Para comprobar el funcionamiento del sistema se ha definido una bater\'ia de consultas con distintos niveles de dificultad y requisitos anal\'iticos. La evaluaci\'on contempla tanto la finalizaci\'on del flujo como la calidad de las respuestas, la correcta utilizaci\'on de los datos y la gesti\'on controlada de los errores. De este modo, el trabajo propone una aproximaci\'on reproducible para estudiar la integraci\'on de modelos de lenguaje, generaci\'on de c\'odigo y an\'alisis financiero, manteniendo la trazabilidad del proceso y evitando la formulaci\'on de recomendaciones de inversi\'on.
 
 \vspace{0.5cm}
-\noindent\textbf{Palabras clave:} an\'alisis financiero, modelos de lenguaje, generaci\'on de c\'odigo, ejecuci\'on controlada, clientes LLM compatibles.
+\noindent\textbf{Palabras clave:} an\'alisis financiero hist\'orico, modelos de lenguaje, generaci\'on de c\'odigo, agentes LLM, ejecuci\'on controlada, trazabilidad.
 \clearpage
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-This Master's Thesis proposes the incremental development of a language-model-driven system for historical financial analysis. The system starts from a user query, market data stored in CSV files and metadata such as tickers, dates or time interval. From this input, the prototype validates the request, uses a first LLM agent to plan the analysis, a second agent to generate executable Python code, validates that code, runs it in a controlled process and transforms the structured output into an interpretable response through a third interpretation agent.
+This work presents the design and development of a language-model-based system for historical financial analysis from natural-language queries. Its purpose is not to predict market behaviour, but to examine how an LLM can be integrated into a workflow in which calculations are executed, reviewed and retained as evidence.
 
-The current MVP supports several families of queries, ranging from simple growth analysis to comparisons with tables, structured data and final-user explanations. The evaluation combines functional tests, controlled error scenarios and a balanced A/B/C battery with five queries per level. The results show that the system can keep financial computation under programmatic control, preserve traceability over generated artifacts and limit the response to historical analysis, without future prediction or investment recommendation.
+The system receives a query together with structured information about the requested assets, time period and available CSV files. A first agent produces an analytical plan, a second agent generates the required Python code, and a third agent explains the calculated results. Input validation, code checks and execution in a separate process are applied between these stages. The workflow retains the plan, generated script, structured output and error logs, making it possible to identify the stage at which a failure occurs.
+
+To examine the operation of the system, an evaluation set was defined with queries covering different levels of difficulty and analytical requirements. The assessment considers workflow completion, response quality, appropriate use of the available data and controlled error handling. The work therefore provides a reproducible approach for studying the integration of language models, code generation and financial analysis while preserving process traceability and avoiding investment recommendations.
 
 \vspace{0.5cm}
-\noindent\textbf{Keywords:} financial analysis, language models, code generation, controlled execution, compatible LLM clients.
+\noindent\textbf{Keywords:}\\
+historical financial analysis, language models, code generation, LLM agents, traceability.
 \clearpage
 
 \tableofcontents

@@ -1,91 +1,412 @@
 \chapter{Anexos}
 
-\section{Ejecución del MVP}
+\section{Ejecución de la batería}
 
-El prototipo puede ejecutarse con ejemplos incluidos en el repositorio:
+La evaluación actual se realiza mediante \texttt{scripts/evaluate\_bateria\_50.py}, que centraliza la selección de casos, la ejecución del flujo y el almacenamiento de los resultados.
+
+Antes de iniciar las llamadas al modelo puede comprobarse la selección sin ejecutar ningún caso:
 
 \begin{verbatim}
-python run_mvp.py --example growth_nvda
-python run_mvp.py --example compare_nvda_amd
-python run_mvp.py --example overview_aapl
-python run_mvp.py --example returns_qqq_spy
-python run_mvp.py --example risk_qqq_spy
-python run_mvp.py --example technical_aapl
+python scripts/evaluate_bateria_50.py --list-only
+python scripts/evaluate_bateria_50.py --levels C --list-only
 \end{verbatim}
 
-También puede recibir un JSON de entrada con consulta, tickers, fechas o periodo, intervalo y rutas a CSV locales.
+La primera orden muestra los 50 identificadores y su distribución; la segunda permite revisar únicamente un nivel. Esta comprobación resulta útil para detectar filtros o nombres incorrectos antes de consumir tiempo de inferencia.
+
+\subsection{Ejecución completa}
+
+La batería entera puede lanzarse con una sola orden:
+
+\begin{verbatim}
+python scripts/evaluate_bateria_50.py
+\end{verbatim}
+
+Esta opción es válida cuando el servicio permanece estable durante toda la ejecución. Sin embargo, cada caso puede requerir varias llamadas al modelo y, en algunos supuestos, un intento adicional de reparación. Por ello, una ejecución única prolongada queda más expuesta a cortes de conexión, límites temporales o interrupciones del proceso.
+
+\subsection{Ejecución por niveles}
+
+Para la evaluación presentada en este trabajo se utilizó una ejecución progresiva. Primero se procesaron los diez casos A; después se cargó ese resultado y se añadieron los veinte B; por último, se incorporaron los veinte C. Los comandos empleados fueron los siguientes:
+
+\begin{footnotesize}
+\begin{verbatim}
+python scripts/evaluate_bateria_50.py --levels A
+
+$A = "results/evaluations/bateria_50_20260607_135100.json"
+python scripts/evaluate_bateria_50.py --levels B `
+  --resume-json $A --skip-existing
+
+$B = "results/evaluations/bateria_50_20260607_140922.json"
+python scripts/evaluate_bateria_50.py --levels C `
+  --resume-json $B --skip-existing
+\end{verbatim}
+\end{footnotesize}
+
+La opción \texttt{--resume-json} recupera los resultados anteriores y los incorpora al nuevo fichero. A su vez, \texttt{--skip-existing} evita volver a ejecutar un caso que ya esté presente. Esta combinación permite continuar el proceso sin perder los niveles completados ni duplicar llamadas.
+
+Después de terminar el nivel C se generó una versión consolidada cuya selección declarada abarca los 50 casos:
+
+\begin{footnotesize}
+\begin{verbatim}
+$C = "results/evaluations/bateria_50_20260607_145322.json"
+python scripts/evaluate_bateria_50.py `
+  --resume-json $C --skip-existing
+\end{verbatim}
+\end{footnotesize}
+
+Como el fichero cargado ya contenía todos los identificadores, esta última orden no repitió ninguna consulta. Su finalidad fue producir el JSON y el informe finales con la batería completa como selección de referencia. El resultado consolidado se almacenó en \path{results/evaluations/bateria_50_20260607_160200.json}.
+
+\subsection{Ejecución en bloques o por casos}
+
+Cuando el servicio presenta una estabilidad menor, la batería también puede dividirse en bloques de cinco o diez ejemplos. El índice comienza en cero:
+
+\begin{verbatim}
+python scripts/evaluate_bateria_50.py --chunk-size 5 --chunk-index 0
+\end{verbatim}
+
+Los bloques posteriores pueden continuar recuperando el JSON anterior y omitiendo los identificadores ya presentes. También es posible ejecutar únicamente uno o varios casos para revisar un fallo concreto:
+
+\begin{footnotesize}
+\begin{verbatim}
+python scripts/evaluate_bateria_50.py --cases B19_oro_intradia_1wk
+python scripts/evaluate_bateria_50.py --cases `
+  C13_eurusd_informe_intradia C17_nvda_amd_regimenes_riesgo
+\end{verbatim}
+\end{footnotesize}
+
+El procedimiento no impide que el modelo genere una respuesta incorrecta, pero reduce el efecto de los fallos operativos. Tras completar cada caso, la herramienta vuelve a escribir el JSON de resultados y el informe Markdown. De este modo, si la ejecución se interrumpe, los casos terminados hasta ese momento permanecen guardados y pueden utilizarse como punto de continuación.
+
+El informe generado se encuentra en \path{results/reports/evaluacion_bateria_50.md}, con una copia en \path{docs/evaluacion_bateria_50.md}. Los resultados completos se conservan en \path{results/evaluations}.
 
 \section{Configuración de API}
 
-Las claves de API se guardan localmente en el fichero \texttt{.env}, que no debe subirse al repositorio. La configuración mínima es:
+Las claves de acceso se guardan localmente en el fichero \texttt{.env}, que no debe incorporarse al repositorio. La configuración mínima utilizada con el servidor compatible con OpenAI es:
 
 \begin{verbatim}
-OPENAI_API_KEY=...
 VLLM_BASE_URL=https://servidor-vllm.example/v1
 VLLM_API_KEY=...
 VLLM_MODEL=openai/gpt-oss-20b
 \end{verbatim}
 
-Si el modelo de OpenAI se sirve desde un servidor vLLM compatible con la interfaz de mensajes, puede indicarse una URL base:
+La aplicación reconoce tres familias equivalentes de variables:
+
+\begin{itemize}
+    \item las específicas de vLLM: \texttt{VLLM\_BASE\_URL}, \texttt{VLLM\_API\_KEY} y \texttt{VLLM\_MODEL};
+    \item las genéricas: \texttt{LLM\_BASE\_URL}, \texttt{LLM\_API\_KEY} y \texttt{LLM\_MODEL};
+    \item las compatibles con OpenAI:\newline
+    \texttt{OPENAI\_BASE\_URL}, \texttt{OPENAI\_API\_KEY} y \texttt{OPENAI\_MODEL}.
+\end{itemize}
+
+También pueden ajustarse los parámetros de generación y conexión:
 
 \begin{verbatim}
-OPENAI_BASE_URL=https://servidor-vllm.example/v1
-OPENAI_MODEL=openai/gpt-oss-20b
+LLM_TEMPERATURE=0.1
+LLM_MAX_TOKENS=4096
+LLM_TIMEOUT_SECONDS=120
+LLM_VERIFY_SSL=true
 \end{verbatim}
 
-En este caso, vLLM describe la infraestructura que sirve el modelo; el modelo sigue identificándose como modelo de OpenAI \cite{openai2025gptossmodelcard}.
+Si no se especifican estos últimos valores, la aplicación utiliza los mostrados como configuración predeterminada. El proceso que ejecuta el código generado dispone, además, de un límite independiente de 60 segundos. En esta configuración, vLLM describe la infraestructura que sirve el modelo; el modelo evaluado continúa siendo \texttt{openai/gpt-oss-20b}, documentado por OpenAI~\cite{openai2025gptossmodelcard}.
 
 \section{Batería de consultas A/B/C}
 
-La batería contiene 15 consultas equilibradas: cinco de Nivel A, cinco de Nivel B y cinco de Nivel C. Dentro de cada nivel, los ejemplos aumentan progresivamente su dificultad.
+La versión actual de la batería contiene 50 consultas. La distribución concede mayor peso a los niveles B y C porque concentran las tareas con varias métricas, salidas estructuradas, restricciones de formato y mayor probabilidad de error. Los diez casos A representan el 20\,\% del total; los veinte casos B, el 40\,\%; y los veinte casos C, el 40\,\%.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{0.72\textwidth}{L{0.18\textwidth}Y L{0.20\textwidth}}
+\toprule
+\textbf{Nivel} & \textbf{Número de casos} & \textbf{Porcentaje} \\
+\midrule
+A & 10 & 20\,\% \\
+B & 20 & 40\,\% \\
+C & 20 & 40\,\% \\
+\bottomrule
+\end{tabularx}
+\caption{Distribución de la batería de 50 consultas.}
+\label{tab:anexo_distribucion_bateria_50}
+\end{table}
+
+Los casos reutilizan ocho conjuntos de datos locales: Nvidia, Nvidia y AMD, AAPL, QQQ y SPY, S\&P 500, Bitcoin, EUR/USD y oro. En algunos ejemplos se combinan dos fuentes. La tabla siguiente recoge la batería completa mediante su identificador y una descripción resumida. El catálogo digital conserva, además, la consulta literal, las rutas de entrada y las salidas esperadas.
 
 \small
-\begin{longtable}{p{0.10\textwidth} p{0.50\textwidth} p{0.30\textwidth}}
-\caption{Batería de 15 consultas por nivel de profundidad.}
+\begin{singlespace}
+\begin{longtable}{>{\scriptsize\raggedright\arraybackslash}p{0.42\textwidth} p{0.50\textwidth}}
+\caption{Batería completa de 50 consultas por nivel de profundidad.}
 \label{tab:anexo_bateria_queries_abc}\\
 \toprule
-\textbf{Nivel} & \textbf{Consulta resumida} & \textbf{Objetivo de evaluación} \\
+\textbf{Identificador} & \textbf{Consulta y objetivo resumidos} \\
+\midrule
+\endfirsthead
+\multicolumn{2}{c}{\textit{Continuación de la batería de 50 consultas}} \\
+\toprule
+\textbf{Identificador} & \textbf{Consulta y objetivo resumidos} \\
 \midrule
 \endhead
-A & Crecimiento de Nvidia en los últimos cinco años. & Crecimiento histórico básico. \\
-A & Comparación simple de Nvidia y AMD en dos años. & Comparación por rentabilidad. \\
-A & Visión general de AAPL en tres meses. & Resumen descriptivo. \\
-A & Retornos de QQQ y SPY en 2024. & Retornos históricos resumidos. \\
-A & Riesgo histórico de QQQ y SPY en 2024. & Riesgo, volatilidad y extremos. \\
-B & Análisis ampliado de Nvidia con tabla y datos de evolución. & Salida estructurada de un activo. \\
-B & Comparación de QQQ y SPY con tabla y serie normalizada. & Comparación relativa base 100. \\
-B & Retorno y riesgo de AAPL con explicación sencilla. & Relación retorno-riesgo. \\
-B & Bitcoin 2024 con rentabilidad, volatilidad y drawdown. & Cobertura de activo volátil. \\
-B & EUR/USD intradía con variación, rango y volatilidad horaria. & Cobertura de divisa horaria. \\
-C & Informe QQQ/SPY con tabla, normalización y drawdown. & Informe comparativo completo. \\
-C & Ranking NVDA/AMD por rentabilidad, riesgo y drawdown. & Comparación multicriterio. \\
-C & Informe detallado del S\&P 500 desde 2020. & Serie larga de índice amplio. \\
-C & Informe horario del oro con mejores/peores intervalos y rango. & Materia prima e intervalo horario. \\
-C & QQQ/SPY 2024 con cuatro bloques obligatorios. & Estrés de formato y planificación. \\
+\texttt{\detokenize{A01_nvda_crecimiento_5y}} & Crecimiento histórico de Nvidia durante cinco años. \\
+\texttt{\detokenize{A02_nvda_volatilidad_basica_5y}} & Volatilidad histórica y peor día observado de Nvidia. \\
+\texttt{\detokenize{A03_nvda_amd_comparacion_simple}} & Comparación directa del crecimiento de Nvidia y AMD. \\
+\texttt{\detokenize{A04_aapl_vision_general_3mo}} & Visión descriptiva de AAPL durante tres meses. \\
+\texttt{\detokenize{A05_aapl_media_movil_simple}} & Media móvil de 20 sesiones y comparación con el último cierre. \\
+\texttt{\detokenize{A06_qqq_spy_retornos_2024}} & Comparación breve de los retornos de QQQ y SPY en 2024. \\
+\texttt{\detokenize{A07_sp500_crecimiento_desde_2020}} & Crecimiento del S\&P 500 desde 2020. \\
+\texttt{\detokenize{A08_btc_crecimiento_2024}} & Crecimiento de Bitcoin durante 2024. \\
+\texttt{\detokenize{A09_eurusd_cambio_10d_1h}} & Variación de EUR/USD en diez días con datos horarios. \\
+\texttt{\detokenize{A10_oro_rango_1wk_1h}} & Rango máximo y mínimo del oro durante una semana. \\
+\midrule
+\texttt{\detokenize{B01_nvda_tabla_evolucion_5y}} & Análisis ampliado de Nvidia con tabla y serie de evolución. \\
+\texttt{\detokenize{B02_nvda_metricas_riesgo_5y}} & Retorno y métricas de riesgo de Nvidia durante cinco años. \\
+\texttt{\detokenize{B03_nvda_resumen_mensual_5y}} & Mejor y peor mes de Nvidia con resumen mensual. \\
+\texttt{\detokenize{B04_nvda_amd_tabla_comparativa}} & Tabla comparativa de rentabilidad, volatilidad y drawdown. \\
+\texttt{\detokenize{B05_nvda_amd_serie_normalizada}} & Comparación NVDA/AMD mediante una serie normalizada. \\
+\texttt{\detokenize{B06_nvda_amd_correlacion}} & Correlación de retornos y comparación de volatilidad. \\
+\texttt{\detokenize{B07_aapl_retorno_riesgo_3mo}} & Relación entre retorno y riesgo de AAPL. \\
+\texttt{\detokenize{B08_aapl_tecnico_sma_20_50}} & Medias móviles de 20 y 50 sesiones de AAPL. \\
+\texttt{\detokenize{B09_aapl_volumen_y_precio}} & Relación entre volumen y variación del precio de AAPL. \\
+\texttt{\detokenize{B10_qqq_spy_tabla_serie_2024}} & Comparación QQQ/SPY con tabla y serie normalizada. \\
+\texttt{\detokenize{B11_qqq_spy_retorno_riesgo_2024}} & Retorno, volatilidad y relación retorno-riesgo de QQQ y SPY. \\
+\texttt{\detokenize{B12_qqq_spy_drawdown_2024}} & Comparación de drawdown y datos para su evolución temporal. \\
+\texttt{\detokenize{B13_qqq_spy_meses_2024}} & Retornos mensuales y activo ganador en cada mes. \\
+\texttt{\detokenize{B14_btc_2024_perfil_volatil}} & Perfil de rentabilidad, volatilidad y drawdown de Bitcoin. \\
+\texttt{\detokenize{B15_btc_2024_mejores_peores_dias}} & Cinco mejores y cinco peores días de Bitcoin. \\
+\texttt{\detokenize{B16_sp500_desde_2020_riesgo}} & Crecimiento, volatilidad y drawdown del S\&P 500. \\
+\texttt{\detokenize{B17_sp500_serie_base_100}} & Serie base 100 y tabla de rentabilidad anual del S\&P 500. \\
+\texttt{\detokenize{B18_eurusd_intradia_10d}} & Variación, rango y volatilidad horaria de EUR/USD. \\
+\texttt{\detokenize{B19_oro_intradia_1wk}} & Cambio, rango y mejores y peores horas del oro. \\
+\texttt{\detokenize{B20_btc_sp500_lectura_contextual}} & Perfil de riesgo de Bitcoin sin incorporar comparaciones externas. \\
+\midrule
+\texttt{\detokenize{C01_qqq_spy_informe_profesional_2024}} & Informe QQQ/SPY con tabla, serie normalizada y drawdown. \\
+\texttt{\detokenize{C02_qqq_spy_formato_cuatro_bloques}} & Informe con cuatro bloques de salida obligatorios. \\
+\texttt{\detokenize{C03_qqq_spy_retorno_riesgo_meses}} & Informe comparativo con retorno, riesgo y ranking mensual. \\
+\texttt{\detokenize{C04_nvda_amd_ranking_multicriterio}} & Ranking NVDA/AMD por rentabilidad, riesgo y drawdown. \\
+\texttt{\detokenize{C05_nvda_amd_informe_cliente}} & Informe para un usuario no técnico sobre Nvidia y AMD. \\
+\texttt{\detokenize{C06_nvda_5y_informe_completo}} & Informe completo de Nvidia con serie base 100 y drawdown. \\
+\texttt{\detokenize{C07_nvda_estres_salida_json}} & Caso de estrés con cuatro secciones estructuradas. \\
+\texttt{\detokenize{C08_sp500_informe_desde_2020}} & Informe detallado del S\&P 500 desde 2020. \\
+\texttt{\detokenize{C09_sp500_crisis_y_recuperacion}} & Comportamiento anual, caídas y recuperaciones del S\&P 500. \\
+\texttt{\detokenize{C10_btc_2024_informe_riesgo}} & Informe de riesgo de Bitcoin con extremos y drawdown. \\
+\texttt{\detokenize{C11_btc_2024_meses_y_drawdown}} & Análisis mensual y drawdown máximo de Bitcoin. \\
+\texttt{\detokenize{C12_aapl_informe_tecnico_3mo}} & Informe técnico de AAPL con medias móviles y volumen. \\
+\texttt{\detokenize{C13_eurusd_informe_intradia}} & Informe intradía de EUR/USD con tabla y serie temporal. \\
+\texttt{\detokenize{C14_oro_informe_intradia}} & Informe horario del oro con extremos, rango y volatilidad. \\
+\texttt{\detokenize{C15_caso_control_limitaciones}} & Caso de control sobre límites y prudencia de la respuesta. \\
+\texttt{\detokenize{C16_btc_riesgo_cola_2024}} & Riesgo de cola de Bitcoin mediante VaR y expected shortfall. \\
+\texttt{\detokenize{C17_nvda_amd_regimenes_riesgo}} & Volatilidad y correlación móviles y cambios de liderazgo. \\
+\texttt{\detokenize{C18_sp500_episodios_drawdown}} & Tres mayores episodios de drawdown y sus recuperaciones. \\
+\texttt{\detokenize{C19_btc_sp500_comparacion_2024}} & Comparación Bitcoin/S\&P 500 sobre fechas comunes. \\
+\texttt{\detokenize{C20_oro_identidad_instrumento}} & Tratamiento prudente de GC=F como instrumento concreto. \\
 \bottomrule
 \end{longtable}
+\end{singlespace}
 \normalsize
 
-\section{Prompts usados por los agentes}
+\section{Plantillas de prompts de los agentes}
 
-El prompt base define un componente profesional de análisis financiero histórico. Todos los agentes comparten las mismas restricciones: trabajar sólo con datos históricos disponibles en CSV, no predecir, no recomendar inversión y no añadir información externa.
+Este anexo recoge las partes fijas de las instrucciones utilizadas en las llamadas al modelo. Los bloques indicados entre corchetes representan el contenido variable que se incorpora durante la ejecución: la consulta, la entrada estructurada, las reglas de profundidad, el plan, los resultados o el error correspondiente. Esta separación permite mostrar el contrato estable de cada agente sin reproducir un ejemplo concreto.
 
-\subsection{Agente 1: planificación}
+\subsection{Instrucción común}
 
-El agente planificador devuelve JSON con nivel A/B/C, objetivo analítico, tipo de análisis, métricas, columnas requeridas, requisitos de datos, requisitos de salida y una justificación breve del nivel elegido. No calcula cifras y no redacta la respuesta final.
+\footnotesize
+\begin{verbatim}
+Eres un componente profesional de analisis financiero historico
+asistido por LLM. Trabajas exclusivamente con datos historicos ya
+disponibles en CSV y con el contrato JSON indicado.
+
+No realizas predicciones, asesoramiento de inversion,
+recomendaciones de compra/venta, analisis fundamental externo
+ni incorporas informacion que no este en la entrada.
+\end{verbatim}
+\normalsize
+
+\subsection{Agente 1: planificación analítica}
+
+\footnotesize
+\begin{verbatim}
+Agente 1 - PLANIFICACION ANALITICA.
+
+Devuelve exclusivamente un objeto JSON valido con el esquema
+indicado. No incluyas Markdown.
+
+Tu tarea es convertir la peticion del usuario en un plan
+verificable para un script Python posterior. No calcules cifras
+y no redactes la respuesta final.
+
+Instrucciones obligatorias:
+
+1. Lee la consulta completa y clasifica analysis_level como A, B
+   o C usando las reglas incluidas en el payload.
+2. Define analytical_goal como un objetivo financiero concreto,
+   sin expresiones vagas.
+3. Enumera metrics con nombres calculables: retorno_total, cagr,
+   volatilidad, max_drawdown, correlacion, medias_moviles,
+   ranking_mensual u otros si la consulta los exige.
+4. Enumera required_columns segun los calculos: Close para
+   rentabilidad, High y Low para rangos, Volume para volumen y
+   Open cuando sea necesario.
+5. Enumera data_requirements con la granularidad temporal, los
+   activos, las comparaciones y las validaciones minimas.
+6. Enumera output_requirements con las tablas, metricas y datos
+   visuales esperados. No pidas imagenes; pide datos JSON.
+7. Enumera presentation_preferences con el tono y la estructura
+   esperados para el agente interpretador.
+8. En reasoning justifica brevemente el nivel elegido y las
+   metricas, sin exponer una cadena de pensamiento extensa.
+
+Restricciones: utiliza solo los CSV, tickers y fechas de entrada.
+No uses noticias, datos fundamentales, precios actuales externos,
+predicciones ni recomendaciones de inversion.
+
+[ENTRADA ESTRUCTURADA, REGLAS A/B/C Y ESQUEMA JSON]
+\end{verbatim}
+\normalsize
+
+El contenido variable incluye el esquema de salida y las reglas que distinguen los niveles A, B y C. El agente no recibe una etiqueta impuesta para cada ejemplo: debe deducir el nivel a partir de la consulta y justificar brevemente su elección.
 
 \subsection{Agente 2: generación de código}
 
-El agente generador devuelve un JSON con un único campo \texttt{code}. El script debe leer el payload desde \texttt{argv[1]}, cargar datos mediante funciones autorizadas, calcular métricas sobre CSV locales y emitir un único JSON por \texttt{stdout}. Si se solicitan datos visuales, se devuelven como estructuras JSON, no como ficheros de imagen.
+\footnotesize
+\begin{verbatim}
+Agente 2 - GENERACION DE CODIGO PYTHON.
+
+Devuelve exclusivamente un objeto JSON valido con un unico campo
+code. No incluyas Markdown.
+
+El valor code debe ser un script Python completo, autocontenido
+y ejecutable. Debe leer el payload desde argv[1], calcular solo
+con los CSV indicados y escribir un unico JSON en stdout.
+
+Contrato tecnico obligatorio:
+
+1. Define main() y protege la entrada con
+   if __name__ == '__main__'.
+2. Lee el payload con
+   json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')).
+   No uses open().
+3. Usa load_close_prices para cierres y load_market_data para
+   datos OHLCV. No uses pd.read_csv directamente.
+4. Usa solo las importaciones permitidas. No uses red, ficheros
+   adicionales, subprocess, os, eval, exec ni rutas no recibidas.
+5. Devuelve siempre analysis_level, metrics, summary y limitations.
+6. Para niveles B o C, incluye table_data cuando existan
+   comparaciones, rankings o bloques de metricas.
+7. Para peticiones visuales, incluye chart_data o
+   visualization_data con tipo sugerido, series muestreadas,
+   ejes y unidades. No generes PNG, PDF o SVG.
+8. Ordena por fecha, elimina NaN cuando proceda, evita divisiones
+   por cero y controla datos insuficientes.
+9. Pasa la salida por make_json_safe antes de json.dumps.
+10. Si una metrica no puede calcularse, incluye null y una
+    limitacion explicita. No inventes valores.
+
+No redactes la respuesta final al usuario. Devuelve solamente
+resultados estructurados y trazables.
+
+[CONSULTA, ENTRADA VALIDADA, RUTAS, PLAN Y CONTRATO DE SALIDA]
+\end{verbatim}
+\normalsize
+
+El payload añade las importaciones permitidas, el contrato de lectura y las funciones comunes de carga. Cuando se solicitan series extensas, el código debe limitar cada una a un máximo de 120 puntos e indicar las fechas inicial y final. Esta reducción afecta a la presentación del resultado, no a los datos utilizados en los cálculos.
+
+\subsection{Reparación del código}
+
+\footnotesize
+\begin{verbatim}
+REPARACION DE CODIGO DEL AGENTE 2.
+
+El codigo anterior fallo o fue rechazado. Devuelve exclusivamente
+JSON valido con un unico campo code. El script corregido debe ser
+completo, no un parche parcial.
+
+Manten el objetivo, el nivel A/B/C y las salidas solicitadas por
+el plan. Corrige la causa indicada en error_detail y conserva el
+contrato: Path(sys.argv[1]).read_text, load_close_prices o
+load_market_data, make_json_safe y un unico JSON en stdout.
+
+No uses open(), pd.read_csv, os, subprocess, eval, exec, red
+ni Markdown.
+
+[CONSULTA, PLAN, CODIGO ANTERIOR Y DETALLE DEL ERROR]
+\end{verbatim}
+\normalsize
 
 \subsection{Agente 3: interpretación}
 
-El agente interpretador recibe la salida ejecutada y el plan. Su tarea es explicar los resultados en español, ajustando la profundidad al nivel A/B/C y separando datos históricos, lectura y limitaciones. No recalcula ni incorpora datos externos.
+\footnotesize
+\begin{verbatim}
+Agente 3 - INTERPRETACION FINANCIERA EN ESPANOL.
+
+Redacta la respuesta final para el usuario usando unicamente
+execution_output y analysis_plan. No recalcules, no completes
+cifras ausentes y no incorpores datos externos.
+
+Devuelve texto en espanol con frases completas. No devuelvas JSON,
+diccionarios, bloques de codigo ni una repeticion aislada de las
+metricas.
+
+Reglas de respuesta:
+
+1. Ajusta la extension al analysis_level: A breve y directo;
+   B estructurado con las metricas principales; C como informe
+   compacto con apartados claros.
+2. Distingue datos historicos observados, lectura interpretativa
+   y limitaciones.
+3. Si existen tablas o datos visuales, explica que muestran sin
+   fingir que se ha generado una imagen.
+4. Si una metrica es null o hay datos insuficientes, indicalo como
+   una limitacion.
+5. No uses tono persuasivo, no recomiendes comprar o vender y no
+   predigas rendimientos futuros.
+6. Manten un espanol claro, profesional y comprensible para un
+   usuario no tecnico.
+
+[PLAN ANALITICO Y RESULTADOS CALCULADOS]
+\end{verbatim}
+\normalsize
 
 \section{Trazabilidad de una ejecución}
 
-Cada ejecución conserva la entrada normalizada, el plan analítico, el código generado, la salida estándar, los errores y la respuesta final. Estos artefactos permiten repetir una prueba, revisar qué entendió cada agente y comprobar si la interpretación final se corresponde con los resultados calculados.
+Cada caso conserva información suficiente para reconstruir el recorrido completo. El informe de evaluación presenta la entrada utilizada, el estado final, el tiempo observado, la respuesta almacenada en \texttt{state.final\_answer}, la salida estructurada de la ejecución y las métricas cualitativas. El fichero JSON mantiene, además, el plan analítico, el código generado, los avisos, el mensaje de error y las rutas de los artefactos de ejecución.
 
-\section{Métricas subjetivas futuras}
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{L{0.28\textwidth}Y}
+\toprule
+\textbf{Elemento conservado} & \textbf{Utilidad durante la revisión} \\
+\midrule
+Entrada de la consulta & Permite comprobar activos, periodo, intervalo y datos disponibles. \\
+Plan analítico & Muestra cómo interpretó la petición el primer agente. \\
+Código generado & Permite revisar cómo se trasladó el plan a operaciones calculables. \\
+Salida de ejecución & Contiene las métricas, tablas, series y limitaciones obtenidas. \\
+Respuesta final & Permite contrastar la redacción con los resultados calculados. \\
+Estado, avisos y errores & Identifican el punto de finalización y los intentos de reparación. \\
+Tiempo y artefactos & Ayudan a reconstruir la ejecución y localizar sus registros. \\
+\bottomrule
+\end{tabularx}
+\caption{Información conservada para revisar cada caso de la batería.}
+\label{tab:anexo_trazabilidad_ejecucion}
+\end{table}
 
-La revisión subjetiva de calidad se mantiene como línea futura. La plantilla prevista incluye comprensión de la consulta, selección de métricas, adecuación del código, fidelidad a resultados, claridad, utilidad, reconocimiento de limitaciones, ausencia de recomendación de inversión y trazabilidad. Antes de usar estas métricas como evidencia principal será necesario reforzar la rúbrica y definir criterios de revisión más estables.
+La salida legible se almacena en \texttt{docs/evaluacion\_bateria\_50.md}; el catálogo de entrada se encuentra en \texttt{data/catalog/bateria\_50\_ejemplos.json}; y los resultados completos se conservan en \texttt{results/evaluations}. El informe Markdown limita la extensión de algunas estructuras para mantener la legibilidad, mientras que el JSON conserva el detalle íntegro.
+
+\section{Rúbrica de evaluación cualitativa}
+
+La evaluación utiliza cinco métricas cualitativas puntuadas de 0 a 2: el 0 señala un incumplimiento o un fallo esencial; el 1, un cumplimiento parcial; y el 2, un resultado adecuado. La suma ofrece una referencia sobre 10 puntos. La valoración inicial es heurística, puede contrastarse con los artefactos conservados y sirve para priorizar la revisión, pero no sustituye una evaluación humana detallada.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabularx}{\textwidth}{L{0.30\textwidth}Y}
+\toprule
+\textbf{Métrica} & \textbf{Aspecto evaluado} \\
+\midrule
+Comprensión de la consulta & Correspondencia del plan con los activos, el periodo, el nivel y las restricciones solicitadas. \\
+Pertinencia de las métricas & Adecuación y suficiencia de las medidas elegidas para responder a la petición. \\
+Calidad de la ejecución analítica & Corrección del cálculo, uso de los datos adecuados y presencia de una salida estructurada. \\
+Fidelidad de la interpretación & Coherencia de la respuesta final con el plan y los resultados ejecutados. \\
+Claridad, utilidad y prudencia & Calidad comunicativa, reconocimiento de límites y ausencia de predicciones o recomendaciones. \\
+\bottomrule
+\end{tabularx}
+\caption{Métricas cualitativas aplicadas a los casos de evaluación.}
+\label{tab:anexo_metricas_cualitativas}
+\end{table}

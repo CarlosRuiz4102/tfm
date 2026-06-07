@@ -1,16 +1,16 @@
-﻿\chapter{Introducción}
+\chapter{Introducción}
 
 \section{Contexto y definición del problema}
 
-La inteligencia artificial ha evolucionado desde sistemas basados en reglas y técnicas estadísticas hasta modelos capaces de aprender representaciones complejas a partir de grandes volúmenes de datos. Dentro de esta evolución, el aprendizaje automático permitió entrenar modelos a partir de ejemplos; el aprendizaje profundo amplió esa capacidad mediante redes neuronales con muchas capas; y la inteligencia artificial generativa incorporó modelos capaces de producir texto, código, imágenes u otros artefactos a partir de instrucciones. Un punto de inflexión especialmente relevante fue la arquitectura Transformer, introducida en el trabajo \textit{Attention Is All You Need}~\cite{vaswani2017attention}. Su mecanismo de atención facilitó el entrenamiento de modelos de lenguaje de gran escala y se convirtió en una de las bases técnicas sobre las que se apoyan los LLM actuales.
+Los modelos de lenguaje de gran escala han ampliado de forma notable las posibilidades de interacción con los sistemas informáticos. Además de producir texto, pueden interpretar instrucciones, proponer procedimientos y generar código ejecutable. Buena parte de este avance se apoya en la arquitectura Transformer, presentada en \textit{Attention Is All You Need}~\cite{vaswani2017attention}, cuyo mecanismo de atención constituye una de las bases de los modelos de lenguaje actuales.
 
-Este TFM se sitúa dentro de esa evolución, pero no desde la perspectiva de entrenar un nuevo modelo. El foco está en integrar modelos de lenguaje ya disponibles dentro de un sistema software verificable. En concreto, el proyecto explora cómo un LLM puede ayudar a interpretar consultas financieras, generar código Python e interpretar resultados, manteniendo el cálculo bajo control programático y conservando artefactos auditables.
+La capacidad de generar código resulta especialmente interesante en tareas de análisis de datos. Una consulta expresada en lenguaje natural puede transformarse en operaciones de carga, filtrado, cálculo y presentación de resultados. Sin embargo, esta flexibilidad introduce un problema de confianza: que el código sea plausible no significa que sea correcto, y que una respuesta esté bien redactada no garantiza que respete los datos de partida.
 
-El análisis financiero histórico combina carga de datos, validación de entradas, selección del tipo de análisis, cálculo de métricas, generación de código, interpretación de resultados y comunicación final al usuario. En muchos prototipos basados en modelos de lenguaje estas fases se mezclan dentro de una única llamada generativa, lo que dificulta la trazabilidad del resultado y aumenta el riesgo de errores silenciosos.
+Este problema cobra especial importancia en el ámbito financiero. Incluso cuando el análisis se limita a información histórica, una cifra incorrecta o una interpretación poco prudente puede conducir a conclusiones equivocadas. Por ello, no basta con pedir al modelo que responda directamente a una consulta: también es necesario conocer qué datos ha utilizado, qué métricas ha calculado, qué código ha ejecutado y qué limitaciones presenta el resultado.
 
-Este trabajo plantea una aproximación controlada: el sistema parte de una entrada estructurada con consulta, tickers, fechas y rutas CSV; valida los datos mínimos; usa un agente planificador para definir el análisis; usa un agente generador para producir código Python; valida el contrato de seguridad del script; ejecuta el código en un entorno controlado; y finalmente usa un agente interpretador para explicar las métricas obtenidas.
+Este trabajo aborda el problema desde la integración de sistemas, no desde el entrenamiento de un nuevo modelo. Para ello, se desarrolla un prototipo que recibe una consulta financiera y un conjunto de datos históricos almacenados en CSV, organiza el análisis mediante agentes LLM y mantiene los cálculos dentro de un flujo programático. El sistema separa la planificación, la generación de código y la interpretación final, valida el script antes de ejecutarlo y conserva los principales artefactos de cada ejecución.
 
-Para situar el alcance tecnológico del trabajo, la Figura~\ref{fig:alcance_ia_tfm} resume la relación entre inteligencia artificial, aprendizaje automático, aprendizaje profundo e inteligencia artificial generativa. El TFM no se centra en entrenar modelos ni en desarrollar nuevas arquitecturas neuronales, sino en integrar modelos de lenguaje dentro de un sistema trazable de análisis financiero histórico.
+La Figura~\ref{fig:alcance_ia_tfm} sitúa el trabajo dentro de las principales áreas de la inteligencia artificial y muestra la relación entre aprendizaje automático, aprendizaje profundo e inteligencia artificial generativa. El proyecto se enmarca en esta última área, aunque su aportación no consiste en desarrollar un modelo generativo, sino en estudiar su uso dentro de una arquitectura trazable de análisis financiero histórico.
 
 \begin{figure}[H]
 \centering
@@ -21,40 +21,40 @@ Para situar el alcance tecnológico del trabajo, la Figura~\ref{fig:alcance_ia_t
 
 \section{Motivación}
 
-La motivación principal del proyecto es explorar cómo un flujo LLM con ejecución controlada puede aportar orden, modularidad y robustez a un sistema de análisis financiero asistido por inteligencia artificial. La aplicación de modelos de lenguaje al dominio financiero resulta atractiva por su capacidad para interpretar peticiones, generar código y adaptar el lenguaje al usuario, pero también exige mecanismos de control, especialmente cuando la respuesta final puede confundirse con una recomendación financiera.
+El proyecto nace del interés por combinar tres ámbitos que a menudo se estudian por separado: los modelos de lenguaje, la programación para el análisis de datos y la interpretación financiera. Los LLM permiten construir con rapidez interfaces capaces de entender peticiones diversas, pero esa misma facilidad puede ocultar errores cuando todo el proceso queda reducido a una única respuesta generativa.
 
-Además, el proyecto nace de un interés personal por la intersección entre inteligencia artificial, programación y análisis financiero. La disponibilidad de modelos generativos abre la posibilidad de construir prototipos útiles con una rapidez que hace pocos años era difícil de imaginar. Sin embargo, precisamente por esa facilidad, resulta importante defender un enfoque responsable: las salidas del modelo deben revisarse, contrastarse con datos y situarse dentro de los límites del conocimiento experto. En este TFM, esa idea se traduce en una arquitectura donde el LLM ayuda, pero no sustituye la validación, la ejecución controlada ni la revisión crítica de resultados.
+La motivación principal es comprobar hasta qué punto puede aprovecharse la flexibilidad del modelo sin renunciar a mecanismos básicos de control. En el sistema propuesto, el LLM decide cómo abordar la consulta y genera el código necesario, pero el resultado financiero procede de la ejecución de ese código sobre datos locales. Esta separación permite revisar tanto el planteamiento seguido como los cálculos obtenidos.
 
-El interés del trabajo no está en construir un producto financiero completo, sino en estudiar si un prototipo incremental puede convertir consultas históricas en cálculos trazables y explicaciones prudentes. Por ello se evita que el LLM actúe como una caja negra que responde directamente al usuario: el sistema separa planificación, generación de código e interpretación final, valida el código antes de ejecutarlo y captura los resultados en formato estructurado. Si el modelo no está configurado o falla, el sistema informa el error y no genera una respuesta alternativa sin modelo.
+Otro criterio importante es que los fallos sean visibles. Si el prototipo no puede generar código válido, la ejecución no termina correctamente o la salida supera las capacidades del modelo, el sistema registra el problema y devuelve un error controlado. Este comportamiento resulta preferible a completar una respuesta con cifras no verificadas. La evaluación mediante 50 consultas permite observar estos fallos, especialmente en los casos de mayor dificultad, e identificar en qué parte del proceso se producen.
 
-En esta memoria se utiliza el término MVP como \textit{prototipo mínimo viable} dentro de una evolución por etapas, no como producto comercial cerrado. El primer MVP validó consultas básicas de crecimiento y comparación; el segundo amplió la cobertura analítica; y la versión actual incorpora tres agentes diferenciados, generación de código controlada, validación de seguridad, ejecución aislada y artefactos auditables. Esta evolución se detalla en la Sección~\ref{sec:evolucion_mvp}.
+En esta memoria, el término MVP hace referencia a un prototipo mínimo viable construido de forma incremental, no a un producto financiero listo para su uso. Las primeras iteraciones se centraron en consultas sencillas de crecimiento y comparación. Más adelante se incorporaron nuevos tipos de análisis, tres agentes diferenciados, mecanismos de validación y reparación del código, la ejecución en un proceso separado y la conservación de artefactos. Esta evolución se describe en la Sección~\ref{sec:evolucion_mvp}.
 
 \section{Objetivos}
 
-El objetivo general del trabajo es desarrollar y validar un prototipo basado en LLM capaz de ejecutar análisis financieros históricos a partir de entradas estructuradas y datos en CSV.
+El objetivo general del trabajo es diseñar, implementar y evaluar un sistema basado en un modelo de lenguaje capaz de transformar consultas sobre datos financieros históricos en cálculos ejecutables y respuestas trazables.
 
 Los objetivos específicos son:
 
 \begin{itemize}
-    \item Definir un flujo que separe validación, planificación, generación de código, control de seguridad, ejecución e interpretación final.
-    \item Diseñar un agente planificador capaz de interpretar la consulta, identificar el nivel A/B/C y construir un plan estructurado.
-    \item Diseñar un agente generador capaz de producir código Python a partir del plan analítico y del mensaje original del usuario.
-    \item Validar el código generado mediante contrato de script, importaciones permitidas y salida JSON.
-    \item Ejecutar el código en un entorno controlado y conservar artefactos auditables.
-    \item Diseñar un agente interpretador que redacte la respuesta final a partir de métricas ya calculadas, sin añadir datos externos ni recomendaciones de inversión.
-    \item Cubrir consultas de distinta profundidad, desde respuestas básicas hasta salidas con tablas, datos visuales y comparativas detalladas.
-    \item Evaluar el MVP mediante casos funcionales, escenarios de error controlado y una batería A/B/C equilibrada.
+    \item Diseñar una arquitectura modular que separe la planificación, la generación de código, su validación, la ejecución de los cálculos y la elaboración de la respuesta final.
+    \item Desarrollar un flujo capaz de interpretar consultas con diferentes requisitos analíticos y determinar los datos, métricas y operaciones necesarios.
+    \item Generar y ejecutar código Python adaptado a cada consulta, aplicando controles que limiten las operaciones permitidas.
+    \item Garantizar la trazabilidad del proceso mediante la conservación del plan, el código generado, los resultados estructurados y los registros de error.
+    \item Generar respuestas financieras basadas exclusivamente en los cálculos realizados, sin incorporar predicciones ni recomendaciones de inversión.
+    \item Evaluar la capacidad del modelo de lenguaje para comprender y adaptarse a las tareas planteadas, generar código acorde con sus requisitos y redactar respuestas claras, precisas y fundamentadas.
+    \item Analizar el comportamiento global del sistema mediante una batería de 50 consultas de distinta complejidad, pruebas automatizadas y métricas de evaluación.
 \end{itemize}
 
 \section{Alcance}
 
-El sistema se limita al análisis histórico-descriptivo de activos financieros a partir de datos ya descargados. No realiza predicción futura, recomendación de inversión ni análisis fundamental complejo. Esta restricción es deliberada: el foco del TFM no es construir un asesor financiero, sino estudiar una arquitectura LLM trazable para análisis histórico con generación y ejecución controlada de código.
+El sistema se limita al análisis histórico y descriptivo de activos financieros a partir de datos descargados previamente y almacenados en ficheros CSV. Los casos utilizados incluyen acciones, índices, fondos cotizados, divisas, una materia prima y un criptoactivo, con diferentes periodos e intervalos temporales.
+
+El prototipo no obtiene precios en tiempo real durante la ejecución, no incorpora noticias ni información macroeconómica y tampoco realiza análisis fundamental. No pretende predecir movimientos futuros ni recomendar la compra o venta de activos. Estas restricciones responden al propósito del trabajo: evaluar una arquitectura LLM trazable, no construir un asesor financiero.
+
+La validación de seguridad limita determinadas operaciones mediante el análisis del árbol sintáctico del código, aunque no equivale a un entorno aislado de producción. Por otra parte, la batería de 50 casos permite observar el comportamiento del sistema ante un conjunto amplio de consultas, pero una única ejecución no basta para establecer su robustez estadística frente a la variabilidad propia de los modelos generativos.
 
 \section{Estructura de la memoria}
 
-La memoria se organiza siguiendo la lógica de desarrollo del proyecto. El Capítulo~2 presenta el estado de la cuestión, con especial atención a modelos de lenguaje en finanzas, uso de herramientas externas, generación de código, multimodalidad y trazabilidad. El Capítulo~3 describe los datos utilizados, su procedencia, su organización en CSV y los artefactos generados por el flujo. El Capítulo~4 expone la metodología incremental seguida durante el desarrollo del MVP.
+La memoria se organiza siguiendo el recorrido del proyecto. El Capítulo~2 revisa los trabajos relacionados con modelos de lenguaje en finanzas, generación de código y trazabilidad. El Capítulo~3 describe los datos empleados y el análisis exploratorio realizado, mientras que el Capítulo~4 presenta la metodología y los criterios de evaluación.
 
-Los capítulos centrales describen la arquitectura y la implementación. El Capítulo~5 presenta el diseño general del sistema. El Capítulo~6 detalla los módulos de código, el contrato de ejecución, el control de seguridad y la compactación de salidas. El Capítulo~7 explica la integración de modelos de lenguaje y la separación entre agentes. El Capítulo~8 recoge el planteamiento de evaluación y la batería A/B/C. Finalmente, el Capítulo~9 aborda consideraciones éticas y de seguridad, el Capítulo~10 resume conclusiones y trabajo futuro, y los anexos incluyen configuraciones, batería de consultas, prompts y ejecuciones resumidas.
-
-
-
+Los Capítulos~5 y~6 exponen la arquitectura y su implementación, incluidos los contratos de datos, la validación del código y el proceso de ejecución. El Capítulo~7 se centra en la integración de los tres agentes LLM. El Capítulo~8 presenta la batería de 50 consultas, los resultados y los principales fallos observados. Finalmente, el Capítulo~9 aborda el uso responsable y la seguridad; el Capítulo~10 recoge las conclusiones y el trabajo futuro; y los anexos reúnen la configuración, las consultas, los prompts y distintas trazas de ejecución.
