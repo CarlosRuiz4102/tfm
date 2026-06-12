@@ -5,7 +5,6 @@ matplotlib>=3.8,<4
 yfinance>=0.2.54
 
 # Dependencias previstas para la siguiente iteracion
-langgraph>=0.2
 langchain>=0.3
 langchain-openai>=0.2
 openai>=1.0

@@ -16,7 +16,6 @@ class WorkflowTests(unittest.TestCase):
         def _fake_analysis(query_input):
             return (
                 AnalysisPlan(
-                    analysis_level="A",
                     analytical_goal=f"Analizar historicamente: {query_input.query}",
                     analysis_type="financial_analysis",
                     metrics=["rows"],
@@ -46,7 +45,6 @@ def main() -> None:
     tickers = payload["tickers"]
     output = {
         "analysis_type": payload["analysis_plan"]["analysis_type"],
-        "analysis_level": payload["analysis_plan"]["analysis_level"],
         "metrics": {"tickers": tickers, "csv_count": len(payload["csv_paths"])},
         "summary": f"Analisis completado para {', '.join(tickers)}",
         "limitations": ["Salida simulada para pruebas automatizadas."],

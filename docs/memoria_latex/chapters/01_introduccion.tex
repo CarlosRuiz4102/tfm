@@ -1,60 +1,50 @@
-\chapter{Introducción}
+\chapter{Introduccion}
 
-\section{Contexto y definición del problema}
+\section{Contexto y definicion del problema}
 
-Los modelos de lenguaje de gran escala han ampliado de forma notable las posibilidades de interacción con los sistemas informáticos. Además de producir texto, pueden interpretar instrucciones, proponer procedimientos y generar código ejecutable. Buena parte de este avance se apoya en la arquitectura Transformer, presentada en \textit{Attention Is All You Need}~\cite{vaswani2017attention}, cuyo mecanismo de atención constituye una de las bases de los modelos de lenguaje actuales.
+Los modelos de lenguaje de gran escala han ampliado de forma notable las posibilidades de interaccion con los sistemas informaticos. Ademas de producir texto, pueden interpretar instrucciones, proponer procedimientos y generar codigo ejecutable. Buena parte de este avance se apoya en la arquitectura Transformer y en el mecanismo de atencion, que constituyen una de las bases de los modelos de lenguaje actuales.
 
-La capacidad de generar código resulta especialmente interesante en tareas de análisis de datos. Una consulta expresada en lenguaje natural puede transformarse en operaciones de carga, filtrado, cálculo y presentación de resultados. Sin embargo, esta flexibilidad introduce un problema de confianza: que el código sea plausible no significa que sea correcto, y que una respuesta esté bien redactada no garantiza que respete los datos de partida.
+La capacidad de generar codigo resulta especialmente interesante en tareas de analisis de datos. Una consulta expresada en lenguaje natural puede transformarse en operaciones de carga, filtrado, calculo y presentacion de resultados. Sin embargo, esta flexibilidad introduce un problema de confianza: que el codigo sea plausible no significa que sea correcto, y que una respuesta este bien redactada no garantiza que respete los datos de partida.
 
-Este problema cobra especial importancia en el ámbito financiero. Incluso cuando el análisis se limita a información histórica, una cifra incorrecta o una interpretación poco prudente puede conducir a conclusiones equivocadas. Por ello, no basta con pedir al modelo que responda directamente a una consulta: también es necesario conocer qué datos ha utilizado, qué métricas ha calculado, qué código ha ejecutado y qué limitaciones presenta el resultado.
+Este problema cobra especial importancia en el ambito financiero. Incluso cuando el analisis se limita a informacion historica, una cifra incorrecta o una interpretacion poco prudente puede conducir a conclusiones equivocadas. Por ello, no basta con pedir al modelo que responda directamente a una consulta: tambien es necesario conocer que datos ha utilizado, que metricas ha calculado, que codigo ha ejecutado y que limitaciones presenta el resultado.
 
-Este trabajo aborda el problema desde la integración de sistemas, no desde el entrenamiento de un nuevo modelo. Para ello, se desarrolla un prototipo que recibe una consulta financiera y un conjunto de datos históricos almacenados en CSV, organiza el análisis mediante agentes LLM y mantiene los cálculos dentro de un flujo programático. El sistema separa la planificación, la generación de código y la interpretación final, valida el script antes de ejecutarlo y conserva los principales artefactos de cada ejecución.
+Este trabajo aborda el problema desde la integracion de sistemas, no desde el entrenamiento de un nuevo modelo. Para ello, se desarrolla un prototipo que recibe una consulta financiera y un conjunto de datos historicos almacenados en CSV, organiza el analisis mediante agentes LLM y mantiene los calculos dentro de un flujo programatico. El sistema separa la planificacion, la generacion de codigo y la interpretacion final, valida el codigo antes de ejecutarlo y conserva los principales artefactos de cada ejecucion.
 
-La Figura~\ref{fig:alcance_ia_tfm} sitúa el trabajo dentro de las principales áreas de la inteligencia artificial y muestra la relación entre aprendizaje automático, aprendizaje profundo e inteligencia artificial generativa. El proyecto se enmarca en esta última área, aunque su aportación no consiste en desarrollar un modelo generativo, sino en estudiar su uso dentro de una arquitectura trazable de análisis financiero histórico.
+\section{Motivacion}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.82\textwidth]{figures/mapa_ia_analytics_vidhya.png}
-\caption{Mapa conceptual de relaciones entre inteligencia artificial, aprendizaje automático, redes neuronales, aprendizaje profundo e inteligencia artificial generativa. Fuente: Analytics Vidhya~\cite{analyticsvidhya2024generativeaiterms}.}
-\label{fig:alcance_ia_tfm}
-\end{figure}
+El proyecto nace del interes por combinar tres ambitos que a menudo se estudian por separado: los modelos de lenguaje, la programacion para el analisis de datos y la interpretacion financiera. Los LLM permiten construir con rapidez interfaces capaces de entender peticiones diversas, pero esa misma facilidad puede ocultar errores cuando todo el proceso queda reducido a una unica respuesta generativa.
 
-\section{Motivación}
+La motivacion principal es comprobar hasta que punto puede aprovecharse la flexibilidad del modelo sin renunciar a mecanismos basicos de control. En el sistema propuesto, el LLM decide como abordar la consulta y genera el codigo necesario, pero el resultado financiero procede de la ejecucion de ese codigo sobre datos locales. Esta separacion permite revisar tanto el planteamiento seguido como los calculos obtenidos.
 
-El proyecto nace del interés por combinar tres ámbitos que a menudo se estudian por separado: los modelos de lenguaje, la programación para el análisis de datos y la interpretación financiera. Los LLM permiten construir con rapidez interfaces capaces de entender peticiones diversas, pero esa misma facilidad puede ocultar errores cuando todo el proceso queda reducido a una única respuesta generativa.
+Otro criterio importante es que los fallos sean visibles. Si el prototipo no puede generar codigo valido, la ejecucion no termina correctamente o la salida supera las capacidades del modelo, el sistema registra el problema y devuelve un error controlado. Este comportamiento resulta preferible a completar una respuesta con cifras no verificadas. La evaluacion mediante los casos de estudio definidos para el proyecto permite observar estos fallos, especialmente en los escenarios de mayor dificultad, e identificar en que parte del proceso se producen.
 
-La motivación principal es comprobar hasta qué punto puede aprovecharse la flexibilidad del modelo sin renunciar a mecanismos básicos de control. En el sistema propuesto, el LLM decide cómo abordar la consulta y genera el código necesario, pero el resultado financiero procede de la ejecución de ese código sobre datos locales. Esta separación permite revisar tanto el planteamiento seguido como los cálculos obtenidos.
-
-Otro criterio importante es que los fallos sean visibles. Si el prototipo no puede generar código válido, la ejecución no termina correctamente o la salida supera las capacidades del modelo, el sistema registra el problema y devuelve un error controlado. Este comportamiento resulta preferible a completar una respuesta con cifras no verificadas. La evaluación mediante 50 consultas permite observar estos fallos, especialmente en los casos de mayor dificultad, e identificar en qué parte del proceso se producen.
-
-En esta memoria, el término MVP hace referencia a un prototipo mínimo viable construido de forma incremental, no a un producto financiero listo para su uso. Las primeras iteraciones se centraron en consultas sencillas de crecimiento y comparación. Más adelante se incorporaron nuevos tipos de análisis, tres agentes diferenciados, mecanismos de validación y reparación del código, la ejecución en un proceso separado y la conservación de artefactos. Esta evolución se describe en la Sección~\ref{sec:evolucion_mvp}.
+El prototipo se construyo de forma incremental, desde consultas sencillas hasta un flujo con tres agentes, validacion, reparacion y conservacion de evidencias.
 
 \section{Objetivos}
 
-El objetivo general del trabajo es diseñar, implementar y evaluar un sistema basado en un modelo de lenguaje capaz de transformar consultas sobre datos financieros históricos en cálculos ejecutables y respuestas trazables.
+El objetivo general del trabajo es disenar, implementar y evaluar un sistema basado en un modelo de lenguaje capaz de transformar consultas sobre datos financieros historicos en calculos ejecutables y respuestas trazables.
 
-Los objetivos específicos son:
+Los objetivos especificos son:
 
 \begin{itemize}
-    \item Diseñar una arquitectura modular que separe la planificación, la generación de código, su validación, la ejecución de los cálculos y la elaboración de la respuesta final.
-    \item Desarrollar un flujo capaz de interpretar consultas con diferentes requisitos analíticos y determinar los datos, métricas y operaciones necesarios.
-    \item Generar y ejecutar código Python adaptado a cada consulta, aplicando controles que limiten las operaciones permitidas.
-    \item Garantizar la trazabilidad del proceso mediante la conservación del plan, el código generado, los resultados estructurados y los registros de error.
-    \item Generar respuestas financieras basadas exclusivamente en los cálculos realizados, sin incorporar predicciones ni recomendaciones de inversión.
-    \item Evaluar la capacidad del modelo de lenguaje para comprender y adaptarse a las tareas planteadas, generar código acorde con sus requisitos y redactar respuestas claras, precisas y fundamentadas.
-    \item Analizar el comportamiento global del sistema mediante una batería de 50 consultas de distinta complejidad, pruebas automatizadas y métricas de evaluación.
+    \item Disenar una arquitectura modular que separe la planificacion, la generacion de codigo, su validacion, la ejecucion de los calculos y la elaboracion de la respuesta final.
+    \item Desarrollar un flujo capaz de interpretar consultas con diferentes requisitos analiticos y determinar los datos, metricas y operaciones necesarios.
+    \item Generar y ejecutar codigo Python adaptado a cada consulta, aplicando controles que limiten las operaciones permitidas.
+    \item Garantizar la trazabilidad del proceso mediante la conservacion del plan, el codigo generado, los resultados estructurados y los registros de error.
+    \item Generar respuestas financieras basadas exclusivamente en los calculos realizados, sin incorporar predicciones ni recomendaciones de inversion.
+    \item Evaluar la capacidad del modelo de lenguaje para comprender y adaptarse a las tareas planteadas, generar codigo acorde con sus requisitos y redactar respuestas claras, precisas y fundamentadas.
 \end{itemize}
 
 \section{Alcance}
 
-El sistema se limita al análisis histórico y descriptivo de activos financieros a partir de datos descargados previamente y almacenados en ficheros CSV. Los casos utilizados incluyen acciones, índices, fondos cotizados, divisas, una materia prima y un criptoactivo, con diferentes periodos e intervalos temporales.
+El sistema se limita al analisis historico y descriptivo de activos financieros a partir de datos descargados previamente y almacenados en ficheros CSV. Los casos utilizados incluyen acciones, indices, fondos cotizados, divisas, una materia prima y un criptoactivo, con diferentes periodos e intervalos temporales.
 
-El prototipo no obtiene precios en tiempo real durante la ejecución, no incorpora noticias ni información macroeconómica y tampoco realiza análisis fundamental. No pretende predecir movimientos futuros ni recomendar la compra o venta de activos. Estas restricciones responden al propósito del trabajo: evaluar una arquitectura LLM trazable, no construir un asesor financiero.
-
-La validación de seguridad limita determinadas operaciones mediante el análisis del árbol sintáctico del código, aunque no equivale a un entorno aislado de producción. Por otra parte, la batería de 50 casos permite observar el comportamiento del sistema ante un conjunto amplio de consultas, pero una única ejecución no basta para establecer su robustez estadística frente a la variabilidad propia de los modelos generativos.
+El prototipo no obtiene precios en tiempo real durante la ejecucion, no incorpora noticias ni informacion macroeconomica y tampoco realiza analisis fundamental. No pretende predecir movimientos futuros ni recomendar la compra o venta de activos. Estas restricciones responden al proposito del trabajo: evaluar una arquitectura LLM trazable, no construir un asesor financiero.
 
 \section{Estructura de la memoria}
 
-La memoria se organiza siguiendo el recorrido del proyecto. El Capítulo~2 revisa los trabajos relacionados con modelos de lenguaje en finanzas, generación de código y trazabilidad. El Capítulo~3 describe los datos empleados y el análisis exploratorio realizado, mientras que el Capítulo~4 presenta la metodología y los criterios de evaluación.
+La memoria se organiza en torno a los tres bloques que mas peso tendran en el desarrollo del TFM: la metodologia, el flujo multiagente y la evaluacion del sistema. El Capitulo~2 revisa los trabajos previos y situa la propuesta dentro del estado de la cuestion. El Capitulo~3 resume el material de trabajo y el planteamiento experimental de partida.
 
-Los Capítulos~5 y~6 exponen la arquitectura y su implementación, incluidos los contratos de datos, la validación del código y el proceso de ejecución. El Capítulo~7 se centra en la integración de los tres agentes LLM. El Capítulo~8 presenta la batería de 50 consultas, los resultados y los principales fallos observados. Finalmente, el Capítulo~9 aborda el uso responsable y la seguridad; el Capítulo~10 recoge las conclusiones y el trabajo futuro; y los anexos reúnen la configuración, las consultas, los prompts y distintas trazas de ejecución.
+El Capitulo~4 define la metodologia con la que se estudiara el sistema: unidad de analisis, protocolo de ejecucion, criterios de evaluacion y amenazas a la validez. El Capitulo~5 se reserva para el flujo multiagente del sistema y para la explicacion detallada de sus etapas, contratos, validaciones y rutas de recuperacion. El Capitulo~6 recogera los resultados y la evaluacion final del proyecto.
+
+Los ultimos capitulos se plantean de forma mas compacta. El Capitulo~7 reunira las limitaciones, los aspectos eticos y las condiciones de reproducibilidad, mientras que el Capitulo~8 cerrara la memoria con las conclusiones y el trabajo futuro. Por ultimo, los anexos conservaran solo la informacion operativa de apoyo que siga siendo util para ejecutar el sistema, documentar su configuracion LLM y describir los artefactos tecnicos que deja cada corrida.

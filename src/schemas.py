@@ -39,7 +39,6 @@ class FinancialQueryInput:
 
 @dataclass
 class AnalysisPlan:
-    analysis_level: str
     analytical_goal: str
     analysis_type: str
     metrics: list[str]

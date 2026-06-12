@@ -100,12 +100,8 @@ def build_llm_analysis(query_input: FinancialQueryInput) -> tuple[AnalysisPlan, 
                 ]
         if payload is None:
             raise LLMClientError(str(last_error))
-        analysis_level = str(payload.get("analysis_level") or "A").strip().upper()
-        if analysis_level not in {"A", "B", "C"}:
-            analysis_level = "A"
         return (
             AnalysisPlan(
-                analysis_level=analysis_level,
                 analytical_goal=str(payload.get("analytical_goal") or query_input.query).strip(),
                 analysis_type=str(payload.get("analysis_type") or "historical_financial_analysis").strip(),
                 metrics=_as_str_list(payload.get("metrics"), []),

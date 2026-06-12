@@ -1,0 +1,111 @@
+\chapter{Metodologia}
+
+\section{Funcion de este capitulo}
+
+Este capitulo debe explicar como se va a estudiar el sistema y con que criterio se va a juzgar si el nuevo TFM funciona bien o no. No debe confundirse con la descripcion del flujo: aqui lo importante no es como esta construido el sistema, sino como se va a analizar de forma defendible.
+
+\section{Enfoque metodologico}
+
+\textit{Completar aqui la idea central del enfoque metodologico. Por ejemplo: desarrollo iterativo de un sistema multiagente, evaluacion empirica sobre casos de analisis financiero historico, combinacion de revision tecnica y lectura cualitativa de resultados, etc.}
+
+\section{Preguntas guia para escribir bien la metodologia}
+
+\subsection{Sobre el objetivo de evaluacion}
+
+\begin{enumerate}
+    \item ?Que quieres demostrar exactamente con este TFM?
+    \item ?Quieres demostrar viabilidad del flujo, robustez de la arquitectura, calidad de las respuestas o una combinacion de ellas?
+    \item ?Que seria un buen resultado, pero no necesariamente una demostracion completa?
+    \item ?Que afirmaciones no deberias hacer aunque el prototipo funcione bien?
+\end{enumerate}
+
+\subsection{Sobre la unidad de analisis}
+
+\begin{enumerate}
+    \item ?Que vas a considerar como unidad de analisis principal: una consulta, una ejecucion completa, una etapa del flujo o un caso compuesto?
+    \item ?Te interesa medir solo el resultado final o tambien el comportamiento intermedio de cada agente?
+    \item ?Quieres analizar los fallos por etapa o solo por caso completo?
+\end{enumerate}
+
+\subsection{Sobre el diseno experimental}
+
+\begin{enumerate}
+    \item ?Como vas a construir o seleccionar la bateria de consultas del nuevo TFM?
+    \item ?Como vas a graduar la dificultad de los casos?
+    \item ?Quieres hablar de complejidad de forma cualitativa sin imponer una etiqueta fija al sistema?
+    \item ?Que tipos de consulta deben estar presentes para que el experimento sea creible?
+    \item ?Que parte del flujo quieres tensionar de forma deliberada?
+\end{enumerate}
+
+\subsection{Sobre la evaluacion}
+
+\begin{enumerate}
+    \item ?Como distinguiras entre exito tecnico del flujo y calidad real del analisis?
+    \item ?Que metricas tecnicas quieres observar: completitud, tiempo, errores por etapa, reparaciones, trazas conservadas?
+    \item ?Que dimensiones cualitativas quieres valorar: pertinencia de metricas, fidelidad de la interpretacion, prudencia, claridad?
+    \item ?Habra revision humana? Si la hay, ?con que rubrica o con que criterios?
+\end{enumerate}
+
+\subsection{Sobre la validez del estudio}
+
+\begin{enumerate}
+    \item ?Que amenazas a la validez interna puede tener el experimento?
+    \item ?Que limita la generalizacion del trabajo?
+    \item ?Hasta que punto dependes del modelo concreto, de los prompts o del proveedor de inferencia?
+    \item ?Como evitaras confundir una respuesta convincente con un resultado correcto?
+\end{enumerate}
+
+\section{Estructura recomendada para la metodologia final}
+
+\subsection{Pregunta de investigacion y objetivos evaluables}
+
+\textit{Completar aqui la pregunta principal de investigacion y los objetivos que realmente puedan verificarse con el experimento.}
+
+\subsection{Unidad de analisis}
+
+\textit{Completar aqui que se evalua exactamente en cada caso y por que esa unidad de analisis es adecuada para el TFM.}
+
+\subsection{Diseno experimental}
+
+\textit{Completar aqui el numero de casos, su clasificacion, su dificultad y el razonamiento que justifica ese diseno. Si se habla de consultas mas simples o mas avanzadas, conviene que esa clasificacion se use solo como herramienta de evaluacion y no como una etiqueta explicita que el sistema reciba en la entrada.}
+
+\subsection{Protocolo de ejecucion}
+
+\textit{Completar aqui como se lanza cada caso, que artefactos se conservan, que pasos del flujo deben completarse y como se registran errores, reparaciones y tiempos.}
+
+\subsection{Metricas de evaluacion}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{L{0.22\textwidth}L{0.18\textwidth}Y}
+\toprule
+\textbf{Metrica} & \textbf{Tipo} & \textbf{Utilidad dentro de la evaluacion} \\
+\midrule
+\textit{Completar} & \textit{Tecnica / cualitativa} & \textit{Completar} \\
+\textit{Completar} & \textit{Tecnica / cualitativa} & \textit{Completar} \\
+\textit{Completar} & \textit{Tecnica / cualitativa} & \textit{Completar} \\
+\bottomrule
+\end{tabularx}
+\caption{Metricas previstas para la evaluacion del sistema.}
+\label{tab:metricas_metodologia_compacta}
+\end{table}
+
+\subsection{Revision humana}
+
+\textit{Completar aqui si habra rubricado manual, lectura comparada de respuestas, comprobacion de metricas o supervision por etapas.}
+
+\subsection{Amenazas a la validez}
+
+\textit{Completar aqui sesgos de seleccion de casos, dependencia de configuracion, sensibilidad a prompts y cualquier otra limitacion metodologica importante.}
+
+\section{Criterio de calidad para este capitulo}
+
+La metodologia final deberia permitir responder sin ambiguedad a cuatro cuestiones:
+
+\begin{enumerate}
+    \item ?Que se va a evaluar exactamente?
+    \item ?Como se va a ejecutar esa evaluacion?
+    \item ?Con que criterios se juzgara el sistema?
+    \item ?Que limites tendra la interpretacion de los resultados?
+\end{enumerate}

@@ -1,83 +1,71 @@
-\chapter{Estado de la cuestión}
+\chapter{Estado de la cuestion}
 
-\section{Enfoque de la revisión}
+\section{Enfoque de la revision}
 
-Este capítulo sitúa el trabajo dentro del uso de modelos de lenguaje para el análisis financiero y la automatización de tareas de datos. No se pretende revisar todo el campo de la inteligencia artificial aplicada a las finanzas, sino centrarse en las líneas que sustentan el sistema desarrollado: los modelos especializados en este dominio, las arquitecturas basadas en agentes, el uso de herramientas externas, la generación de código y la evaluación de sistemas generativos.
+Este capitulo situa el trabajo dentro del uso de modelos de lenguaje para el analisis financiero y la automatizacion de tareas de datos. No se pretende revisar todo el campo de la inteligencia artificial aplicada a las finanzas, sino centrarse en las lineas que sustentan el sistema desarrollado: los modelos especializados en este dominio, las arquitecturas basadas en agentes, el uso de herramientas externas, la generacion de codigo y la evaluacion de sistemas generativos.
 
-El punto de partida es un modelo ya disponible, integrado en un flujo de trabajo controlado. Ante una consulta en lenguaje natural, el modelo interviene en la planificación del análisis, la generación de código Python y la redacción de una respuesta basada en los resultados obtenidos al analizar datos históricos locales. Quedan fuera del alcance el entrenamiento de un modelo propio, la predicción de precios y la toma autónoma de decisiones de inversión.
-
-Esta delimitación permite orientar la revisión hacia trabajos que combinan lenguaje natural, cálculo programático y mecanismos de control. Como responden a problemas y escalas diferentes, no tendría sentido comparar directamente sus resultados. Lo relevante es identificar las ideas que ayudan a justificar las decisiones adoptadas en el prototipo.
+El punto de partida es un modelo de pesos abiertos ya existente, identificado en este trabajo como openai/gpt-oss-20b e integrado en un flujo de trabajo controlado. Ante una consulta en lenguaje natural, el modelo interviene en la planificacion del analisis, la generacion de codigo Python y la redaccion de una respuesta basada en los resultados obtenidos al analizar datos historicos locales. Quedan fuera del alcance el entrenamiento de un modelo propio, la prediccion de precios y la toma autonoma de decisiones de inversion.
 
 \section{Modelos de lenguaje y agentes financieros}
 
-La aplicación del procesamiento del lenguaje natural al ámbito financiero es anterior a los modelos generativos actuales. FinBERT adapta la arquitectura BERT al lenguaje financiero y muestra la utilidad de los modelos especializados en tareas como el análisis de sentimiento~\cite{araci2019finbert}. Posteriormente, BloombergGPT y FinGPT ampliaron esta línea mediante modelos entrenados o adaptados con noticias, documentación corporativa y otros recursos propios del sector~\cite{wu2023bloomberggpt,yang2023fingpt}.
+La aplicacion del procesamiento del lenguaje natural al ambito financiero es anterior a los modelos generativos actuales. FinBERT adapta la arquitectura BERT al lenguaje financiero y muestra la utilidad de los modelos especializados en tareas como el analisis de sentimiento. Posteriormente, BloombergGPT y FinGPT ampliaron esta linea mediante modelos entrenados o adaptados con noticias, documentacion corporativa y otros recursos propios del sector.
 
-Estos trabajos muestran que el lenguaje financiero contiene vocabulario y relaciones que requieren una interpretación cuidadosa. Sin embargo, su objetivo principal se centra en construir o adaptar el modelo. Aquí se adopta una perspectiva diferente: se utiliza \texttt{openai/gpt-oss-20b}, un modelo de pesos abiertos, y se estudia su comportamiento dentro de un sistema verificable de análisis histórico~\cite{openai2025gptossmodelcard}. La atención se desplaza así del entrenamiento a la integración, el control y la trazabilidad.
+Estos trabajos muestran que el lenguaje financiero contiene vocabulario y relaciones que requieren una interpretacion cuidadosa. En este trabajo se adopta una perspectiva distinta: se utiliza \texttt{openai/gpt-oss-20b}, un modelo de pesos abiertos con cerca de 21.000 millones de parametros totales que, gracias a su arquitectura de mezcla de expertos, activa aproximadamente 3.600 millones por cada token procesado. La denominacion \textit{20b} indica su escala aproximada, pero no constituye por si sola una medida de la calidad de las respuestas. El interes se centra en estudiar su integracion en un sistema verificable de analisis historico.
 
-La evolución de los LLM financieros también ha favorecido la aparición de sistemas basados en agentes. FinRobot propone una arquitectura orientada a la investigación y valoración de empresas~\cite{zhou2024finrobot}, mientras que TradingAgents distribuye tareas de análisis, debate y toma de decisiones de trading entre varios agentes~\cite{xiao2024tradingagents}. En ambos casos, el modelo deja de actuar únicamente como generador de texto y pasa a intervenir en un proceso compuesto por distintas responsabilidades.
+La evolucion de los LLM financieros tambien ha favorecido la aparicion de sistemas basados en agentes. FinRobot propone una arquitectura orientada a la investigacion y valoracion de empresas, mientras que TradingAgents distribuye tareas de analisis, debate y toma de decisiones de trading entre varios agentes. En ambos casos, el modelo deja de actuar unicamente como generador de texto y pasa a intervenir en un proceso compuesto por distintas responsabilidades.
 
-El sistema comparte esta separación funcional, aunque limita deliberadamente la autonomía. Un mismo modelo desempeña tres funciones: interpretar la consulta, generar el código y explicar los resultados. No se simula una organización de analistas, no se permite actuar sobre el mercado ni se producen recomendaciones de inversión. Esta delimitación facilita la supervisión de cada fase y permite estudiar por separado la comprensión de la tarea, la capacidad de generar código y la calidad de la redacción final.
+\section{Agentes, herramientas y orquestacion}
 
-\section{Agentes, herramientas y orquestación}
+Los sistemas basados en agentes permiten que un modelo vaya mas alla de la generacion de texto: puede utilizar herramientas y trabajar con los resultados de acciones externas. ReAct propone alternar razonamiento y actuacion para que el modelo observe las consecuencias de sus decisiones. Toolformer estudia como puede aprender a recurrir a herramientas cuando las necesita. Las revisiones sobre agentes basados en LLM describen esta evolucion como el paso de sistemas puramente conversacionales a arquitecturas capaces de planificar, actuar y utilizar observaciones del entorno.
 
-Los sistemas basados en agentes permiten que un modelo vaya más allá de la generación de texto: puede utilizar herramientas y trabajar con los resultados de acciones externas. ReAct propone alternar razonamiento y actuación para que el modelo observe las consecuencias de sus decisiones~\cite{yao2022react}. Toolformer estudia cómo puede aprender a recurrir a herramientas cuando las necesita~\cite{schick2023toolformer}. Las revisiones sobre agentes basados en LLM describen esta evolución como el paso de sistemas puramente conversacionales a arquitecturas capaces de planificar, actuar y utilizar observaciones del entorno~\cite{wang2023agentsurvey}.
+Para coordinar estas tareas es necesario conservar la informacion producida durante la ejecucion. En la practica, esto exige mantener un estado compartido, definir etapas con responsabilidades separadas y establecer transiciones controladas entre validacion, generacion, ejecucion e interpretacion. Esta estructura resulta especialmente util cuando se combinan componentes generativos con comprobaciones programaticas.
 
-Para coordinar estas tareas es necesario conservar la información producida durante la ejecución. LangGraph representa los flujos mediante un estado compartido, nodos que realizan operaciones y transiciones que determinan el siguiente paso~\cite{langgraph}. Esta estructura encaja bien cuando se combinan componentes generativos con validaciones y decisiones programáticas.
+El sistema adopta este patron mediante un recorrido definido de antemano. El modelo no selecciona libremente las herramientas ni altera el orden del proceso, y el estado compartido conserva la informacion de cada ejecucion sin mantener una memoria conversacional permanente. Los detalles de esta arquitectura se presentan mas adelante en los capitulos dedicados a la metodologia y al flujo multiagente del sistema.
 
-El sistema adopta este patrón, pero sigue un recorrido definido de antemano. El modelo no selecciona libremente las herramientas ni modifica el orden del proceso. Cada consulta pasa por las fases de planificación, generación de código, validación, ejecución e interpretación. Si aparece un error, las transiciones determinan si se intenta una reparación o si el flujo debe finalizar de forma controlada.
+\section{Generacion y ejecucion controlada de codigo}
 
-El estado compartido funciona como una memoria de trabajo limitada a cada ejecución. Conserva las entradas y salidas de las distintas fases, pero no mantiene una memoria conversacional permanente. De este modo, se puede revisar el recorrido completo de cada caso sin incorporar información de consultas anteriores. También resulta más fácil localizar el punto exacto en el que se produjo un fallo, aunque la respuesta final parezca convincente.
+La generacion automatica de codigo es una de las capacidades que mas ha impulsado el uso de los modelos de lenguaje en tareas tecnicas. El trabajo sobre Codex mostro que un modelo entrenado con grandes cantidades de codigo puede sintetizar programas a partir de descripciones en lenguaje natural y evaluarse con pruebas funcionales como HumanEval. En ciencia de datos, DS-1000 amplio esta linea con un banco de pruebas basado en problemas mas cercanos a escenarios reales y apoyado en librerias habituales de analisis.
 
-\section{Generación y ejecución controlada de código}
+Estas investigaciones respaldan el uso de un LLM para traducir una consulta financiera en operaciones de carga, filtrado y calculo. Tambien ponen de manifiesto una limitacion fundamental: que un programa parezca correcto no implica que sea ejecutable, seguro o fiel a la peticion. Por ello, el codigo no se considera una respuesta final, sino un artefacto intermedio que debe superar varios controles.
 
-La generación automática de código es una de las capacidades que ha impulsado el uso de los modelos de lenguaje en tareas técnicas. El trabajo sobre Codex y HumanEval mostró que un modelo entrenado con código puede sintetizar programas a partir de descripciones en lenguaje natural~\cite{chen2021codex}. En ciencia de datos, DS-1000 propuso un banco de pruebas con problemas realistas y librerías habituales de análisis~\cite{lai2022ds1000}.
+Ejecutar codigo generado por un modelo introduce riesgos especificos. Los estudios sobre asistentes de programacion han mostrado que sus sugerencias pueden contener vulnerabilidades, incluso cuando parecen funcionales. Por este motivo, el codigo debe validarse antes de su ejecucion y limitarse a un conjunto restringido de operaciones.
 
-Estas investigaciones respaldan el uso de un LLM para traducir una consulta financiera en operaciones de carga, filtrado y cálculo. También ponen de manifiesto una limitación fundamental: que un programa parezca correcto no implica que sea ejecutable, seguro o fiel a la petición. Por ello, el código no se considera una respuesta final, sino un artefacto intermedio que debe superar varios controles.
+La propuesta trata el codigo como un artefacto intermedio que debe respetar un contrato estructurado y superar controles antes de ejecutarse. Esta combinacion permite separar el calculo de su comunicacion, aunque no elimina todos los riesgos asociados a la ejecucion de codigo generado.
 
-La comunicación entre el modelo y la aplicación se apoya en salidas estructuradas. El plan analítico, el código generado y los resultados de la ejecución siguen contratos JSON conocidos, mientras que el texto libre se reserva para la explicación destinada al usuario. Esta separación reduce la ambigüedad y permite detectar respuestas incompletas o mal formadas antes de pasar a la siguiente fase.
+\section{Fiabilidad y evaluacion de sistemas generativos}
 
-Ejecutar código generado por un modelo introduce riesgos específicos. Los estudios sobre asistentes de programación han mostrado que sus sugerencias pueden contener vulnerabilidades, incluso cuando parecen funcionales~\cite{pearce2022asleep}. Por este motivo, el código debe validarse antes de su ejecución y limitarse a un conjunto restringido de operaciones.
+Una limitacion conocida de los modelos generativos es la produccion de respuestas plausibles que no se corresponden con la informacion disponible, fenomeno denominado habitualmente alucinacion. La generacion aumentada con recuperacion busca reducir este problema apoyando la respuesta en fuentes obtenidas de forma explicita. Aunque el sistema no incorpora recuperacion documental, sigue un principio de anclaje similar: la explicacion final debe basarse en datos locales, codigo ejecutado y resultados registrados.
 
-El prototipo combina revisión estática, limitación de importaciones, un proceso de ejecución separado y un tiempo máximo. Estas medidas reducen la superficie de riesgo, aunque no equivalen a una sandbox completa. En un entorno de producción sería necesario añadir más aislamiento, permisos mínimos y límites de recursos.
+Este anclaje es especialmente importante en el analisis financiero. Cuando una respuesta presenta datos de rentabilidad, volatilidad o drawdown, debe ser posible revisar tanto la informacion de partida como el procedimiento seguido. Tambien conviene separar con claridad la descripcion del comportamiento historico de cualquier prediccion o recomendacion. Conservar la consulta, el plan, el codigo, los resultados, los errores y la respuesta final no elimina la posibilidad de fallo, pero ayuda a localizarlo y valorar sus consecuencias.
 
-Los resultados numéricos se obtienen al ejecutar el código sobre los CSV locales y se conservan en una salida estructurada. El agente encargado de redactar la respuesta recibe esos valores, pero no debe sustituirlos por cifras generadas libremente. Así se mantiene una separación clara entre el cálculo y su comunicación.
+La evaluacion de un sistema de estas caracteristicas no puede reducirse a una unica cifra. Los marcos de evaluacion amplios y transparentes defienden una lectura compuesta por distintos escenarios y metricas, para evitar que un resultado agregado oculte capacidades y limitaciones relevantes. En el caso del texto generado, tambien se ha senalado que las metricas automaticas tradicionales no siempre reflejan la calidad percibida durante una evaluacion humana.
 
-\section{Fiabilidad y evaluación de sistemas generativos}
-
-Una limitación conocida de los modelos generativos es la producción de respuestas plausibles que no se corresponden con la información disponible, fenómeno denominado habitualmente alucinación~\cite{ji2022hallucination}. La generación aumentada con recuperación busca reducir este problema apoyando la respuesta en fuentes obtenidas de forma explícita~\cite{lewis2020rag}. Aunque el sistema no incorpora recuperación documental, sigue un principio de anclaje similar: la explicación final debe basarse en datos locales, código ejecutado y resultados registrados.
-
-Este anclaje es especialmente importante en el análisis financiero. Cuando una respuesta presenta datos de rentabilidad, volatilidad o drawdown, debe ser posible revisar tanto la información de partida como el procedimiento seguido. También conviene separar con claridad la descripción del comportamiento histórico de cualquier predicción o recomendación. Conservar la consulta, el plan, el código, los resultados, los errores y la respuesta final no elimina la posibilidad de fallo, pero ayuda a localizarlo y valorar sus consecuencias.
-
-La evaluación de un sistema de estas características no puede reducirse a una única cifra. HELM defiende una evaluación amplia y transparente, compuesta por distintos escenarios y métricas, para evitar que un resultado agregado oculte capacidades y limitaciones relevantes~\cite{liang2022helm}. En el caso del texto generado, G-Eval señala además que las métricas automáticas tradicionales no siempre reflejan la calidad percibida durante una evaluación humana~\cite{liu2023geval}.
-
-Siguiendo estas ideas, la evaluación distingue entre el funcionamiento técnico y la calidad de la respuesta. La parte técnica comprueba si el flujo genera un plan, produce código, ejecuta el análisis y conserva los artefactos. La parte cualitativa valora si se ha comprendido la consulta, si las métricas son pertinentes, si la ejecución analítica es adecuada y si la interpretación final resulta fiel, clara, útil y prudente.
-
-La batería de 50 casos distribuye las consultas en los niveles A, B y C, con una exigencia progresiva. Las dimensiones cualitativas reciben una preevaluación heurística que ayuda a localizar casos problemáticos. Sin embargo, estas reglas son aproximadas y no sustituyen la revisión humana. La combinación de ambos enfoques permite distinguir, por ejemplo, entre un caso que falla al ejecutar el código y otro que obtiene resultados válidos, pero los explica de manera insuficiente.
+Siguiendo estas ideas, la evaluacion combina indicadores tecnicos, una valoracion cualitativa y revision humana. Esta aproximacion permite distinguir entre los fallos del flujo y las respuestas que, aun completandose, presentan problemas de pertinencia, fidelidad o claridad.
 
 \section{Comparativa y posicionamiento de la propuesta}
 
-La Tabla~\ref{tab:comparativa_estado_arte} resume las líneas revisadas y muestra cómo se relacionan con el sistema desarrollado. El objetivo concreto es integrar un modelo de lenguaje con generación controlada de código y análisis reproducible de datos históricos.
+La Tabla~\ref{tab:comparativa_estado_arte} resume las lineas revisadas y muestra como se relacionan con el sistema desarrollado. El objetivo concreto es integrar un modelo de lenguaje con generacion controlada de codigo y analisis reproducible de datos historicos.
 
 {\scriptsize
 \begin{longtable}{>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{4.45cm}>{\raggedright\arraybackslash}p{6.0cm}}
-\caption{Comparación entre los trabajos relacionados y la propuesta desarrollada.}
+\caption{Comparacion entre los trabajos relacionados y la propuesta desarrollada.}
 \label{tab:comparativa_estado_arte}\\
 \toprule
-\textbf{Trabajo o línea} & \textbf{Aportación principal} & \textbf{Relación con este trabajo} \\
+\textbf{Trabajo o linea} & \textbf{Aportacion principal} & \textbf{Relacion con este trabajo} \\
 \midrule
 \endfirsthead
 \toprule
-\textbf{Trabajo o línea} & \textbf{Aportación principal} & \textbf{Relación con este trabajo} \\
+\textbf{Trabajo o linea} & \textbf{Aportacion principal} & \textbf{Relacion con este trabajo} \\
 \midrule
 \endhead
-FinBERT, BloombergGPT y FinGPT & Modelos entrenados o adaptados al lenguaje financiero~\cite{araci2019finbert,wu2023bloomberggpt,yang2023fingpt}. & Se centran en el modelo; la propuesta estudia la integración controlada de un modelo disponible. \\
-FinRobot y TradingAgents & Agentes para investigación, valoración o trading~\cite{zhou2024finrobot,xiao2024tradingagents}. & Inspiran la separación de responsabilidades, pero el sistema no toma decisiones de inversión ni actúa sobre el mercado. \\
-ReAct, Toolformer y LangGraph & Herramientas externas y flujos coordinados mediante estados y transiciones~\cite{yao2022react,schick2023toolformer,langgraph}. & Respaldan el uso de herramientas y un estado común; aquí el recorrido está fijado para favorecer el control. \\
-Codex, DS-1000 y seguridad de código & Síntesis, evaluación y riesgos del código producido por modelos~\cite{chen2021codex,lai2022ds1000,pearce2022asleep}. & Justifican la generación de código bajo contrato y su validación antes de ejecutarlo. \\
-Alucinaciones y RAG & Estudio de respuestas no fieles y anclaje en fuentes externas~\cite{ji2022hallucination,lewis2020rag}. & La respuesta se apoya en los CSV locales y en los resultados obtenidos, aunque no se utiliza recuperación documental. \\
-HELM y G-Eval & Evaluación multidimensional y calidad del texto generado~\cite{liang2022helm,liu2023geval}. & Fundamentan la combinación de indicadores técnicos, dimensiones cualitativas y revisión humana. \\
+FinBERT, BloombergGPT y FinGPT & Modelos entrenados o adaptados al lenguaje financiero. & Se centran en el modelo; la propuesta estudia la integracion controlada de \texttt{openai/gpt-oss-20b} en un flujo verificable. \\
+FinRobot y TradingAgents & Agentes para investigacion, valoracion o trading. & Inspiran la separacion de responsabilidades, pero el sistema no toma decisiones de inversion ni actua sobre el mercado. \\
+ReAct, Toolformer y arquitecturas de orquestacion & Uso de herramientas externas y coordinacion de pasos mediante observaciones y transiciones controladas. & Respaldan el uso de herramientas y un estado comun; aqui el recorrido esta fijado para favorecer el control. \\
+Codex, DS-1000 y seguridad de codigo & Sintesis, evaluacion y riesgos del codigo producido por modelos. & Justifican la generacion de codigo bajo contrato y su validacion antes de ejecutarlo. \\
+Alucinaciones y RAG & Estudio de respuestas no fieles y anclaje en fuentes externas. & La respuesta se apoya en los CSV locales y en los resultados obtenidos, aunque no se utiliza recuperacion documental. \\
+HELM y G-Eval & Evaluacion multidimensional y calidad del texto generado. & Fundamentan la combinacion de indicadores tecnicos, dimensiones cualitativas y revision humana. \\
 \bottomrule
 \end{longtable}
 }
 
-En conjunto, el trabajo ocupa una posición intermedia entre un asistente puramente conversacional y un agente financiero autónomo. Un único modelo planifica el análisis, genera el código y explica los resultados, mientras que las capas deterministas se encargan de la validación, la ejecución y el registro de artefactos. Esta separación permite estudiar el valor práctico del modelo sin atribuirle capacidades que no se han implementado ni evaluado.
+En conjunto, el trabajo ocupa una posicion intermedia entre un asistente puramente conversacional y un agente financiero autonomo. Un unico modelo planifica el analisis, genera el codigo y explica los resultados, mientras que las capas deterministas se encargan de la validacion, la ejecucion y el registro de artefactos. Esta separacion permite estudiar el valor practico del modelo sin atribuirle capacidades que no se han implementado ni evaluado.

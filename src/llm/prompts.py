@@ -18,30 +18,28 @@ def build_analysis_messages(query_input: FinancialQueryInput) -> list[LLMMessage
     payload = {
         "input": query_input.to_dict(),
         "quality_guidelines": {
-            "level_a": (
-                "Nivel A: consulta directa, un activo o comparacion simple, sin formato exigido. "
-                "Debe producir metricas esenciales y una respuesta breve. Ejemplos: crecimiento total, "
-                "precio inicial/final, rentabilidad acumulada, volatilidad basica o resumen descriptivo."
+            "simple_queries": (
+                "Consulta simple: un activo o comparacion directa, sin formato exigido ni varias salidas "
+                "simultaneas. Suele requerir metricas esenciales y una respuesta breve."
             ),
-            "level_b": (
-                "Nivel B: consulta que pide mayor explicacion, comparativa clara, tabla o serie estructurada "
-                "o desglose retorno-riesgo. Debe producir varias metricas, datos tabulares y como maximo "
-                "datos estructurados adicionales."
+            "structured_queries": (
+                "Consulta estructurada: pide comparacion clara, tabla, serie, desglose retorno-riesgo o una "
+                "explicacion mas rica. Debe reflejarse en output_requirements y presentation_preferences."
             ),
-            "level_c": (
-                "Nivel C: consulta profesional, multicriterio o con formato impuesto. Debe coordinar "
-                "varias familias de metricas, tablas y datos visuales si se solicitan, separando rendimiento, "
-                "riesgo, comparacion temporal y limitaciones."
+            "advanced_queries": (
+                "Consulta avanzada: impone varias restricciones a la vez, exige una salida profesional o combina "
+                "varias familias de metricas, tablas y datos visuales."
             ),
             "adaptation_rule": (
-                "El nivel se decide por la peticion, no por una etiqueta externa. Si el usuario pide tabla, "
-                "serie normalizada, drawdown, medias moviles, ranking, periodos mejores/peores o bloques "
-                "de salida concretos, reflejalo en output_requirements y eleva el nivel si corresponde."
+                "No existe una etiqueta externa de dificultad que debas devolver. Debes inferir a partir de la "
+                "peticion el grado de profundidad, estructura y detalle esperados. Si el usuario pide tabla, "
+                "serie normalizada, drawdown, medias moviles, ranking, periodos mejores/peores o bloques de "
+                "salida concretos, reflejalo directamente en output_requirements y presentation_preferences."
             ),
         },
         "required_json_schema": {
-            "analysis_level": "A|B|C",
             "analytical_goal": "str",
+            "analysis_type": "str",
             "metrics": ["str"],
             "required_columns": ["str"],
             "data_requirements": ["str"],
@@ -59,16 +57,19 @@ def build_analysis_messages(query_input: FinancialQueryInput) -> list[LLMMessage
             "Tu tarea es convertir la peticion del usuario en un plan verificable para un script Python posterior. "
             "No calcules cifras y no redactes la respuesta final.\n"
             "Instrucciones obligatorias:\n"
-            "1. Lee la consulta completa y clasifica analysis_level como A, B o C usando las reglas del payload.\n"
+            "1. Lee la consulta completa e infiere el grado de profundidad y estructura que el usuario espera.\n"
             "2. Define analytical_goal como objetivo financiero concreto, sin palabras vagas como 'analizar' sin detalle.\n"
-            "3. Enumera metrics con nombres calculables: retorno_total, cagr, volatilidad, max_drawdown, "
+            "3. Define analysis_type con una etiqueta breve y descriptiva, por ejemplo historical_growth, "
+            "comparative_risk_return, technical_overview o structured_financial_report.\n"
+            "4. Enumera metrics con nombres calculables: retorno_total, cagr, volatilidad, max_drawdown, "
             "correlacion, medias_moviles, ranking_mensual u otros si la consulta los exige.\n"
-            "4. Enumera required_columns segun los calculos: Close para rentabilidad, High/Low para rangos, "
+            "5. Enumera required_columns segun los calculos: Close para rentabilidad, High/Low para rangos, "
             "Volume para volumen, Open si la consulta lo requiere.\n"
-            "5. Enumera data_requirements con granularidad temporal, activos, comparaciones y validaciones minimas.\n"
-            "6. Enumera output_requirements con tablas, metricas y datos visuales esperados; no pidas imagenes, pide datos JSON.\n"
-            "7. Enumera presentation_preferences con el tono y estructura esperada para el agente interpretador.\n"
-            "8. En reasoning justifica brevemente el nivel elegido y las metricas, sin exponer cadena de pensamiento extensa.\n"
+            "6. Enumera data_requirements con granularidad temporal, activos, comparaciones y validaciones minimas.\n"
+            "7. Enumera output_requirements con tablas, metricas y datos visuales esperados; no pidas imagenes, pide datos JSON.\n"
+            "8. Enumera presentation_preferences con el tono, estructura y nivel de detalle esperado para el agente interpretador.\n"
+            "9. En reasoning justifica brevemente por que la consulta requiere ese grado de profundidad y esas metricas, "
+            "sin exponer cadena de pensamiento extensa.\n"
             "Restricciones: usa solo CSV, tickers y fechas de entrada; no uses noticias, fundamentales, precios actuales externos, "
             "predicciones ni recomendaciones de inversion.\n"
             f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
@@ -85,7 +86,7 @@ def build_codegen_messages(query_input: FinancialQueryInput, plan: AnalysisPlan)
         "code_contract": {
             "argv_1": "ruta a un JSON payload con query, tickers, csv_paths y analysis_plan",
             "stdout": "un unico JSON valido",
-            "required_top_level_keys": ["analysis_level", "metrics", "summary", "limitations"],
+            "required_top_level_keys": ["metrics", "summary", "limitations"],
             "allowed_imports": [
                 "json",
                 "sys",
@@ -107,10 +108,11 @@ def build_codegen_messages(query_input: FinancialQueryInput, plan: AnalysisPlan)
             ),
             "payload_loading": "Usa json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')). No uses open().",
             "presentation_contract": (
-                "Incluye metricas suficientes para el nivel pedido. "
-                "Nivel A: metrics y summary bastan si la consulta no pide formato. "
-                "Nivel B: incluye table_data cuando haya comparacion o desglose, y chart_data si se piden series estructuradas. "
-                "Nivel C: separa summary, metrics, table_data, chart_data/visualization_data, observations y limitations. "
+                "Incluye metricas suficientes para responder a la consulta segun analysis_plan. "
+                "Si la consulta es simple, metrics y summary pueden bastar si no se pide formato adicional. "
+                "Si hay comparacion o desglose, incluye table_data. Si se piden series o apoyo visual, incluye chart_data "
+                "o visualization_data. Si la consulta exige una respuesta rica o por bloques, separa summary, metrics, "
+                "table_data, chart_data/visualization_data, observations y limitations segun corresponda. "
                 "Si se piden datos visuales, no generes imagenes: devuelve datos JSON con tipo sugerido, ejes, series y etiquetas. "
                 "No devuelvas series largas completas: muestrea como maximo 120 puntos por serie e incluye fecha inicial/final."
             ),
@@ -129,8 +131,8 @@ def build_codegen_messages(query_input: FinancialQueryInput, plan: AnalysisPlan)
             "2. Lee el payload con json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')). No uses open().\n"
             "3. Usa load_close_prices para precios de cierre y load_market_data para OHLCV. No uses pd.read_csv.\n"
             "4. Usa solo imports permitidos. No uses red, ficheros adicionales, subprocess, os, eval, exec ni rutas no recibidas.\n"
-            "5. Devuelve siempre analysis_level, metrics, summary y limitations.\n"
-            "6. Para Nivel B o C, incluye table_data cuando haya comparaciones, rankings o bloques de metricas.\n"
+            "5. Devuelve siempre metrics, summary y limitations.\n"
+            "6. Cuando la consulta o el plan pidan comparaciones, rankings o bloques de metricas, incluye table_data.\n"
             "7. Para peticiones visuales, incluye chart_data o visualization_data con tipo sugerido, series muestreadas, "
             "ejes y unidades; nunca generes PNG/PDF/SVG.\n"
             "8. Calcula con cuidado: ordena por fecha, elimina NaN donde proceda, evita division por cero, "
@@ -163,7 +165,7 @@ def build_code_repair_messages(
             "user",
             "REPARACION DE CODIGO DEL AGENTE 2.\n"
             "El codigo anterior fallo o fue rechazado. Devuelve exclusivamente JSON valido con un unico campo code. "
-            "El script corregido debe ser completo, no un parche parcial. Mantén el objetivo, nivel A/B/C y salidas "
+            "El script corregido debe ser completo, no un parche parcial. Mantén el objetivo y las salidas "
             "solicitadas por el plan. Corrige la causa concreta indicada en error_detail y conserva el contrato: "
             "Path(sys.argv[1]).read_text, load_close_prices/load_market_data, make_json_safe, stdout con un unico JSON, "
             "sin open(), pd.read_csv, os, subprocess, eval, exec, red ni markdown.\n"
@@ -187,8 +189,9 @@ def build_interpretation_messages(output: dict, plan: AnalysisPlan) -> list[LLMM
             "Debes devolver texto en espanol con frases completas. No devuelvas JSON, diccionarios, listas, "
             "bloques de codigo ni una repeticion aislada de las metricas.\n"
             "Reglas de respuesta:\n"
-            "1. Ajusta la extension al analysis_level: A breve y directo; B estructurado con metricas principales; "
-            "C informe compacto con apartados claros.\n"
+            "1. Ajusta la extension y estructura a la complejidad de la consulta y a presentation_preferences. "
+            "Si la peticion es simple, responde de forma breve y directa; si es comparativa o estructurada, "
+            "organiza mejor la respuesta; si exige una salida rica o profesional, usa apartados claros.\n"
             "2. Distingue datos historicos observados, lectura interpretativa y limitaciones.\n"
             "3. Si hay tablas o datos visuales en la salida, describe que muestran sin fingir que existe una imagen.\n"
             "4. Si una metrica es null o hay datos insuficientes, indicalo como limitacion, no como error oculto.\n"

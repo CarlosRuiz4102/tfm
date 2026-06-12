@@ -1,1236 +1,0 @@
-     UNIVERSIDAD POLITÉCNICA DE MADRID
-    Escuela Técnica Superior de Ingeniería de Sistemas
-                      Informáticos
-                                                  Máster
-                                                  Deep Learning
-                                                 Universidad Politécnica de Madrid
-
-
-
-
-               Trabajo Fin de Máster
-
-
-Sistema multiagente para análisis nanciero histórico
-     mediante generación automática de código
-
-
-
-   MÁSTER DE FORMACIÓN PERMANENTE
-               EN DEEP LEARNING
-
-                       Presentado por:
-
-
-
-                 Carlos Ruiz Oyarzun
-                    Ba jo la dirección de:
-
-
-                  Dr. Adrián Girón Jiménez
-
-
-               Dr. Alejandro Delgado Peribáñez
-
-
-
-
-                        Madrid, 2026
-Resumen
-
-    Este Trabajo Fin de Máster propone el desarrollo incremental de un sistema mul-
-tiagente orientado al análisis nanciero histórico. El sistema parte de consultas ya
-normalizadas, datos de mercado almacenados en CSV y un conjunto cerrado de inten-
-ciones analíticas. A partir de esa entrada, el prototipo valida la solicitud, selecciona
-una familia de agente, genera un plan de análisis, construye código Python ejecutable,
-lanza dicho código en un proceso controlado y transforma la salida en una respuesta in-
-terpretable. La arquitectura se ha construido de forma gradual, manteniendo una base
-determinista y trazable antes de incorporar de forma controlada modelos de lenguaje
-mediante APIs compatibles con OpenAI.
-    El MVP actual soporta seis intenciones analíticas: crecimiento de precio, compara-
-ción de activos, visión descriptiva de un activo, análisis de retornos, análisis de riesgo
-histórico y análisis técnico. La evaluación combina pruebas funcionales, escenarios de
-error controlado y una comparativa entre el modo determinista y varios proveedores
-LLM. Los resultados muestran que el sistema puede mantener el cálculo nanciero bajo
-control programático y utilizar modelos de lenguaje como una capa de interpretación
-nal para mejorar la redacción sin alterar las métricas calculadas.
-
-Palabras clave: sistema multiagente, análisis nanciero, modelos de lenguaje, gene-
-ración de código, reproducibilidad, fallback determinista.
-
-
-
-
-                                            i
-Abstract
-
-    This Master's Thesis proposes the incremental development of a multi-agent system
-for historical nancial analysis. The system starts from already normalized queries,
-market data stored in CSV les and a closed set of analytical intents. From this input,
-the prototype validates the request, selects an agent family, generates an analysis plan,
-builds executable Python code, runs that code in a controlled process and transforms
-the output into an interpretable response. The architecture has been built gradually,
-preserving a deterministic and traceable base before incorporating optional calls to
-language models through APIs compatible with OpenAI.
-    The current MVP supports six analytical intents: price growth, asset comparison,
-descriptive view of an asset, returns analysis, historical risk analysis and technical
-analysis. The evaluation combines functional tests, controlled error scenarios and a
-comparison between the deterministic mode and several LLM providers. The results
-show that the system can keep nancial computation under programmatic control while
-using language models only as an optional layer to improve the nal wording of the
-response.
-
-Keywords: multi-agent system, nancial analysis, language models, code generation,
-reproducibility, deterministic fallback.
-
-
-
-
-                                           ii
-Índice general
-
-Resumen                                                                                  i
-
-
-Abstract                                                                                ii
-
-
-1. Introduccion                                                                         1
-  1.1. Contexto y denicion del problema . . . . . . . . . . . . . . . . . . . .         1
-  1.2. Motivacion . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    1
-  1.3. Objetivos . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     2
-  1.4. Alcance . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     2
-  1.5. Estructura de la memoria . . . . . . . . . . . . . . . . . . . . . . . . .        2
-
-2. Estado de la cuestion                                                                4
-  2.1. Analisis nanciero historico asistido por software . . . . . . . . . . . . .      4
-  2.2. Sistemas basados en modelos de lenguaje . . . . . . . . . . . . . . . . .         4
-  2.3. Arquitecturas multiagente . . . . . . . . . . . . . . . . . . . . . . . . .       6
-  2.4. Limitaciones de los enfoques monoliticos . . . . . . . . . . . . . . . . .        6
-  2.5. Generacion automatica de codigo . . . . . . . . . . . . . . . . . . . . .         6
-  2.6. Herramientas y tecnologias relacionadas . . . . . . . . . . . . . . . . . .       7
-  2.7. Justicacion de la propuesta . . . . . . . . . . . . . . . . . . . . . . . .      7
-
-3. Datos y material de trabajo                                                          8
-  3.1. Fuente de datos y trazabilidad . . . . . . . . . . . . . . . . . . . . . . .      8
-  3.2. Catalogo de consultas y activos . . . . . . . . . . . . . . . . . . . . . .       8
-  3.3. Estructura de los CSV . . . . . . . . . . . . . . . . . . . . . . . . . . .       9
-  3.4. Analisis exploratorio de datos . . . . . . . . . . . . . . . . . . . . . . .      9
-  3.5. Calidad, cobertura y limitaciones . . . . . . . . . . . . . . . . . . . . .      10
-  3.6. Papel de los notebooks auxiliares . . . . . . . . . . . . . . . . . . . . .      10
-
-4. Metodologia                                                                          11
-  4.1. Enfoque incremental del desarrollo . . . . . . . . . . . . . . . . . . . .       11
-  4.2. Denicion de intenciones analiticas . . . . . . . . . . . . . . . . . . . .      12
-  4.3. Diseno experimental . . . . . . . . . . . . . . . . . . . . . . . . . . . .      12
-
-                                           iii
-  4.4. Metricas de validacion . . . . . . . . . . . . . . . . . . . . . . . . . . .     12
-  4.5. Justicacion de no entrenar un modelo propio . . . . . . . . . . . . . .         13
-  4.6. Gestion de riesgos tecnicos . . . . . . . . . . . . . . . . . . . . . . . . .    13
-
-5. Diseno del sistema                                                                   14
-  5.1. Arquitectura general . . . . . . . . . . . . . . . . . . . . . . . . . . . .     14
-  5.2. Entrada estructurada y estado compartido . . . . . . . . . . . . . . . .         14
-  5.3. Nodos del pipeline . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     14
-  5.4. Familias de agentes analiticos . . . . . . . . . . . . . . . . . . . . . . .     15
-  5.5. Generacion controlada de codigo . . . . . . . . . . . . . . . . . . . . . .      15
-  5.6. Ejecucion segura y artefactos . . . . . . . . . . . . . . . . . . . . . . .      15
-  5.7. Gestion de errores y fallback determinista . . . . . . . . . . . . . . . .       15
-
-6. Implementacion                                                                       17
-  6.1. Estructura del repositorio . . . . . . . . . . . . . . . . . . . . . . . . .     17
-  6.2. Modulos principales . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    17
-  6.3. Ejecucion, despliegue local y reproducibilidad . . . . . . . . . . . . . .       18
-  6.4. Tests automatizados . . . . . . . . . . . . . . . . . . . . . . . . . . . .      18
-  6.5. Evaluacion automatica de perles LLM . . . . . . . . . . . . . . . . . .         18
-  6.6. Artefactos generados . . . . . . . . . . . . . . . . . . . . . . . . . . . .     19
-
-7. Integracion controlada de modelos de lenguaje                                        20
-  7.1. Motivacion de la capa LLM . . . . . . . . . . . . . . . . . . . . . . . .        20
-  7.2. Cliente compatible con OpenAI . . . . . . . . . . . . . . . . . . . . . .        20
-  7.3. Activacion granular . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    20
-  7.4. Proveedores evaluados . . . . . . . . . . . . . . . . . . . . . . . . . . .      21
-  7.5. Estrategia de fallback . . . . . . . . . . . . . . . . . . . . . . . . . . . .   21
-  7.6. Observaciones tecnicas de la integracion . . . . . . . . . . . . . . . . .       21
-  7.7. Gestion de credenciales . . . . . . . . . . . . . . . . . . . . . . . . . . .    22
-
-8. Resultados y evaluacion                                                              23
-  8.1. Validacion del modo determinista . . . . . . . . . . . . . . . . . . . . .       23
-  8.2. Robustez ante errores . . . . . . . . . . . . . . . . . . . . . . . . . . . .    23
-  8.3. Comparativa entre proveedores LLM . . . . . . . . . . . . . . . . . . .          24
-  8.4. Evaluacion del modelo universitario vLLM . . . . . . . . . . . . . . . .         24
-  8.5. Primera ejecucion comparativa completa . . . . . . . . . . . . . . . . .         25
-  8.6. Discusion de resultados . . . . . . . . . . . . . . . . . . . . . . . . . . .    25
-
-9. Aspectos eticos, seguridad y uso responsable                                         26
-  9.1. Delimitacion nanciera del sistema . . . . . . . . . . . . . . . . . . . .       26
-  9.2. Riesgos de interpretacion . . . . . . . . . . . . . . . . . . . . . . . . . .    26
-
-                                           iv
-  9.3. Seguridad en la generacion y ejecucion de codigo . . . . . . . . . . . . .       26
-  9.4. Privacidad y datos . . . . . . . . . . . . . . . . . . . . . . . . . . . . .     27
-  9.5. Sostenibilidad, costes y recursos . . . . . . . . . . . . . . . . . . . . . .    27
-  9.6. Limitaciones de uso . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    27
-
-10.Conclusiones y trabajo futuro                                                        28
-  10.1. Cumplimiento de objetivos . . . . . . . . . . . . . . . . . . . . . . . . .     28
-  10.2. Aportaciones principales . . . . . . . . . . . . . . . . . . . . . . . . . .    28
-  10.3. Limitaciones actuales . . . . . . . . . . . . . . . . . . . . . . . . . . . .   29
-  10.4. Lineas de trabajo futuro . . . . . . . . . . . . . . . . . . . . . . . . . .    29
-
-Referencias                                                                             30
-A. Anexos                                                                               31
-  A.1. Ejecucion del MVP . . . . . . . . . . . . . . . . . . . . . . . . . . . . .      31
-  A.2. Conguracion de APIs . . . . . . . . . . . . . . . . . . . . . . . . . . .       31
-  A.3. Documentacion interna de apoyo . . . . . . . . . . . . . . . . . . . . .         32
-
-
-
-
-                                           v
-Índice de tablas
-
- 3.1. Tipos de activos representados en el conjunto de datos. . . . . . . . . .        9
- 3.2. Resumen de cobertura y calidad del conjunto de datos. . . . . . . . . .          9
- 3.3. Metricas exploratorias por serie utilizadas para contextualizar los casos
-      de prueba. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .   10
-
- 4.1. Evolucion incremental del MVP. . . . . . . . . . . . . . . . . . . . . . .       11
- 4.2. Intenciones analiticas soportadas por el MVP. . . . . . . . . . . . . . .        12
-
- 6.1. Principales modulos del repositorio. . . . . . . . . . . . . . . . . . . . .     17
-
- 8.1. Casos funcionales representativos del MVP. . . . . . . . . . . . . . . . .       23
- 8.2. Comparativa general de conguraciones evaluadas. . . . . . . . . . . . .         24
- 8.3. Resultados del perl universitario vLLM. . . . . . . . . . . . . . . . . .       24
- 8.4. Tiempos aproximados observados en la primera comparativa completa.               25
-
-
-
-
-                                          vi
-Índice de guras
-
- 2.1. Mapa conceptual de inteligencia articial, aprendizaje automatico, re-
-      des neuronales, aprendizaje profundo e inteligencia articial generati-
-      va. Fuente: imagen divulgativa publicada por la cuenta de Instagram
-      @analytics_vidhya. . . . . . . . . . . . . . . . . . . . . . . . . . . . .   5
-
-
-
-
-                                       vii
-Capítulo 1
-Introduccion
-
-1.1. Contexto y denicion del problema
-    El analisis nanciero historico suele combinar varias tareas que, aunque son concep-
-tualmente distintas, aparecen juntas en el trabajo practico: carga de datos, validacion
-de entradas, seleccion del tipo de analisis, calculo de metricas, generacion de gracos,
-interpretacion de resultados y comunicacion nal al usuario. En muchos prototipos
-basados en modelos de lenguaje, estas fases se mezclan dentro de una unica llamada
-generativa, lo que diculta la trazabilidad del resultado y aumenta el riesgo de errores
-silenciosos.
-    Este trabajo plantea una aproximacion diferente. En lugar de delegar todo el proceso
-en un modelo generativo, se disena un ujo multiagente en el que cada fase tiene
-una responsabilidad delimitada. El sistema no intenta resolver desde cero el problema
-completo de comprension del lenguaje natural, sino que parte de una consulta nanciera
-ya estructurada: intencion, tickers, rango temporal, intervalo y rutas a los cheros CSV.
-A partir de esta entrada, el objetivo es orquestar un analisis reproducible y controlado.
-
-
-1.2. Motivacion
-    La motivacion principal del proyecto es explorar como una arquitectura multiagen-
-te puede aportar orden, modularidad y robustez a un sistema de analisis nanciero
-asistido por inteligencia articial. La aplicacion de modelos de lenguaje al dominio
-nanciero resulta atractiva por su capacidad de generar explicaciones y adaptar el len-
-guaje al usuario, pero tambien exige mecanismos de control. En un contexto nanciero,
-incluso cuando el objetivo es puramente descriptivo, resulta esencial separar los calculos
-vericables de la redaccion nal.
-    Por esta razon, el MVP se ha construido inicialmente con plantillas deterministas.
-Esta decision permite validar el ujo completo antes de introducir APIs externas o
-
-
-                                            1
-modelos servidos localmente. Una vez estabilizada la arquitectura, la incorporacion de
-proveedores como Groq, Gemini o el endpoint universitario vLLM se realiza de forma
-gradual, empezando por la fase de interpretacion y conservando fallbacks programati-
-cos.
-
-
-1.3. Objetivos
-   El objetivo general del trabajo es desarrollar y validar un prototipo multiagente
-capaz de ejecutar analisis nancieros historicos a partir de entradas estructuradas y
-datos en CSV.
-   Los objetivos especicos son:
-
-     Denir un workow modular que separe ingesta, enrutado, planicacion, genera-
-     cion de codigo, ejecucion e interpretacion.
-
-     Implementar familias de agentes especializadas para distintas intenciones anali-
-     ticas.
-
-     Mantener una base determinista que permita pruebas reproducibles y control de
-     errores.
-
-     Preparar la arquitectura para integrar modelos de lenguaje mediante APIs com-
-     patibles con OpenAI.
-
-     Evaluar el MVP mediante casos funcionales y escenarios de error controlado.
-
-
-1.4. Alcance
-    El sistema se limita al analisis historico-descriptivo de activos nancieros a partir
-de datos ya descargados. No realiza prediccion futura, recomendacion de inversion ni
-analisis fundamental complejo. Esta restriccion es deliberada: el foco del TFM no es
-construir un asesor nanciero, sino estudiar la arquitectura de un pipeline multiagente
-trazable para analisis historico.
-
-
-1.5. Estructura de la memoria
-    La memoria se organiza siguiendo la logica de desarrollo del proyecto. En primer
-lugar se presenta el estado de la cuestion, con especial atencion a modelos de lengua-
-je, arquitecturas multiagente y limitaciones de enfoques monoliticos. A continuacion
-se describen los datos utilizados, su trazabilidad y su calidad. Despues se expone la
-metodologia incremental seguida durante el desarrollo.
-
-                                           2
-    Los capitulos centrales describen el diseno del sistema, la implementacion del MVP
-y la integracion controlada de modelos de lenguaje. Posteriormente se presentan los
-resultados de evaluacion, incluyendo el modo determinista y la comparativa con pro-
-veedores LLM. Finalmente se discuten los aspectos eticos y de seguridad, se resumen
-las conclusiones y se plantean lineas de trabajo futuro.
-
-
-
-
-                                          3
-Capítulo 2
-Estado de la cuestion
-
-2.1. Analisis nanciero historico asistido por software
-   El analisis nanciero historico se apoya habitualmente en el procesamiento de series
-temporales de precios. Las tareas mas frecuentes incluyen calculo de rentabilidades,
-comparacion de activos, estimacion de volatilidad, analisis de drawdown e indicadores
-tecnicos. Estas operaciones son reproducibles cuando se denen con claridad los datos
-de entrada, el periodo temporal y las formulas empleadas.
-   En este contexto, una herramienta automatizada debe priorizar la trazabilidad. No
-basta con producir una respuesta nal correcta en apariencia: tambien es necesario
-poder revisar que datos se han utilizado, que transformaciones se han aplicado y que
-metricas se han calculado.
-
-
-2.2. Sistemas basados en modelos de lenguaje
-    Los modelos de lenguaje de gran escala han abierto la posibilidad de construir
-sistemas capaces de interpretar instrucciones, generar codigo y redactar explicaciones
-adaptadas al usuario. Sin embargo, su uso directo en tareas analiticas puede introducir
-problemas de vericabilidad si no se acompana de estructuras de control. En domi-
-nios donde los resultados dependen de calculos concretos, como el analisis nanciero,
-resulta conveniente combinar componentes generativos con ejecucion programatica y
-validaciones explicitas.
-    La Figura 2.1 permite situar visualmente el alcance tecnologico del trabajo.
-
-
-
-
-                                          4
-Figura 2.1: Mapa conceptual de inteligencia articial, aprendizaje automatico, redes
-neuronales, aprendizaje profundo e inteligencia articial generativa. Fuente: imagen
-divulgativa publicada por la cuenta de Instagram @analytics_vidhya.
-
-    Aunque se trata de una imagen divulgativa y no de una taxonomia formal exhausti-
-va, resulta util para contextualizar el lugar que ocupan los modelos de lenguaje dentro
-del campo de la inteligencia articial. La inteligencia articial constituye el marco mas
-amplio, orientado al desarrollo de sistemas capaces de realizar tareas que requieren
-algun grado de comportamiento inteligente. Dentro de ella, el aprendizaje automatico
-agrupa metodos que aprenden patrones a partir de datos, mientras que las redes neu-
-ronales representan una familia concreta de modelos parametrizados. El aprendizaje
-profundo se apoya en redes neuronales con multiples capas, capaces de aprender repre-
-sentaciones jerarquicas de la informacion. Finalmente, la inteligencia articial genera-
-tiva aparece como un subconjunto asociado a modelos capaces de producir contenido
-nuevo, como texto, codigo, imagenes o respuestas multimodales.
-    Esta distincion es importante para el presente TFM porque el sistema desarrollado
-no aborda el entrenamiento de modelos de aprendizaje profundo ni sustituye el calculo
-nanciero por inferencia generativa. El uso de modelos de lenguaje se plantea como
-
-                                           5
-una capa auxiliar y acotada sobre un pipeline nanciero trazable. En la conguracion
-actual, el LLM se limita principalmente a la interpretacion textual de resultados ya
-calculados por codigo determinista. De este modo, la arquitectura combina una base
-vericable, centrada en datos historicos y metricas reproducibles, con una capa genera-
-tiva orientada a mejorar la claridad de la respuesta nal sin asumir la responsabilidad
-del calculo nanciero.
-
-
-2.3. Arquitecturas multiagente
-    Las arquitecturas multiagente permiten dividir una tarea compleja en responsabi-
-lidades mas pequenas. En este proyecto, la idea de agente no se entiende como una
-entidad autonoma sin restricciones, sino como una familia analitica con una interfaz
-clara: recibe una intencion, produce un plan, genera o selecciona codigo y contribuye a
-la interpretacion nal. Esta separacion facilita la extension del sistema, ya que nuevas
-intenciones pueden incorporarse sin reescribir el ujo completo.
-
-
-2.4. Limitaciones de los enfoques monoliticos
-    Un enfoque monolitico, en el que una unica funcion o prompt realiza todo el proceso,
-puede ser suciente para una demostracion pequena, pero presenta limitaciones cuando
-se desea evaluar el sistema de forma rigurosa. Entre ellas destacan la dicultad para
-aislar errores, la falta de trazabilidad entre la entrada y la salida, y la ausencia de
-puntos intermedios donde aplicar validaciones. El diseno propuesto en este TFM busca
-precisamente evitar estas limitaciones.
-
-
-2.5. Generacion automatica de codigo
-    Una de las capacidades mas relevantes de los modelos de lenguaje es la generacion
-de codigo. En un sistema de analisis nanciero, esta capacidad puede resultar util
-para adaptar el calculo a distintas intenciones. No obstante, tambien introduce riesgos:
-errores sintacticos, calculos incorrectos, uso de columnas inexistentes o dependencias
-no controladas.
-    Por esta razon, el presente trabajo diferencia entre generacion controlada de codigo
-y generacion abierta mediante LLM. En la version actual del MVP, el codigo se genera
-mediante plantillas programaticas para garantizar estabilidad. La posible generacion
-mediante modelo se plantea como una extension futura y no como requisito para validar
-la arquitectura base.
-
-
-
-                                           6
-2.6. Herramientas y tecnologias relacionadas
-     El proyecto se apoya en tecnologias ampliamente utilizadas en sistemas de ana-
-lisis y automatizacion. Python se utiliza como lenguaje principal por su ecosistema
-de procesamiento de datos. Los datos nancieros proceden de yfinance. La orques-
-tacion se disena siguiendo una logica de workow con estado compartido, compatible
-con herramientas como LangGraph. La integracion LLM se prepara mediante una in-
-terfaz compatible con OpenAI, lo que permite probar Groq, Gemini y un endpoint
-universitario basado en vLLM.
-
-
-2.7. Justicacion de la propuesta
-    La propuesta del TFM se justica por la necesidad de combinar dos propiedades
-que a menudo aparecen separadas: calculo trazable y explicacion exible. El sistema
-mantiene los calculos nancieros en codigo controlado, pero permite incorporar modelos
-de lenguaje en fases concretas, especialmente en la interpretacion nal. De este modo
-se reduce el riesgo de alucinaciones en metricas y se conserva la posibilidad de generar
-respuestas mas naturales.
-
-
-
-
-                                           7
-Capítulo 3
-Datos y material de trabajo
-
-3.1. Fuente de datos y trazabilidad
-    El sistema trabaja con datos nancieros historicos descargados previamente me-
-diante yfinance y almacenados en cheros CSV dentro del repositorio. Cada chero
-de datos dispone de un chero de metadatos asociado en formato JSON, donde se
-conserva informacion sobre la consulta original, la intencion analitica, los tickers im-
-plicados, el intervalo temporal y los parametros utilizados para la descarga.
-    Esta decision permite separar la fase de obtencion de datos de la fase de analisis.
-El MVP no depende de que la API externa este disponible durante cada ejecucion,
-sino que opera sobre un conjunto de datos congelado y versionado. De este modo, los
-resultados obtenidos son mas reproducibles y pueden revisarse posteriormente a partir
-de los mismos cheros de entrada.
-
-
-3.2. Catalogo de consultas y activos
-    El catalogo de casos se encuentra en data/catalog/query_cases.json. En la ver-
-sion actual se han denido diez consultas de referencia y se han analizado ocho CSV,
-que contienen diez series ticker-caso normalizadas. Los activos incluidos cubren ac-
-ciones, ETFs, un indice amplio, un criptoactivo, una divisa y un futuro de materia
-prima.
-    La variedad de activos permite comprobar que el sistema no esta limitado a un
-unico instrumento nanciero y que puede trabajar con diferentes horizontes temporales
-e intervalos de observacion.
-
-
-
-
-                                           8
- Categoria                 Activos incluidos
- Acciones                  AAPL, AMD, NVDA
- ETFs                      QQQ, SPY
- Indice                    S&P 500 (GSPC)
- Criptoactivo              BTC-USD
- Divisa                    EURUSD=X
- Materia prima / futuro    GC=F
-
-          Tabla 3.1: Tipos de activos representados en el conjunto de datos.
-
-3.3. Estructura de los CSV
-    Los cheros generados por yfinance contienen columnas de tipo OHLCV: apertu-
-ra, maximo, minimo, cierre, cierre ajustado y volumen. En algunos casos se almacenan
-con cabeceras multinivel, por lo que el proyecto incorpora una capa de lectura y nor-
-malizacion antes de ejecutar los calculos nancieros.
-    La variable mas importante para el MVP es el precio de cierre, ya que sobre ella
-se calculan crecimiento, rentabilidades, volatilidad, drawdown e indicadores tecnicos
-basicos. El volumen se conserva como informacion complementaria, aunque no se trata
-como obligatorio para todos los activos, especialmente en divisas o futuros intradia.
-
-
-3.4. Analisis exploratorio de datos
-   El analisis exploratorio conrma que el conjunto de datos contiene 5.080 las nor-
-malizadas en formato largo, con un rango temporal observado entre el 2 de enero de
-2020 y el 17 de marzo de 2026. Los intervalos considerados son diario (1d) e intradia
-horario (1h).
-
-              Indicador                        Resultado
-              Casos denidos en catalogo       10
-              CSV analizados                   8
-              Series ticker-caso               10
-              Filas normalizadas               5.080
-              Intervalos                       1d, 1h
-              Nulos en precios de cierre       0
-              Duplicados por fecha             0 en los cheros analizados
-
-          Tabla 3.2: Resumen de cobertura y calidad del conjunto de datos.
-
-   Ademas del resumen agregado, se calcularon metricas descriptivas por serie para
-comprobar que los casos de prueba cubrian situaciones nancieras diversas. La Tabla 3.3
-muestra una seleccion de las series analizadas. Se observan activos con crecimientos muy
-
-
-                                           9
-elevados, como NVDA en cinco anos, series con drawdowns signicativos, como AMD
-en la comparativa con NVDA, y activos de menor volatilidad relativa, como SPY. Esta
-diversidad es util porque obliga al sistema a redactar respuestas para escenarios con
-magnitudes y niveles de riesgo distintos.
-
- Serie                    Retorno total Volatilidad anual Max. drawdown
- NVDA, 5 anos                   1273.33 %                51.31 %             -66.36 %
- BTC-USD, 2024                   109.76 %                44.13 %             -26.18 %
- NVDA, 2 anos                    107.13 %                49.42 %             -36.89 %
- S&P 500, desde 2020             105.64 %                20.77 %             -33.93 %
- QQQ, 2024                        28.07 %                17.99 %             -13.56 %
- SPY, 2024                        24.45 %                12.63 %              -8.41 %
- AMD, 2 anos                       3.11 %                55.10 %             -58.98 %
- AAPL, 3 meses                    -7.00 %                24.15 %             -10.07 %
-
-Tabla 3.3: Metricas exploratorias por serie utilizadas para contextualizar los casos de
-prueba.
-
-
-
-3.5. Calidad, cobertura y limitaciones
-    La ausencia de nulos en el precio de cierre es relevante porque las metricas prin-
-cipales del MVP dependen directamente de esta columna. Tambien se comprobo la
-ausencia de duplicados por fecha en los cheros analizados. Estas condiciones permiten
-ejecutar las seis intenciones actuales sin introducir imputaciones adicionales.
-    Como limitacion, las descargas basadas en periodos relativos, por ejemplo 3mo o 5y,
-dependen de la fecha en la que se genero el CSV. Para una version nal completamente
-cerrada seria recomendable jar rangos start/end en todos los casos. Tambien debe
-considerarse que los datos proceden de Yahoo Finance mediante yfinance, por lo que
-en un entorno productivo habria que estudiar licencias, disponibilidad y estabilidad del
-proveedor.
-
-
-3.6. Papel de los notebooks auxiliares
-   Durante el desarrollo se conservaron tres notebooks con funciones diferenciadas. El
-notebook 01_yfinance_eda_avanzado.ipynb se mantiene como laboratorio para pro-
-bar nuevos tickers, periodos e intervalos antes de incorporarlos al dataset denitivo. El
-notebook 02_catalogo_queries_y_csv.ipynb documenta la relacion entre el catalo-
-go de consultas y los cheros CSV esperados. Finalmente, 03_eda_datos_tfm.ipynb
-queda como referencia principal del analisis exploratorio formal, junto con las tablas
-procesadas en data/processed/.
-
-                                            10
-Capítulo 4
-Metodologia
-
-4.1. Enfoque incremental del desarrollo
-    El desarrollo del trabajo se ha planteado como una sucesion de iteraciones contro-
-ladas. En lugar de construir desde el inicio un sistema completamente dependiente de
-modelos de lenguaje, se ha partido de un MVP determinista capaz de completar el ujo
-de extremo a extremo. Esta decision permite validar primero la arquitectura, la traza-
-bilidad y la ejecucion del codigo generado antes de introducir componentes generativos
-mas variables.
-    La primera iteracion valido el ujo minimo con dos intenciones analiticas: creci-
-miento historico y comparacion de activos. La segunda iteracion amplio el alcance con
-analisis descriptivo y analisis de retornos. La tercera incorporo analisis de riesgo histo-
-rico, analisis tecnico, pruebas de error y una reorganizacion interna basada en familias
-de agentes. La Tabla 4.1 resume la progresion seguida.
-
- Iteracion Objetivo principal                        Evidencia obtenida
- MVP 1        Validar el ujo extremo a ex- El sistema procesa un caso de ac-
-              tremo con price_growth y tivo unico y un caso multi-activo,
-              compare_assets.                 genera codigo ejecutable y produce
-                                              una respuesta interpretable.
- MVP 2        Comprobar que la arquitectura Se pasa de dos a cuatro intenciones
-              crece sin redisenarse, incor- y se valida que las nuevas metricas
-              porando    asset_overview     y se integran sobre las mismas inter-
-              return_analysis.                faces.
- MVP 3        Aumentar     madurez    funcio- Se consolidan seis intenciones, tres
-              nal    y   robustez   mediante escenarios de error controlado y
-              historical_risk_analysis,       una modularizacion por familias de
-              technical_analysis y pruebas agentes.
-              negativas.
-
-                      Tabla 4.1: Evolucion incremental del MVP.
-
-
-                                            11
-4.2. Denicion de intenciones analiticas
-    El MVP trabaja con un conjunto cerrado de intenciones. Esta restriccion hace que el
-problema sea evaluable y reduce la ambiguedad del sistema. Cada intencion se asocia
-con una familia de agente, un plan analitico, un bloque de codigo y una forma de
-interpretar la salida.
-
- Intencion                      Objetivo
- price_growth             Calcular crecimiento o caida de un activo en un pe-
-                          riodo.
- compare_assets           Comparar la evolucion relativa de varios activos.
- asset_overview           Generar una vision descriptiva general de un activo.
- return_analysis          Analizar retornos historicos y estadisticos basicos.
- historical_risk_analysis Estimar riesgo historico mediante volatilidad y draw-
-                          down.
- technical_analysis       Calcular indicadores tecnicos como medias moviles y
-                          RSI.
-
-              Tabla 4.2: Intenciones analiticas soportadas por el MVP.
-
-
-
-4.3. Diseno experimental
-    La evaluacion se apoya en seis casos representativos, uno por cada intencion imple-
-mentada. Estos casos permiten comprobar que el sistema valida la entrada, selecciona
-la familia analitica correcta, genera un plan, construye codigo ejecutable, ejecuta el
-script y devuelve una respuesta nal interpretable.
-    Ademas de los casos correctos, se incorporan escenarios negativos para comprobar
-la robustez del ujo. Entre ellos se incluyen intenciones no soportadas, rutas CSV
-inexistentes y cardinalidad incorrecta de tickers para analisis que requieren una unica
-serie.
-
-
-4.4. Metricas de validacion
-    La validacion del MVP no se plantea como entrenamiento de un modelo supervi-
-sado, sino como evaluacion funcional de un pipeline software. Por tanto, las metricas
-principales son:
-
-     Exito de ejecucion del ujo completo.
-
-     Codigo de retorno del script generado.
-
-     Presencia o ausencia de errores controlados.
-
-                                          12
-     Cobertura de intenciones analiticas.
-
-     Uso de fallback determinista cuando falla una API externa.
-
-     Tiempo de respuesta en las pruebas con proveedores LLM.
-
-
-4.5. Justicacion de no entrenar un modelo propio
-    El objetivo del TFM no es entrenar desde cero un modelo nanciero, sino estudiar
-una arquitectura multiagente trazable para automatizar analisis historicos. Por ello, el
-trabajo utiliza modelos de lenguaje preentrenados a traves de APIs compatibles con
-OpenAI y limita su papel, en la conguracion actual, a la fase de interpretacion nal.
-    Esta decision reduce el coste computacional, evita depender de hardware GPU
-propio y permite centrar la evaluacion en la robustez del workow. La planicacion, el
-calculo nanciero y la ejecucion permanecen bajo control programatico.
-
-
-4.6. Gestion de riesgos tecnicos
-   Los principales riesgos identicados son la fragilidad del codigo generado, la dispo-
-nibilidad de APIs externas, los problemas de codicacion en respuestas LLM, las cuotas
-de proveedores gratuitos y la posible confusion entre analisis historico y recomendacion
-nanciera. Para mitigarlos, el sistema conserva una base determinista, valida entra-
-das, captura salidas de ejecucion, registra artefactos y activa la capa LLM de forma
-controlada, empezando por la interpretacion nal.
-
-
-
-
-                                            13
-Capítulo 5
-Diseno del sistema
-
-5.1. Arquitectura general
-    El sistema se ha disenado como un workow modular que transforma una consulta
-nanciera estructurada en una respuesta analitica basada en calculos ejecutados so-
-bre datos historicos. La arquitectura separa de forma explicita las fases de ingesta,
-enrutado, planicacion, generacion de codigo, ejecucion e interpretacion.
-    Esta separacion evita que una unica llamada generativa concentre todo el razona-
-miento del sistema. Cada fase tiene una responsabilidad concreta y produce artefactos
-intermedios que pueden revisarse, probarse y sustituirse de forma independiente.
-
-
-5.2. Entrada estructurada y estado compartido
-    El ujo parte de una entrada normalizada que incluye consulta original, intencion
-analitica, tickers, periodo o fechas, intervalo y rutas a los CSV. A partir de esa entrada
-se construye un estado compartido que viaja por los nodos del workow.
-    El estado contiene, entre otros campos, la intencion detectada, el agente seleccio-
-nado, el plan analitico, el codigo generado, la salida estandar, la salida de error, el
-codigo de retorno, los avisos y la respuesta nal. Esta estructura permite mantener
-trazabilidad entre la entrada inicial y el resultado entregado al usuario.
-
-
-5.3. Nodos del pipeline
-   El pipeline se organiza en seis nodos principales:
-
-  1. Ingesta: valida la entrada minima y comprueba la existencia de los cheros.
-
-  2. Router: valida la coherencia de la solicitud y selecciona la familia analitica.
-
-  3. Analisis especializado: transforma la intencion en un plan estructurado.
-
-                                           14
-  4. Generacion de codigo: construye un script Python adaptado al plan.
-  5. Ejecucion: ejecuta el script en un proceso controlado.
-  6. Interpretacion: convierte los resultados en una respuesta legible.
-
-
-5.4. Familias de agentes analiticos
-    La logica especica de cada intencion se agrupa en familias de agentes. En esta
-version, la idea de agente no se interpreta como una entidad autonoma sin restricciones,
-sino como un componente especializado con un contrato claro. Cada agente sabe que
-metricas calcular, que salidas esperar y como construir una interpretacion inicial.
-    Esta organizacion facilita la extension del sistema. Si se desea incorporar una nue-
-va intencion, se puede anadir una nueva familia analitica sin reescribir el workow
-completo.
-
-
-5.5. Generacion controlada de codigo
-    La generacion de codigo se situa entre el plan analitico y la ejecucion. En el modo
-determinista, el sistema utiliza plantillas programaticas que producen scripts Python
-ajustados al contrato esperado. Esta decision permite controlar imports, rutas, formato
-de salida y gestion de errores.
-    En futuras iteraciones, la generacion de codigo podria delegarse parcialmente en un
-modelo de lenguaje. Sin embargo, esta activacion se considera mas arriesgada que la
-interpretacion nal, por lo que el MVP actual mantiene esta fase bajo control deter-
-minista.
-
-
-5.6. Ejecucion segura y artefactos
-    El codigo se guarda como un script independiente y se ejecuta mediante un proceso
-externo controlado. La ejecucion captura stdout, stderr, returncode y un payload
-estructurado con los resultados del analisis.
-    Los scripts generados y los logs de ejecucion se almacenan como artefactos revi-
-sables. Esto permite auditar que calculos se realizaron y que salida se utilizo para
-construir la respuesta nal.
-
-
-5.7. Gestion de errores y fallback determinista
-   El sistema incorpora validaciones para errores previsibles, como intenciones no so-
-portadas, CSV inexistentes o numero incorrecto de tickers. Cuando se activa la capa
-
-                                          15
-LLM, el ujo conserva un fallback determinista. Si la API falla, no esta congurada o
-devuelve una respuesta no valida, el sistema puede continuar con la logica programa-
-tica.
-    Esta estrategia es clave para que el MVP no dependa criticamente de proveedores
-externos ni de disponibilidad de red.
-
-
-
-
-                                         16
-Capítulo 6
-Implementacion
-
-6.1. Estructura del repositorio
-   El codigo del proyecto se organiza en una estructura separada por responsabilidades.
-La carpeta src/ contiene la implementacion principal, data/ conserva los datos y
-catalogos, notebooks/ incluye el analisis exploratorio y tests/ agrupa las pruebas
-automatizadas.
-
- Ruta               Funcion
- src/schemas.py     Dene modelos de entrada, salida y estado.
- src/graph/         Contiene nodos, routing y construccion del workow.
- src/agents/        Agrupa las familias analiticas del MVP.
- src/execution/     Gestiona persistencia y ejecucion de scripts.
- src/io/            Lee y normaliza los CSV nancieros.
- src/llm/           Prepara la integracion controlada con APIs LLM.
- tests/             Valida casos funcionales y escenarios de error.
-
-                   Tabla 6.1: Principales modulos del repositorio.
-
-
-
-6.2. Modulos principales
-   El chero schemas.py dene los contratos de datos que atraviesan el sistema. Los
-modulos de src/graph/ implementan los nodos del pipeline y las reglas de transicion.
-Las familias de agentes se concentran en src/agents/, donde cada intencion se asocia
-con una logica analitica concreta.
-   La ejecucion de codigo se encapsula en src/execution/code_runner.py. Este mo-
-dulo guarda el script generado, lo lanza como proceso externo y devuelve salidas es-
-tructuradas. Esta separacion evita mezclar el calculo nanciero con la orquestacion del
-workow.
-
-                                          17
-6.3. Ejecucion, despliegue local y reproducibilidad
-    El MVP se ejecuta de forma local mediante run_mvp.py. La memoria considera este
-despliegue local como suciente para la fase academica del trabajo, ya que el objetivo
-principal es validar el pipeline y no publicar un servicio productivo.
-
-python run_mvp.py --example growth_nvda
-python run_mvp.py --example compare_nvda_amd
-python run_mvp.py --example overview_aapl
-python run_mvp.py --example returns_qqq_spy
-python run_mvp.py --example risk_qqq_spy
-python run_mvp.py --example technical_aapl
-
-   La reproducibilidad se apoya en tres elementos: datos CSV versionados, ejemplos
-de entrada controlados y pruebas automatizadas. Las claves de API se almacenan en
-un chero local .env, excluido del control de versiones.
-
-
-6.4. Tests automatizados
-   El proyecto incorpora pruebas unitarias para validar tanto el modo determinista
-como la conguracion LLM. La bateria principal comprueba las seis intenciones sopor-
-tadas y varios errores previsibles.
-
-python -m unittest tests/test_mvp.py
-python -m unittest tests/test_llm_config.py tests/test_mvp.py
-
-   En las ejecuciones documentadas, el MVP supera nueve pruebas sobre nueve en la
-bateria funcional principal. Al incluir las pruebas de conguracion LLM, se documenta
-una ejecucion de catorce pruebas superadas, lo que conrma que la incorporacion de
-dependencias LLM no rompe el funcionamiento determinista.
-
-
-6.5. Evaluacion automatica de perles LLM
-    Para comparar el modo determinista con los distintos proveedores LLM se incorporo
-el script scripts/evaluate_llm_profiles.py. Este script ejecuta una misma bateria
-de ejemplos contra varios perles: deterministic, groq, gemini y university. Su
-objetivo es evitar evaluaciones manuales aisladas y generar evidencias comparables
-entre conguraciones.
-    Cada ejecucion registra el perl utilizado, el ejemplo, la intencion analitica, el es-
-tado nal, el codigo de retorno del script generado, posibles avisos, la respuesta -
-nal, el agente seleccionado, el plan analitico, la salida estructurada de ejecucion y el
-
-                                           18
-tiempo aproximado. Tambien se incorporan comprobaciones cualitativas simples, como
-detectar si se ha usado fallback o si la respuesta evita formulaciones propias de una
-recomendacion directa de inversion.
-
-python scripts/evaluate_llm_profiles.py \
-  --profiles deterministic groq gemini university --examples all
-
-    Los resultados generados se consideran artefactos de evaluacion y no codigo fuen-
-te. Por ello, las salidas completas pueden almacenarse en una carpeta de resultados
-ignorada por el control de versiones, mientras que la memoria recoge los indicadores
-agregados mas relevantes.
-
-
-6.6. Artefactos generados
-    Cada ejecucion puede producir scripts, logs y payloads de resultado. Estos artefactos
-permiten revisar el comportamiento del sistema despues de la ejecucion y aportan
-evidencia para la memoria. La existencia de scripts generados tambien facilita detectar
-errores en la fase de calculo, en lugar de conar unicamente en la respuesta nal.
-
-
-
-
-                                           19
-Capítulo 7
-Integracion controlada de modelos de
-lenguaje
-
-7.1. Motivacion de la capa LLM
-    Una vez consolidado el MVP determinista, el trabajo incorpora una capa de modelos
-de lenguaje. El objetivo no es sustituir el calculo nanciero, sino mejorar la redaccion
-nal y estudiar la portabilidad del sistema entre distintos proveedores.
-    La conguracion recomendada activa inicialmente el LLM solo para interpretacion.
-De este modo, el modelo recibe resultados ya calculados y redacta una explicacion
-mas natural, pero no modica la seleccion del agente, el plan analitico ni el codigo
-ejecutado.
-
-
-7.2. Cliente compatible con OpenAI
-    La integracion se ha preparado mediante un cliente compatible con APIs tipo Ope-
-nAI. Esta decision permite alternar entre proveedores sin modicar el workow princi-
-pal. El sistema utiliza variables de entorno para seleccionar perl, modelo, URL base
-y clave de API.
-
-
-7.3. Activacion granular
-   La capa LLM puede activarse por fases mediante variables de conguracion:
-
-     LLM_USE_FOR_INTERPRETATION: el modelo redacta la respuesta nal.
-
-     LLM_USE_FOR_PLANNING: el modelo puede ajustar el plan analitico.
-
-     LLM_USE_FOR_CODEGEN: el modelo puede generar codigo Python.
-
-
-                                          20
-    La activacion de planicacion y generacion de codigo se mantiene deshabilitada
-en la evaluacion principal, porque son fases con mayor riesgo de introducir errores no
-trazables.
-
-
-7.4. Proveedores evaluados
-   Se han preparado y evaluado tres perles principales:
-
-     Groq: proveedor externo compatible con OpenAI, utilizado como primera API
-     operativa.
-
-     Gemini: proveedor secundario para estudiar portabilidad y calidad comparativa.
-     Modelo universitario vLLM: endpoint academico compatible con OpenAI
-     Chat Completions, usando el modelo openai/gpt-oss-20b.
-
-
-7.5. Estrategia de fallback
-    El diseno conserva siempre el modo determinista como fallback. Si una API falla
-por red, cuota, indisponibilidad o error de formato, el sistema puede devolver una
-respuesta programatica valida. Esta propiedad es esencial para evitar que el MVP
-quede bloqueado por dependencias externas.
-    Durante las pruebas se observaron errores de cuota y disponibilidad en Gemini,
-asi como un problema inicial de red en el entorno de ejecucion. Tambien se comprobo
-que, si falta la dependencia openai, el sistema no queda inutilizado: registra el aviso
-correspondiente y mantiene una respuesta determinista. En todos estos casos, el enfoque
-con fallback permitio mantener el sistema operativo.
-
-
-7.6. Observaciones tecnicas de la integracion
-   La primera integracion real con APIs externas puso de maniesto varias cuestiones
-practicas. Groq completo la bateria de seis casos sin warnings una vez instaladas las
-dependencias y habilitada la conectividad, por lo que se considero el proveedor externo
-mas comodo para iterar inicialmente. Gemini tambien produjo respuestas alineadas
-con los datos, pero mostro limitaciones operativas del free tier : errores 429 por cuo-
-ta y 503 por alta demanda temporal, resueltos mediante espera, reintento y fallback
-determinista.
-   El endpoint universitario vLLM resulto especialmente relevante para el TFM porque
-conrma que la arquitectura puede conectarse a un backend academico compatible con
-OpenAI Chat Completions sin cambiar el workow principal. En la validacion tecnica
-
-                                          21
-se observo que el servidor devuelve un campo adicional reasoning; el sistema conserva
-esta informacion en la respuesta cruda, pero utiliza solo el contenido nal del mensaje
-para construir la respuesta al usuario. Tambien se incorporo una reparacion defensiva
-de codicacion para evitar mojibake en respuestas con tildes o simbolos especiales.
-
-
-7.7. Gestion de credenciales
-   Las claves de Groq, Gemini y del endpoint universitario se gestionan mediante
-variables de entorno en el chero local .env. Este archivo no se versiona y no debe
-compartirse. El repositorio incluye conguraciones de ejemplo, pero una ejecucion real
-con API solo es posible cuando el entorno local contiene una clave valida. Si la cla-
-ve falta, es un marcador de ejemplo o el perl no esta congurado, el sistema debe
-continuar en modo determinista o activar fallback.
-
-
-
-
-                                          22
-Capítulo 8
-Resultados y evaluacion
-
-8.1. Validacion del modo determinista
-    El resultado principal del trabajo es un MVP capaz de completar el ujo de analisis
-para seis intenciones nancieras sin depender de APIs externas. En modo determinista,
-los seis casos representativos nalizan correctamente, sin warnings y con codigo de
-retorno cero en los scripts generados.
-
- Caso                  Intencion                       Objetivo
- growth_nvda           price_growth                    Crecimiento historico de NV-
-                                                       DA.
- compare_nvda_amd compare_assets                       Comparacion de NVDA y
-                                                       AMD.
- overview_aapl         asset_overview                  Vision descriptiva de AAPL.
- returns_qqq_spy       return_analysis                 Analisis de retornos de QQQ
-                                                       y SPY.
- risk_qqq_spy          historical_risk_analysis        Riesgo historico de QQQ y
-                                                       SPY.
- technical_aapl        technical_analysis              Indicadores     tecnicos  de
-                                                       AAPL.
-
-                Tabla 8.1: Casos funcionales representativos del MVP.
-
-
-
-8.2. Robustez ante errores
-    Ademas de los casos correctos, el MVP contempla errores de entrada. La bateria
-de pruebas incluye una intencion no soportada, un CSV inexistente y una cardinalidad
-incorrecta de tickers para technical_analysis. Estos escenarios se resuelven mediante
-estados de error controlados y respuestas explicativas.
-
-
-
-                                          23
-    Este comportamiento es relevante porque un sistema analitico no debe evaluarse
-solo en condiciones ideales. La capacidad de fallar de forma explicable forma parte de
-la calidad del prototipo.
-
-
-8.3. Comparativa entre proveedores LLM
-   La evaluacion compara cuatro conguraciones: modo determinista, Groq, Gemini
-y el modelo universitario vLLM. En todos los casos, el calculo nanciero permanece
-controlado por el pipeline del proyecto. Los LLM se utilizan solo para redactar la
-respuesta nal.
-
- Conguracion          Casos OK        Fallbacks        Warnings         Lectura
- Determinista          6/6             No aplica        0                Base estable y
-                                                                         reproducible.
- Groq                  6/6             0                0                Mejor provee-
-                                                                         dor inicial.
- Gemini                6/6             Si      ante Cuotas               Util      para
-                                       429/503                           comparacion.
- Universidad vLLM 6/6                  0            0                    Backend
-                                                                         academico
-                                                                         validado.
-
-            Tabla 8.2: Comparativa general de conguraciones evaluadas.
-
-
-
-8.4. Evaluacion del modelo universitario vLLM
-   El perl universitario se conguro mediante una API compatible con OpenAI Chat
-Completions. La validacion se realizo con LLM_USE_FOR_INTERPRETATION=true y con
-planicacion y generacion de codigo desactivadas.
-
-              Caso                  Estado       Modo           Tiempo
-              compare_nvda_amd      completed    LLM directo    8.24 s
-              growth_nvda           completed    LLM directo    5.17 s
-              overview_aapl         completed    LLM directo    6.23 s
-              returns_qqq_spy       completed    LLM directo    9.87 s
-              risk_qqq_spy          completed    LLM directo    6.31 s
-              technical_aapl        completed    LLM directo    4.71 s
-
-                 Tabla 8.3: Resultados del perl universitario vLLM.
-
-   Los seis casos nalizaron sin fallback, sin warnings y sin recomendaciones directas de
-inversion. La prueba conrma que el sistema puede conectarse a un backend academico
-
-                                           24
-propio sin cambiar el ujo principal.
-
-
-8.5. Primera ejecucion comparativa completa
-    Ademas de las evaluaciones individuales por proveedor, se realizo una bateria com-
-parativa con las cuatro variantes disponibles: determinista, Groq, Gemini y universidad
-vLLM. La ejecucion cubrio los seis ejemplos representativos en cada perl, es decir, 24
-ejecuciones en total. El resultado fue satisfactorio en los 24 casos: el modo determinista
-funciono como sin_llm y los tres perles externos funcionaron en modo llm/directo,
-sin fallback en esa bateria completa.
-
-                Variante                Rango aproximado por caso
-                Determinista            1.9 s  3.4 s
-                Groq                    3.5 s  8.1 s
-                Gemini                  6.4 s  10.0 s
-                Universidad vLLM        6.7 s  10.8 s
-
-  Tabla 8.4: Tiempos aproximados observados en la primera comparativa completa.
-
-    La lectura cualitativa de esta ejecucion es que las APIs no mejoran la precision
-numerica del sistema, ya que las metricas proceden del mismo pipeline determinista.
-Su aportacion se concentra en la comunicacion del resultado: las respuestas son mas
-naturales, contextualizan mejor las metricas y se aproximan mas a un informe breve.
-Este efecto fue especialmente visible en consultas como crecimiento historico, compara-
-cion de retornos, riesgo historico y analisis tecnico, donde el modo determinista tiende
-a producir respuestas mas compactas.
-
-
-8.6. Discusion de resultados
-    Los resultados apoyan la hipotesis de diseno del trabajo: una arquitectura hibrida
-permite combinar calculo nanciero determinista con redaccion exible asistida por
-LLM. El modo determinista actua como baseline y fallback, mientras que los provee-
-dores externos mejoran la naturalidad de la explicacion nal.
-    La comparativa tambien muestra que no todos los proveedores tienen el mismo com-
-portamiento operativo. Groq resulto comodo para pruebas repetidas, Gemini aporto
-valor comparativo pero mostro limitaciones de cuota, y el endpoint universitario vLLM
-quedo validado como alternativa academica.
-
-
-
-
-                                             25
-Capítulo 9
-Aspectos eticos, seguridad y uso
-responsable
-
-9.1. Delimitacion nanciera del sistema
-    El sistema se orienta exclusivamente al analisis nanciero historico y descriptivo.
-Sus respuestas deben interpretarse como explicaciones basadas en datos pasados, no
-como predicciones ni como recomendaciones de inversion. Esta delimitacion forma parte
-del diseno del MVP y debe mantenerse visible tanto en la memoria como en cualquier
-interfaz futura.
-    El prototipo calcula metricas como crecimiento, retornos, volatilidad, drawdown e
-indicadores tecnicos basicos. No realiza forecasting, no recomienda comprar o vender
-activos y no adapta decisiones a perles personales de riesgo.
-
-
-9.2. Riesgos de interpretacion
-    Un riesgo relevante es que el usuario confunda una explicacion descriptiva con ase-
-soramiento nanciero. Para reducirlo, el sistema debe utilizar formulaciones prudentes,
-explicitar el periodo analizado y recordar que los resultados historicos no garantizan
-comportamientos futuros.
-    La capa LLM aumenta este riesgo si redacta respuestas demasiado persuasivas. Por
-ello, la conguracion actual solo permite al modelo interpretar resultados ya calculados
-y conserva mecanismos de fallback programatico.
-
-
-9.3. Seguridad en la generacion y ejecucion de codigo
-   La generacion automatica de codigo introduce riesgos especicos. Un script mal
-generado podria fallar, calcular una metrica incorrecta o acceder a recursos no previs-
-
-
-                                          26
-tos. En este proyecto, el riesgo se reduce mediante plantillas deterministas, entradas
-estructuradas, ejecucion controlada y captura explicita de salidas.
-    El codigo generado se ejecuta como proceso externo, con registro de salida estandar,
-salida de error y codigo de retorno. Esta estrategia permite revisar errores y evita que
-la respuesta nal oculte fallos de ejecucion.
-
-
-9.4. Privacidad y datos
-    Los datos utilizados son series historicas de mercado y no contienen datos persona-
-les. Aun asi, las claves de API de proveedores LLM se consideran informacion sensible y
-se almacenan exclusivamente en el chero local .env, excluido del control de versiones.
-    En una version productiva, seria necesario revisar las condiciones de uso de los
-proveedores de datos y de modelos, asi como las politicas de retencion de informacion
-enviada a APIs externas.
-
-
-9.5. Sostenibilidad, costes y recursos
-    El enfoque incremental reduce costes computacionales. El MVP no entrena modelos
-desde cero y puede ejecutarse en CPU sobre datos ya descargados. La capa LLM se ac-
-tiva solo cuando aporta valor, principalmente en interpretacion, y el modo determinista
-permite trabajar sin consumo de APIs externas.
-    Esta estrategia tambien mejora la sostenibilidad del desarrollo: evita ejecuciones
-innecesarias de modelos grandes, reduce dependencia de infraestructura GPU y permite
-comparar proveedores antes de elegir una conguracion de uso continuado.
-
-
-9.6. Limitaciones de uso
-    El sistema no debe utilizarse como herramienta profesional de decision nanciera
-sin validaciones adicionales. Su valor actual es academico y experimental: demostrar
-una arquitectura modular, trazable y robusta para automatizar analisis historicos.
-    Entre las limitaciones principales se encuentran el uso de un dataset acotado, la de-
-pendencia de datos de Yahoo Finance, la ausencia de validacion nanciera profesional y
-la no incorporacion de informacion fundamental, noticias o variables macroeconomicas.
-
-
-
-
-                                           27
-Capítulo 10
-Conclusiones y trabajo futuro
-
-10.1. Cumplimiento de objetivos
-    El trabajo desarrollado demuestra la viabilidad de un sistema multiagente para
-analisis nanciero historico basado en una arquitectura modular, trazable y extensible.
-El MVP actual completa el ujo de extremo a extremo para seis intenciones analiticas,
-gestiona errores basicos de entrada y conserva una base determinista reproducible.
-    Los objetivos planteados se cumplen en una primera version funcional: se ha denido
-un workow modular, se han implementado familias de agentes, se ha generado y eje-
-cutado codigo Python de forma controlada, se han incorporado pruebas automatizadas
-y se ha preparado una integracion controlada con modelos de lenguaje.
-
-
-10.2. Aportaciones principales
-    La primera aportacion del trabajo es la separacion clara entre calculo nanciero e
-interpretacion textual. El sistema no delega las metricas en un LLM, sino que ejecuta
-codigo controlado y utiliza el modelo, cuando esta activo, para mejorar la explicacion
-nal.
-    La segunda aportacion es la estrategia de fallback determinista. Gracias a ella, el
-MVP puede seguir funcionando aunque fallen las APIs externas, existan limites de
-cuota o se produzcan errores de red.
-    La tercera aportacion es la validacion comparativa de distintos proveedores LLM.
-Groq, Gemini y el modelo universitario vLLM se integran mediante una interfaz comun,
-lo que demuestra que la arquitectura no esta acoplada a un proveedor concreto.
-
-
-
-
-                                          28
-10.3. Limitaciones actuales
-    El prototipo trabaja con un conjunto acotado de intenciones y con datos historicos
-ya descargados. No aborda prediccion futura, recomendacion de inversion, analisis fun-
-damental ni incorporacion de noticias. Tampoco se ha activado todavia la generacion
-de codigo mediante LLM en la evaluacion principal, por considerarse una fase de mayor
-riesgo.
-    Otra limitacion es que la evaluacion se basa en casos representativos y pruebas
-automatizadas, pero aun no incluye una evaluacion extensa con usuarios ni una com-
-paracion cuantitativa frente a plataformas nancieras profesionales.
-
-
-10.4. Lineas de trabajo futuro
-    Como trabajo futuro se plantea ampliar el catalogo de consultas, incorporar mas
-activos y jar rangos temporales completamente reproducibles. Tambien seria intere-
-sante anadir visualizaciones al informe nal, mejorar la capa de logging y extender las
-pruebas de robustez.
-    En la parte LLM, el siguiente paso razonable es mantener la interpretacion asisti-
-da y estudiar de forma controlada la activacion de la planicacion. La generacion de
-codigo mediante modelo deberia evaluarse solo despues de denir contratos estrictos,
-validadores automaticos y restricciones de seguridad adicionales.
-    Finalmente, una evolucion natural del proyecto seria construir una interfaz de usua-
-rio o API local que permita ejecutar el sistema de forma interactiva, manteniendo
-siempre visibles las limitaciones del analisis historico y la ausencia de recomendacion
-de inversion.
-
-
-
-
-                                          29
-Referencias
-
-[1] LangChain, LangGraph: Building Stateful, Multi-Actor Applications with LLMs,
-    2024. dirección: https://langchain-ai.github.io/langgraph/
-[2] Groq, Groq API Documentation, 2026. dirección: https://console.groq.com/
-    docs
-[3] Google AI for Developers, Gemini API Documentation, 2026. dirección: https:
-    //ai.google.dev/gemini-api/docs
-[4] R. Aroussi, ynance Python Library, 2026. dirección: https : / / github . com /
-    ranaroussi/yfinance
-
-
-
-
-                                        30
-Apéndice A
-Anexos
-
-A.1. Ejecucion del MVP
-   El proyecto puede ejecutarse en modo determinista mediante los ejemplos incluidos
-en el repositorio:
-
-python run_mvp.py --example growth_nvda
-python run_mvp.py --example compare_nvda_amd
-python run_mvp.py --example overview_aapl
-python run_mvp.py --example returns_qqq_spy
-python run_mvp.py --example risk_qqq_spy
-python run_mvp.py --example technical_aapl
-
-
-A.2. Conguracion de APIs
-   Las claves de API se guardan localmente en el chero .env, que no debe subirse al
-repositorio. Para trabajar sin APIs externas:
-
-LLM_ENABLED=false
-
-   Para activar Groq:
-
-LLM_ENABLED=true
-LLM_PROFILE=groq
-
-   Para activar Gemini:
-
-LLM_ENABLED=true
-LLM_PROFILE=gemini
-
-   Para activar el perl universitario vLLM:
-
-                                         31
-LLM_ENABLED=true
-LLM_PROFILE=university
-UNIVERSITY_BASE_URL=https://w1.etsisi.upm.es/vllm/v1
-UNIVERSITY_MODEL=openai/gpt-oss-20b
-
-
-A.3. Documentacion interna de apoyo
-    Durante el desarrollo se conservaron notas tecnicas, informes de EDA y chas de
-evaluacion en formato TXT. Estos documentos no sustituyen a la memoria, pero sir-
-vieron como evidencias auxiliares para reconstruir decisiones de diseno y resultados
-experimentales. En particular, se utilizaron las notas de iteracion del MVP, el informe
-de EDA, las chas de evaluacion determinista y LLM, la primera ejecucion comparativa
-completa y la guia de credenciales para reforzar las secciones de metodologia, datos,
-implementacion, integracion LLM y resultados.
-
-
-
-
-                                          32
-

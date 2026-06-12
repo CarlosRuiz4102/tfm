@@ -12,15 +12,9 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{csquotes}
-\usepackage[
-    backend=biber,
-    style=ieee,
-    sorting=none
-]{biblatex}
 
 \geometry{left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
 \onehalfspacing
-\addbibresource{references.bib}
 
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
@@ -46,11 +40,11 @@
 
 \chapter*{Resumen}
 \addcontentsline{toc}{chapter}{Resumen}
-Este trabajo presenta el dise\~no y desarrollo de un sistema basado en modelos de lenguaje para realizar an\'alisis financiero hist\'orico a partir de consultas formuladas en lenguaje natural. El objetivo no es predecir la evoluci\'on del mercado, sino estudiar c\'omo integrar un LLM en un flujo de trabajo en el que los c\'alculos puedan ejecutarse, revisarse y conservarse como evidencia.
+Este trabajo estudia el dise\~no de un sistema multiagente basado en modelos de lenguaje para realizar an\'alisis financiero hist\'orico a partir de consultas formuladas en lenguaje natural. El foco del proyecto no est\'a en predecir el mercado, sino en organizar un flujo trazable en el que la petici\'on se transforme en una estructura de datos interpretable, se validen los datos necesarios, se genere c\'odigo ejecutable, se controle su ejecuci\'on y se redacte una respuesta final apoyada en evidencias.
 
-El sistema recibe una consulta junto con informaci\'on estructurada sobre los activos, el periodo analizado y los ficheros CSV disponibles. A partir de esta entrada, un primer agente elabora un plan anal\'itico; un segundo agente genera el c\'odigo Python necesario; y un tercer agente interpreta los resultados calculados. Entre estas etapas se aplican validaciones de entrada, controles sobre el c\'odigo generado y una ejecuci\'on en un proceso separado. El flujo conserva el plan, el script, la salida estructurada y los registros de error, lo que permite localizar en qu\'e etapa se produce un fallo.
+La memoria queda preparada para documentar ese recorrido por etapas. En particular, se refuerzan la metodolog\'ia, la descripci\'on del flujo y el marco de evaluaci\'on, de manera que el trabajo final pueda explicar no solo si el sistema produce respuestas, sino tambi\'en c\'omo llega a ellas, d\'onde falla y qu\'e garant\'ias ofrece cada bloque del proceso.
 
-Para comprobar el funcionamiento del sistema se ha definido una bater\'ia de consultas con distintos niveles de dificultad y requisitos anal\'iticos. La evaluaci\'on contempla tanto la finalizaci\'on del flujo como la calidad de las respuestas, la correcta utilizaci\'on de los datos y la gesti\'on controlada de los errores. De este modo, el trabajo propone una aproximaci\'on reproducible para estudiar la integraci\'on de modelos de lenguaje, generaci\'on de c\'odigo y an\'alisis financiero, manteniendo la trazabilidad del proceso y evitando la formulaci\'on de recomendaciones de inversi\'on.
+En esta versi\'on, varias secciones se han dejado como plantilla guiada para completar conforme se implemente y eval\'ue el flujo definitivo. El objetivo es que la memoria final mantenga coherencia entre dise\~no, ejecuci\'on, resultados y limitaciones, y que cada afirmaci\'on importante pueda apoyarse en artefactos observables del sistema.
 
 \vspace{0.5cm}
 \noindent\textbf{Palabras clave:} an\'alisis financiero hist\'orico, modelos de lenguaje, generaci\'on de c\'odigo, agentes LLM, ejecuci\'on controlada, trazabilidad.
@@ -58,11 +52,11 @@ Para comprobar el funcionamiento del sistema se ha definido una bater\'ia de con
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-This work presents the design and development of a language-model-based system for historical financial analysis from natural-language queries. Its purpose is not to predict market behaviour, but to examine how an LLM can be integrated into a workflow in which calculations are executed, reviewed and retained as evidence.
+This work studies the design of a multi-agent language-model-based system for historical financial analysis from natural-language queries. Rather than predicting market behaviour, the project focuses on defining a traceable workflow in which a request is transformed into structured data, relevant market data are validated, executable code is produced, execution is controlled, and the final answer is grounded in observable evidence.
 
-The system receives a query together with structured information about the requested assets, time period and available CSV files. A first agent produces an analytical plan, a second agent generates the required Python code, and a third agent explains the calculated results. Input validation, code checks and execution in a separate process are applied between these stages. The workflow retains the plan, generated script, structured output and error logs, making it possible to identify the stage at which a failure occurs.
+The dissertation has been prepared so that methodology, workflow description and evaluation can be developed rigorously as the final system is implemented. Several sections are therefore kept as guided templates, allowing the final document to explain not only whether the system works, but also how each stage contributes to robustness, traceability and controlled failure handling.
 
-To examine the operation of the system, an evaluation set was defined with queries covering different levels of difficulty and analytical requirements. The assessment considers workflow completion, response quality, appropriate use of the available data and controlled error handling. The work therefore provides a reproducible approach for studying the integration of language models, code generation and financial analysis while preserving process traceability and avoiding investment recommendations.
+At this stage, the document provides a coherent structure for reporting the final project, with special emphasis on methodological justification, stage-by-stage analysis and evidence-based evaluation.
 
 \vspace{0.5cm}
 \noindent\textbf{Keywords:}\\
@@ -72,23 +66,29 @@ historical financial analysis, language models, code generation, LLM agents, tra
 \tableofcontents
 \listoftables
 \listoffigures
+\chapter*{Abreviaturas y acronimos}
+\addcontentsline{toc}{chapter}{Abreviaturas y acronimos}
+\begin{description}
+\item[API] Application Programming Interface.
+\item[CSV] Comma-Separated Values.
+\item[ETF] Exchange-Traded Fund.
+\item[LLM] Large Language Model.
+\item[OHLCV] Open, High, Low, Close, Adjusted Close y Volume.
+\item[RAG] Retrieval-Augmented Generation.
+\item[UTC] Coordinated Universal Time.
+\end{description}
 
 \clearpage
 \pagenumbering{arabic}
 
 \include{chapters/01_introduccion}
 \include{chapters/02_estado_cuestion}
-\include{chapters/03_datos_material}
-\include{chapters/04_metodologia}
-\include{chapters/05_diseno_sistema}
-\include{chapters/06_implementacion}
-\include{chapters/07_integracion_llm}
-\include{chapters/08_resultados_evaluacion}
-\include{chapters/09_etica_seguridad}
-\include{chapters/10_conclusiones}
-
-\nocite{*}
-\printbibliography[heading=bibintoc,title={Referencias}]
+\include{chapters/03_material_trabajo_planteamiento}
+\include{chapters/04_metodologia_compacta}
+\include{chapters/05_flujo_multiagente}
+\include{chapters/06_resultados_evaluacion_compacta}
+\include{chapters/07_limitaciones_etica_reproducibilidad}
+\include{chapters/08_conclusiones_trabajo_futuro}
 
 \appendix
 \include{chapters/99_anexos}
