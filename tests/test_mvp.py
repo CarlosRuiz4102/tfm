@@ -57,7 +57,7 @@ class WorkflowTests(unittest.TestCase):
             return (
                 AnalysisPlan(
                     analytical_goal=f"Analizar historicamente: {query_input.query}",
-                    analysis_type="financial_analysis",
+                    analysis_type="historical_overview",
                     metrics=["rows"],
                     required_columns=["Date", "Close"],
                     data_requirements=["CSV historico normalizado"],
@@ -249,7 +249,7 @@ if __name__ == "__main__":
             return (
                 AnalysisPlan(
                     analytical_goal="Analisis AAPL",
-                    analysis_type="financial_analysis",
+                    analysis_type="historical_overview",
                     metrics=["rows"],
                     required_columns=["Date", "Close"],
                     data_requirements=["CSV historico normalizado"],

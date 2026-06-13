@@ -94,11 +94,17 @@ Interpretacion:
 - `normalized_query` arranca minimo, solo con `query`
 - todavia no se ha enriquecido nada
 
+Nota importante:
+
+Aunque aqui lo vemos serializado como JSON, internamente `normalized_query`
+ya no se trata como un diccionario generico. El workflow lo mantiene como un
+contexto resuelto tipado que se va enriqueciendo paso a paso.
+
 ## Paso 1. `ingest_node`
 
 Codigo implicado:
 
-1. `FinancialQueryInput.from_dict(state.normalized_query)`
+1. `state.normalized_query.to_query_input()`
 2. `validate_input(query_input)`
 3. `validate_query_input(query_input)`
 
@@ -129,7 +135,7 @@ Que significa:
 
 Codigo implicado:
 
-1. `FinancialQueryInput.from_dict(state.normalized_query)`
+1. `state.normalized_query.to_query_input()`
 2. `build_llm_data_request(query_input)`
 3. `_build_data_request_from_payload(...)`
 4. `_apply_data_request_to_state(state, request)`
@@ -217,7 +223,7 @@ Que ha pasado realmente aqui:
 Esto es importante:
 
 - `FinancialQueryInput` sigue siendo solo la entrada original
-- el enriquecimiento ocurre en `WorkflowState`
+- el enriquecimiento ocurre en `WorkflowState` dentro de un contexto resuelto tipado
 
 ## Paso 3. `data_request_structural_validation_node`
 
@@ -556,10 +562,11 @@ Aunque `FinancialQueryInput` ya solo tiene `query`, el Agente 2 no entra “cieg
 En la implementacion actual, el nodo que llama al Agente 2 hace esto conceptualmente:
 
 ```python
-query_input = FinancialQueryInput.from_dict(state.normalized_query)
+query_input = state.normalized_query.to_query_input()
+phase2_input_payload = _build_phase2_input_payload(state)
 plan, warnings = build_llm_analysis(
     query_input,
-    input_payload=state.normalized_query,
+    input_payload=phase2_input_payload.to_dict(),
 )
 ```
 
@@ -589,7 +596,7 @@ Lo que le entra directamente al Agente 2 en la implementacion actual es:
 }
 ```
 
-#### `input_payload=state.normalized_query`
+#### `input_payload=phase2_input_payload.to_dict()`
 
 ```json
 {
@@ -597,15 +604,28 @@ Lo que le entra directamente al Agente 2 en la implementacion actual es:
   "tickers": [
     "AAPL"
   ],
-  "start": null,
-  "end": null,
-  "period": "3mo",
-  "interval": "1d",
-  "needs_clarification": false,
-  "warnings": [],
+  "temporal_context": {
+    "start": null,
+    "end": null,
+    "period": "3mo",
+    "interval": "1d"
+  },
   "csv_paths": [
     "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_20260613_115136_570323.csv"
-  ]
+  ],
+  "data_context": {
+    "row_count": 60,
+    "available_columns": [
+      "Date",
+      "Ticker",
+      "Open",
+      "High",
+      "Low",
+      "Close",
+      "Adj Close",
+      "Volume"
+    ]
+  }
 }
 ```
 
@@ -618,26 +638,28 @@ Esto significa que, realmente, el Agente 2 ve:
 - los tickers ya resueltos;
 - el rango temporal ya resuelto;
 - el intervalo ya resuelto;
-- la ruta al CSV normalizado que se ha generado.
+- la ruta al CSV normalizado que se ha generado;
+- y el resumen minimo real de los datos disponibles.
 
 ### Lo que no se le pasa directamente hoy
 
-Aunque ya existen en `WorkflowState`, en la implementacion actual no se le pasan todavia de forma directa al prompt del Agente 2:
+Aunque ya existen en `WorkflowState`, en la implementacion actual no se le pasan de forma directa al prompt del Agente 2:
 
-- `download_summary`
+- `financial_data_request`
+- `download_summary` completo
 - `download_artifacts`
 
 Es decir:
 
 - si hablamos de estado global del workflow, esas piezas ya existen;
-- si hablamos estrictamente de entrada real al Agente 2, hoy entra `query_input` y `state.normalized_query`.
+- si hablamos estrictamente de entrada real al Agente 2, hoy entra `query_input` y un payload compacto de fase 2.
 
 ### Respuesta corta y defendible
 
 Si en la defensa te preguntan “¿que le entra realmente al Agente 2?”, la forma mas precisa de responder seria:
 
 - le entra la consulta original del usuario;
-- le entra una version enriquecida de esa consulta con tickers, rango, intervalo y ruta al CSV normalizado;
+- le entra una version enriquecida de esa consulta con tickers, rango, intervalo, ruta al CSV normalizado y resumen minimo de los datos disponibles;
 - y no decide ya que descargar, porque la fase de datos le entrega ese contexto resuelto.
 
 Eso es precisamente lo bueno de la separacion actual:

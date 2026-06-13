@@ -20,6 +20,16 @@ ANALYSIS_SYSTEM_PROMPT = (
     "analisis fundamental externo ni incorporas informacion que no este en la entrada."
 )
 
+ANALYSIS_TYPE_CATALOG = [
+    "historical_overview",
+    "historical_return_analysis",
+    "comparative_return_analysis",
+    "volatility_analysis",
+    "drawdown_analysis",
+    "technical_indicator_analysis",
+    "risk_return_profile",
+]
+
 
 def build_data_request_messages(query_input: FinancialQueryInput) -> list[LLMMessage]:
     """Prompt del Agente 1: convertir consulta libre en contrato de datos."""
@@ -42,8 +52,6 @@ def build_data_request_messages(query_input: FinancialQueryInput) -> list[LLMMes
         LLMMessage("system", DATA_SYSTEM_PROMPT),
         LLMMessage(
             "user",
-            # Este prompt fuerza a que el primer agente piense en términos de
-            # petición de datos y no en términos de análisis financiero.
             "Agente 1 - PLANIFICADOR DE DATOS.\n"
             "Convierte la consulta del usuario en un FinancialDataRequest JSON valido. "
             "Devuelve exclusivamente JSON, sin markdown ni texto adicional.\n"
@@ -66,7 +74,7 @@ def build_data_request_repair_messages(
     validation_errors: list[str],
     stage: str,
 ) -> list[LLMMessage]:
-    """Prompt compartido para las dos rutas de reparación de la fase de datos."""
+    """Prompt compartido para las dos rutas de reparacion de la fase de datos."""
     prompt_title = "Subagente 1 - CORRECCION ESTRUCTURAL" if stage == "structural" else "Subagente 2 - CORRECCION OPERATIVA"
     stage_guidance = (
         "Corrige problemas de estructura, contrato, fechas, intervalos o instrumentos vacios."
@@ -94,8 +102,6 @@ def build_data_request_repair_messages(
         LLMMessage("system", DATA_SYSTEM_PROMPT),
         LLMMessage(
             "user",
-            # stage cambia el tipo de feedback que se le pasa al subagente:
-            # estructura incorrecta o descarga operativamente fallida.
             f"{prompt_title}.\n"
             "Devuelve exclusivamente un FinancialDataRequest JSON valido.\n"
             f"{stage_guidance}\n"
@@ -107,9 +113,15 @@ def build_data_request_repair_messages(
 
 
 def build_analysis_messages(query_input: FinancialQueryInput, input_payload: dict[str, Any] | None = None) -> list[LLMMessage]:
-    """Prompt del Agente 2: planificar el análisis sobre datos ya descargados."""
+    """Prompt del Agente 2: planificar el analisis sobre datos ya descargados."""
+    current_input = input_payload or query_input.to_dict()
     payload = {
-        "input": input_payload or query_input.to_dict(),
+        "input": current_input,
+        "analysis_type_catalog": ANALYSIS_TYPE_CATALOG,
+        "available_dataset_columns": (
+            ((current_input.get("data_context") or {}).get("available_columns"))
+            or ["Date", "Ticker", "Open", "High", "Low", "Close", "Adj Close", "Volume"]
+        ),
         "quality_guidelines": {
             "simple_queries": (
                 "Consulta simple: un activo o comparacion directa, sin formato exigido ni varias salidas "
@@ -130,7 +142,7 @@ def build_analysis_messages(query_input: FinancialQueryInput, input_payload: dic
         },
         "required_json_schema": {
             "analytical_goal": "str",
-            "analysis_type": "str",
+            "analysis_type": "uno de analysis_type_catalog",
             "metrics": ["str"],
             "required_columns": ["str"],
             "data_requirements": ["str"],
@@ -147,6 +159,8 @@ def build_analysis_messages(query_input: FinancialQueryInput, input_payload: dic
             "Devuelve exclusivamente un objeto JSON valido con el esquema indicado. No incluyas markdown.\n"
             "Tu tarea es convertir la peticion del usuario y los datos ya descargados en un plan verificable para un script Python posterior. "
             "No calcules cifras y no redactes la respuesta final.\n"
+            "Debes apoyarte solo en el contexto de entrada ya resuelto por la fase de datos.\n"
+            "required_columns debe referirse a columnas de los datos disponibles y output_requirements debe dejar claro que el script devolvera JSON estructurado.\n"
             f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
         ),
     ]
@@ -157,16 +171,18 @@ def build_codegen_messages(
     plan: AnalysisPlan,
     input_payload: dict[str, Any] | None = None,
 ) -> list[LLMMessage]:
-    """Prompt del Agente 3: generar el script Python a partir del plan analítico."""
+    """Prompt del Agente 3: generar el script Python a partir del plan analitico."""
+    current_input = input_payload or query_input.to_dict()
     payload = {
         "original_user_message": query_input.query,
-        "input": input_payload or query_input.to_dict(),
+        "input": current_input,
         "analysis_plan": plan.to_dict(),
         "required_json_schema": {"code": "str"},
         "code_contract": {
             "argv_1": "ruta a un JSON payload con query, tickers, csv_paths y analysis_plan",
             "stdout": "un unico JSON valido",
             "required_top_level_keys": ["metrics", "summary", "limitations"],
+            "optional_top_level_keys": ["analysis_type", "tables", "series", "diagnostics"],
             "allowed_imports": [
                 "json",
                 "sys",
@@ -176,6 +192,12 @@ def build_codegen_messages(
                 "pandas",
                 "numpy",
                 "src.execution.market_data",
+            ],
+            "implementation_rules": [
+                "Implementa solo los calculos pedidos en analysis_plan.",
+                "Si faltan datos, devuelve limitations en vez de inventar resultados.",
+                "No cambies tickers, fechas, intervalo ni objetivo analitico.",
+                "No generes texto final para el usuario fuera del JSON.",
             ],
             "mandatory_data_loader": (
                 "Usa from src.execution.market_data import load_close_prices, load_market_data, ticker_summary, make_json_safe. "
@@ -196,6 +218,7 @@ def build_codegen_messages(
             "Agente 3 - GENERADOR DE CODIGO.\n"
             "Devuelve exclusivamente un objeto JSON valido con un unico campo code. No incluyas markdown.\n"
             "El valor code debe ser un script Python completo, autocontenido y ejecutable.\n"
+            "Debes implementar el AnalysisPlan recibido, no reinterpretar la consulta desde cero.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),
     ]
@@ -208,7 +231,7 @@ def build_code_repair_messages(
     error_detail: str,
     input_payload: dict[str, Any] | None = None,
 ) -> list[LLMMessage]:
-    """Prompt de reparación usado por las etapas de validación y ejecución de código."""
+    """Prompt de reparacion usado por validacion y ejecucion de codigo."""
     payload = {
         "original_user_message": query_input.query,
         "input": input_payload or query_input.to_dict(),
@@ -230,7 +253,7 @@ def build_code_repair_messages(
 
 
 def build_interpretation_messages(output: dict, plan: AnalysisPlan) -> list[LLMMessage]:
-    """Prompt del Agente 5: redactar la respuesta final sin recalcular métricas."""
+    """Prompt del Agente 5: redactar la respuesta final sin recalcular metricas."""
     payload = {
         "execution_output": output,
         "analysis_plan": plan.to_dict(),

@@ -257,7 +257,7 @@ def build_llm_analysis(
         return (
             AnalysisPlan(
                 analytical_goal=str(payload.get("analytical_goal") or query_input.query).strip(),
-                analysis_type=str(payload.get("analysis_type") or "historical_financial_analysis").strip(),
+                analysis_type=str(payload.get("analysis_type") or "historical_overview").strip(),
                 metrics=_as_str_list(payload.get("metrics"), []),
                 required_columns=_as_str_list(payload.get("required_columns"), []),
                 data_requirements=_as_str_list(payload.get("data_requirements"), []),
