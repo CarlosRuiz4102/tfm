@@ -9,6 +9,8 @@ from src.llm.pipeline import _is_json_only_answer
 
 
 class LLMConfigTests(unittest.TestCase):
+    """Tests unitarios de la capa de configuracion e higiene de salidas LLM."""
+
     def test_llm_requires_credentials_by_default(self) -> None:
         with patch.dict("os.environ", {}, clear=True):
             config = LLMConfig.from_env()
@@ -30,6 +32,8 @@ class LLMConfigTests(unittest.TestCase):
         self.assertEqual(config.model, "test-model")
 
     def test_create_client_returns_none_when_unconfigured(self) -> None:
+        # Si la configuracion no es usable, el cliente no debe crearse para
+        # evitar errores mas profundos en tiempo de ejecucion.
         config = LLMConfig(
             provider="openai-compatible",
             profile="",
@@ -108,6 +112,8 @@ class LLMConfigTests(unittest.TestCase):
         self.assertEqual(repaired, "El precio pasó de 13.34 USD. Análisis técnico.")
 
     def test_detects_json_only_interpretation_answer(self) -> None:
+        # Esto protege la salida final: el agente de interpretacion no deberia
+        # devolver solo JSON crudo cuando esperamos lenguaje natural.
         self.assertTrue(_is_json_only_answer('{"retorno_total": 12.7, "cagr": 0.68}'))
         self.assertFalse(_is_json_only_answer("Nvidia crecio un 1273.33% segun los datos historicos."))
 

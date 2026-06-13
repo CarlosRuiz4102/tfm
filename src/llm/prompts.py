@@ -1,22 +1,115 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from src.llm.client import LLMMessage
-from src.schemas import AnalysisPlan, FinancialQueryInput
+from src.schemas import AnalysisPlan, FinancialDataRequest, FinancialQueryInput
 
 
-SYSTEM_PROMPT = (
+DATA_SYSTEM_PROMPT = (
+    "Eres un componente de planificacion y correccion de peticiones de datos financieros historicos. "
+    "Tu objetivo es producir JSON valido, trazable y utilizable por codigo. "
+    "No calculas metricas financieras, no interpretas resultados y no redactas respuestas finales."
+)
+
+ANALYSIS_SYSTEM_PROMPT = (
     "Eres un componente profesional de analisis financiero historico asistido por LLM. "
-    "Trabajas exclusivamente con datos historicos ya disponibles en CSV y con el contrato JSON indicado. "
+    "Trabajas exclusivamente con datos historicos ya descargados y con el contrato JSON indicado. "
     "No realizas predicciones, asesoramiento de inversion, recomendaciones de compra/venta, "
     "analisis fundamental externo ni incorporas informacion que no este en la entrada."
 )
 
 
-def build_analysis_messages(query_input: FinancialQueryInput) -> list[LLMMessage]:
+def build_data_request_messages(query_input: FinancialQueryInput) -> list[LLMMessage]:
+    """Prompt del Agente 1: convertir consulta libre en contrato de datos."""
     payload = {
         "input": query_input.to_dict(),
+        "required_json_schema": {
+            "user_query": "str",
+            "provider": "yfinance",
+            "instruments": [{"ticker": "str"}],
+            "interval": "str",
+            "start": "YYYY-MM-DD o null",
+            "end": "YYYY-MM-DD o null",
+            "period": "str o null",
+            "required_fields": ["str"],
+            "needs_clarification": "bool",
+            "clarification_reason": "str o null",
+        },
+    }
+    return [
+        LLMMessage("system", DATA_SYSTEM_PROMPT),
+        LLMMessage(
+            "user",
+            # Este prompt fuerza a que el primer agente piense en términos de
+            # petición de datos y no en términos de análisis financiero.
+            "Agente 1 - PLANIFICADOR DE DATOS.\n"
+            "Convierte la consulta del usuario en un FinancialDataRequest JSON valido. "
+            "Devuelve exclusivamente JSON, sin markdown ni texto adicional.\n"
+            "Tu trabajo es decidir que datos hay que pedir, no hacer el analisis financiero.\n"
+            "Debes:\n"
+            "1. Identificar instrumentos o tickers.\n"
+            "2. Inferir intervalo temporal y usar period o start/end segun corresponda.\n"
+            "3. Mantener provider='yfinance'.\n"
+            "4. Incluir required_fields con Open, High, Low, Close, Adj Close y Volume.\n"
+            "5. Marcar needs_clarification=true si la consulta no permite una descarga fiable.\n"
+            "No debes calcular metricas, razonar sobre rentabilidad ni proponer respuesta final.\n"
+            f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
+        ),
+    ]
+
+
+def build_data_request_repair_messages(
+    query_input: FinancialQueryInput,
+    previous_request: FinancialDataRequest,
+    validation_errors: list[str],
+    stage: str,
+) -> list[LLMMessage]:
+    """Prompt compartido para las dos rutas de reparación de la fase de datos."""
+    prompt_title = "Subagente 1 - CORRECCION ESTRUCTURAL" if stage == "structural" else "Subagente 2 - CORRECCION OPERATIVA"
+    stage_guidance = (
+        "Corrige problemas de estructura, contrato, fechas, intervalos o instrumentos vacios."
+        if stage == "structural"
+        else "Corrige el request para que la descarga real en yfinance sea util sin cambiar libremente la intencion del usuario."
+    )
+    payload = {
+        "input": query_input.to_dict(),
+        "previous_financial_data_request": previous_request.to_dict(),
+        "validation_errors": validation_errors,
+        "required_json_schema": {
+            "user_query": "str",
+            "provider": "yfinance",
+            "instruments": [{"ticker": "str"}],
+            "interval": "str",
+            "start": "YYYY-MM-DD o null",
+            "end": "YYYY-MM-DD o null",
+            "period": "str o null",
+            "required_fields": ["str"],
+            "needs_clarification": "bool",
+            "clarification_reason": "str o null",
+        },
+    }
+    return [
+        LLMMessage("system", DATA_SYSTEM_PROMPT),
+        LLMMessage(
+            "user",
+            # stage cambia el tipo de feedback que se le pasa al subagente:
+            # estructura incorrecta o descarga operativamente fallida.
+            f"{prompt_title}.\n"
+            "Devuelve exclusivamente un FinancialDataRequest JSON valido.\n"
+            f"{stage_guidance}\n"
+            "Si no puedes corregir el problema de forma fiable, marca needs_clarification=true "
+            "y explica brevemente el motivo en clarification_reason.\n"
+            f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
+        ),
+    ]
+
+
+def build_analysis_messages(query_input: FinancialQueryInput, input_payload: dict[str, Any] | None = None) -> list[LLMMessage]:
+    """Prompt del Agente 2: planificar el análisis sobre datos ya descargados."""
+    payload = {
+        "input": input_payload or query_input.to_dict(),
         "quality_guidelines": {
             "simple_queries": (
                 "Consulta simple: un activo o comparacion directa, sin formato exigido ni varias salidas "
@@ -32,9 +125,7 @@ def build_analysis_messages(query_input: FinancialQueryInput) -> list[LLMMessage
             ),
             "adaptation_rule": (
                 "No existe una etiqueta externa de dificultad que debas devolver. Debes inferir a partir de la "
-                "peticion el grado de profundidad, estructura y detalle esperados. Si el usuario pide tabla, "
-                "serie normalizada, drawdown, medias moviles, ranking, periodos mejores/peores o bloques de "
-                "salida concretos, reflejalo directamente en output_requirements y presentation_preferences."
+                "peticion el grado de profundidad, estructura y detalle esperados."
             ),
         },
         "required_json_schema": {
@@ -49,38 +140,27 @@ def build_analysis_messages(query_input: FinancialQueryInput) -> list[LLMMessage
         },
     }
     return [
-        LLMMessage("system", SYSTEM_PROMPT),
+        LLMMessage("system", ANALYSIS_SYSTEM_PROMPT),
         LLMMessage(
             "user",
-            "Agente 1 - PLANIFICACION ANALITICA.\n"
+            "Agente 2 - ANALISTA.\n"
             "Devuelve exclusivamente un objeto JSON valido con el esquema indicado. No incluyas markdown.\n"
-            "Tu tarea es convertir la peticion del usuario en un plan verificable para un script Python posterior. "
+            "Tu tarea es convertir la peticion del usuario y los datos ya descargados en un plan verificable para un script Python posterior. "
             "No calcules cifras y no redactes la respuesta final.\n"
-            "Instrucciones obligatorias:\n"
-            "1. Lee la consulta completa e infiere el grado de profundidad y estructura que el usuario espera.\n"
-            "2. Define analytical_goal como objetivo financiero concreto, sin palabras vagas como 'analizar' sin detalle.\n"
-            "3. Define analysis_type con una etiqueta breve y descriptiva, por ejemplo historical_growth, "
-            "comparative_risk_return, technical_overview o structured_financial_report.\n"
-            "4. Enumera metrics con nombres calculables: retorno_total, cagr, volatilidad, max_drawdown, "
-            "correlacion, medias_moviles, ranking_mensual u otros si la consulta los exige.\n"
-            "5. Enumera required_columns segun los calculos: Close para rentabilidad, High/Low para rangos, "
-            "Volume para volumen, Open si la consulta lo requiere.\n"
-            "6. Enumera data_requirements con granularidad temporal, activos, comparaciones y validaciones minimas.\n"
-            "7. Enumera output_requirements con tablas, metricas y datos visuales esperados; no pidas imagenes, pide datos JSON.\n"
-            "8. Enumera presentation_preferences con el tono, estructura y nivel de detalle esperado para el agente interpretador.\n"
-            "9. En reasoning justifica brevemente por que la consulta requiere ese grado de profundidad y esas metricas, "
-            "sin exponer cadena de pensamiento extensa.\n"
-            "Restricciones: usa solo CSV, tickers y fechas de entrada; no uses noticias, fundamentales, precios actuales externos, "
-            "predicciones ni recomendaciones de inversion.\n"
             f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
         ),
     ]
 
 
-def build_codegen_messages(query_input: FinancialQueryInput, plan: AnalysisPlan) -> list[LLMMessage]:
+def build_codegen_messages(
+    query_input: FinancialQueryInput,
+    plan: AnalysisPlan,
+    input_payload: dict[str, Any] | None = None,
+) -> list[LLMMessage]:
+    """Prompt del Agente 3: generar el script Python a partir del plan analítico."""
     payload = {
         "original_user_message": query_input.query,
-        "input": query_input.to_dict(),
+        "input": input_payload or query_input.to_dict(),
         "analysis_plan": plan.to_dict(),
         "required_json_schema": {"code": "str"},
         "code_contract": {
@@ -107,39 +187,15 @@ def build_codegen_messages(query_input: FinancialQueryInput, plan: AnalysisPlan)
                 "Antes de imprimir, usa print(json.dumps(make_json_safe(output), ensure_ascii=False))."
             ),
             "payload_loading": "Usa json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')). No uses open().",
-            "presentation_contract": (
-                "Incluye metricas suficientes para responder a la consulta segun analysis_plan. "
-                "Si la consulta es simple, metrics y summary pueden bastar si no se pide formato adicional. "
-                "Si hay comparacion o desglose, incluye table_data. Si se piden series o apoyo visual, incluye chart_data "
-                "o visualization_data. Si la consulta exige una respuesta rica o por bloques, separa summary, metrics, "
-                "table_data, chart_data/visualization_data, observations y limitations segun corresponda. "
-                "Si se piden datos visuales, no generes imagenes: devuelve datos JSON con tipo sugerido, ejes, series y etiquetas. "
-                "No devuelvas series largas completas: muestrea como maximo 120 puntos por serie e incluye fecha inicial/final."
-            ),
         },
     }
     return [
-        LLMMessage("system", SYSTEM_PROMPT),
+        LLMMessage("system", ANALYSIS_SYSTEM_PROMPT),
         LLMMessage(
             "user",
-            "Agente 2 - GENERACION DE CODIGO PYTHON.\n"
+            "Agente 3 - GENERADOR DE CODIGO.\n"
             "Devuelve exclusivamente un objeto JSON valido con un unico campo code. No incluyas markdown.\n"
-            "El valor code debe ser un script Python completo, autocontenido y ejecutable. "
-            "Debe leer el payload desde argv[1], calcular solo con los CSV indicados y escribir un unico JSON en stdout.\n"
-            "Contrato tecnico obligatorio:\n"
-            "1. Define main() y protege la entrada con if __name__ == '__main__'.\n"
-            "2. Lee el payload con json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')). No uses open().\n"
-            "3. Usa load_close_prices para precios de cierre y load_market_data para OHLCV. No uses pd.read_csv.\n"
-            "4. Usa solo imports permitidos. No uses red, ficheros adicionales, subprocess, os, eval, exec ni rutas no recibidas.\n"
-            "5. Devuelve siempre metrics, summary y limitations.\n"
-            "6. Cuando la consulta o el plan pidan comparaciones, rankings o bloques de metricas, incluye table_data.\n"
-            "7. Para peticiones visuales, incluye chart_data o visualization_data con tipo sugerido, series muestreadas, "
-            "ejes y unidades; nunca generes PNG/PDF/SVG.\n"
-            "8. Calcula con cuidado: ordena por fecha, elimina NaN donde proceda, evita division por cero, "
-            "convierte Series a escalares antes de compararlas y controla datos insuficientes.\n"
-            "9. Pasa la salida por make_json_safe antes de json.dumps.\n"
-            "10. Si una metrica no puede calcularse, incluye null y una limitacion explicita; no inventes valores.\n"
-            "No redactes la respuesta final al usuario: solo resultados estructurados y trazables.\n"
+            "El valor code debe ser un script Python completo, autocontenido y ejecutable.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),
     ]
@@ -150,54 +206,42 @@ def build_code_repair_messages(
     plan: AnalysisPlan,
     previous_code: str,
     error_detail: str,
+    input_payload: dict[str, Any] | None = None,
 ) -> list[LLMMessage]:
+    """Prompt de reparación usado por las etapas de validación y ejecución de código."""
     payload = {
         "original_user_message": query_input.query,
-        "input": query_input.to_dict(),
+        "input": input_payload or query_input.to_dict(),
         "analysis_plan": plan.to_dict(),
         "previous_code": previous_code,
         "error_detail": error_detail,
         "required_json_schema": {"code": "str"},
     }
     return [
-        LLMMessage("system", SYSTEM_PROMPT),
+        LLMMessage("system", ANALYSIS_SYSTEM_PROMPT),
         LLMMessage(
             "user",
-            "REPARACION DE CODIGO DEL AGENTE 2.\n"
+            "Subagente 3/4 - REPARACION DE CODIGO.\n"
             "El codigo anterior fallo o fue rechazado. Devuelve exclusivamente JSON valido con un unico campo code. "
-            "El script corregido debe ser completo, no un parche parcial. Mantén el objetivo y las salidas "
-            "solicitadas por el plan. Corrige la causa concreta indicada en error_detail y conserva el contrato: "
-            "Path(sys.argv[1]).read_text, load_close_prices/load_market_data, make_json_safe, stdout con un unico JSON, "
-            "sin open(), pd.read_csv, os, subprocess, eval, exec, red ni markdown.\n"
+            "El script corregido debe ser completo, no un parche parcial.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),
     ]
 
 
 def build_interpretation_messages(output: dict, plan: AnalysisPlan) -> list[LLMMessage]:
+    """Prompt del Agente 5: redactar la respuesta final sin recalcular métricas."""
     payload = {
         "execution_output": output,
         "analysis_plan": plan.to_dict(),
     }
     return [
-        LLMMessage("system", SYSTEM_PROMPT),
+        LLMMessage("system", ANALYSIS_SYSTEM_PROMPT),
         LLMMessage(
             "user",
-            "Agente 3 - INTERPRETACION FINANCIERA EN ESPANOL.\n"
+            "Agente 5 - INTERPRETE.\n"
             "Redacta la respuesta final para el usuario usando unicamente execution_output y analysis_plan. "
-            "No recalcules, no completes cifras ausentes y no incorpores datos externos. "
-            "Debes devolver texto en espanol con frases completas. No devuelvas JSON, diccionarios, listas, "
-            "bloques de codigo ni una repeticion aislada de las metricas.\n"
-            "Reglas de respuesta:\n"
-            "1. Ajusta la extension y estructura a la complejidad de la consulta y a presentation_preferences. "
-            "Si la peticion es simple, responde de forma breve y directa; si es comparativa o estructurada, "
-            "organiza mejor la respuesta; si exige una salida rica o profesional, usa apartados claros.\n"
-            "2. Distingue datos historicos observados, lectura interpretativa y limitaciones.\n"
-            "3. Si hay tablas o datos visuales en la salida, describe que muestran sin fingir que existe una imagen.\n"
-            "4. Si una metrica es null o hay datos insuficientes, indicalo como limitacion, no como error oculto.\n"
-            "5. No uses tono persuasivo, no des recomendaciones de compra/venta, no predigas rendimiento futuro "
-            "y no uses informacion fundamental, noticias o precios externos.\n"
-            "6. Mantén español claro, profesional y comprensible para un usuario no tecnico.\n"
+            "No recalcules, no completes cifras ausentes y no incorpores datos externos.\n"
             f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
         ),
     ]

@@ -24,14 +24,16 @@ La Figura~\ref{fig:flujo_multiagente_final} se toma como referencia de alto nive
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[page=1,width=\textwidth]{../FlujoFinal.drawio.pdf}
+\includegraphics[page=1,width=\textwidth]{../FlujoNuevo3.drawio.pdf}
 \caption{Flujo multiagente de referencia para el desarrollo del sistema de analisis financiero.}
 \label{fig:flujo_multiagente_final}
 \end{figure}
 
-\textit{Completar aqui una lectura global de la figura. Conviene describir el recorrido principal sin entrar todavia en todos los detalles tecnicos: que entra en el sistema, como se prepara la informacion, donde intervienen los agentes, en que puntos se valida el proceso y como se llega a la respuesta final. Este primer apartado debe servir para que el lector no se pierda cuando empiece el detalle del flujo.}
+El flujo parte de una consulta escrita en lenguaje natural y la transforma de manera progresiva en una respuesta final sustentada por datos descargados, decisiones intermedias trazables y una ejecucion controlada. La primera fase se concentra en resolver el problema de datos: el Agente 1 convierte la peticion del usuario en un \texttt{FinancialDataRequest} estructurado, este contrato se valida a nivel formal y, despues, se comprueba operativamente mediante una descarga real en \texttt{yfinance}. Solo cuando ambas comprobaciones se superan se considera que el sistema dispone de una base suficientemente fiable para pasar al analisis.
 
-\textit{Tambien conviene adelantar aqui dos ideas que luego se desarrollaran mejor: que la arquitectura busca separar responsabilidades y que esa separacion hace posible explicar mejor el comportamiento del sistema, detectar fallos y conservar evidencias del proceso.}
+La fase central del flujo comienza entonces con el Agente 2, que recibe los datos ya descargados y los convierte en un JSON analitico que acota que calculos deben realizarse. A partir de ese plan, el Agente 3 genera el script Python encargado de materializar el analisis. Ese script no se ejecuta directamente: primero pasa por el Agente 4, que valida su estructura y sus restricciones, y solo despues se lanza en el ejecutor. Finalmente, el Agente 5 interpreta la salida correcta y la convierte en una respuesta legible para el usuario.
+
+La arquitectura incorpora ademas cuatro puntos de correccion, uno por cada familia de fallos relevantes: errores estructurales en la peticion de datos, errores operativos de descarga, errores estaticos del codigo generado y errores observados durante la ejecucion. Esta separacion de responsabilidades no solo ordena el sistema, sino que mejora su explicabilidad. Cada bloque tiene una entrada definida, una salida esperada y un criterio claro de exito o bloqueo, lo que facilita defender por que el flujo avanza, por que se repara o por que se detiene en un caso concreto.
 
 \section{Entrada y estado compartido}
 
@@ -53,9 +55,15 @@ La Figura~\ref{fig:flujo_multiagente_final} se toma como referencia de alto nive
 
 \subsection{Parte de datos}
 
-\textit{Completar aqui todo el tramo inicial del flujo, desde la recepcion de la consulta hasta dejar preparada la informacion necesaria antes de entrar en el analisis principal. Puedes comentar normalizacion de la entrada, comprobacion de campos, seleccion o verificacion de CSV, coherencia entre consulta y datos disponibles y cualquier validacion temprana que reduzca errores posteriores.}
+La parte de datos cubre el tramo que va desde la consulta inicial del usuario hasta la obtencion de una descarga valida lista para el Agente 2. Su funcion no es producir todavia el analisis financiero, sino delimitar con precision sobre que informacion va a poder trabajar el sistema. Esta distincion es importante: antes de hablar de metricas, comparaciones o interpretaciones, el flujo debe demostrar que ha entendido que datos necesita, que puede pedirlos de forma coherente y que la fuente externa responde con una descarga util.
 
-\textit{Aqui conviene insistir en que esta fase no intenta resolver la consulta, sino preparar el contexto de trabajo con la mayor claridad posible. Desde el punto de vista de la explicabilidad, este bloque debe mostrar que el sistema no empieza a generar codigo sin haber delimitado antes con que datos puede trabajar y bajo que restricciones.}
+El primer paso de esta fase corresponde al Agente 1, que actua como planificador de datos. A partir de la consulta en lenguaje natural, este agente genera un \texttt{FinancialDataRequest} en formato JSON. Ese contrato debe recoger, al menos, los instrumentos o tickers detectados, la granularidad temporal, el rango o periodo solicitado y la indicacion de si la peticion esta lo bastante clara como para continuar. El objetivo aqui no es inferir conclusiones financieras, sino traducir la intencion del usuario a una peticion de datos concreta, utilizable por el resto del sistema y suficientemente explicita como para ser revisada.
+
+Una vez generado ese request, el flujo no pasa todavia a la descarga. Primero se realiza una validacion estructural. En esta comprobacion se revisa que el JSON exista realmente, que sus campos obligatorios esten presentes, que los tipos sean correctos y que no haya incoherencias obvias entre fechas, periodos, intervalos o lista de instrumentos. Tambien se comprueba que la peticion no este apoyada en supuestos demasiado debiles. Si el request contiene errores corregibles, se activa el Subagente 1, cuya tarea consiste en reescribirlo de forma controlada y devolver una nueva version para validacion. Si el problema no es corregible con fiabilidad, o si se agotan los intentos permitidos, el flujo se bloquea y no avanza a etapas posteriores.
+
+Superada la validacion estructural, la fase de datos entra en su segunda comprobacion: la validacion operativa de descarga. Aqui se intenta la descarga real en \texttt{yfinance} con los parametros ya validados. Esta decision es metodologicamente relevante, porque no basta con que la peticion sea correcta en teoria. Tambien debe demostrarse que produce un resultado util en la practica. En esta etapa se verifica que la llamada no devuelve un conjunto vacio, que los instrumentos esperados aparecen efectivamente y que la respuesta permite persistir artefactos de datos reutilizables por el sistema. Si esta descarga falla de forma reparable, interviene el Subagente 2, especializado en ajustar la peticion desde un punto de vista operativo; si no existe una correccion razonable, la ejecucion vuelve a detenerse.
+
+El resultado final de esta fase es, por tanto, mas fuerte que un simple ``request valido''. Lo que se entrega al Agente 2 es una descarga ya realizada, respaldada por un \texttt{FinancialDataRequest} previamente comprobado y acompanada de los artefactos necesarios para reconstruir el proceso. Desde el punto de vista de la explicabilidad, esta organizacion permite defender que el sistema no empieza a analizar ni a generar codigo sobre una interpretacion vaga de la consulta, sino sobre datos cuya necesidad, forma de obtencion y viabilidad han quedado justificadas antes de continuar.
 
 \subsection{Analista y generador de codigo}
 

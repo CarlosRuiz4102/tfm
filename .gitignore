@@ -40,14 +40,25 @@ Thumbs.db
 # LOGS
 # =========================
 *.log
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # =========================
 # GENERATED RESULTS
 # =========================
-results/code/
-results/logs/
-results/evaluations/
-results/reports/
+results/
+
+# =========================
+# TEMPORARY FILES
+# =========================
+tmp_*.png
+tmp_*.pdf
+tmp_*.txt
+tmp_*.json
+tmp_*.csv
 
 # =========================
 # ETHICS MATERIALS

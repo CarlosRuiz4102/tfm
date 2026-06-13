@@ -11,18 +11,25 @@ except ImportError:  # pragma: no cover - python-dotenv es opcional en ejecucion
     load_dotenv = None
 
 
+# Rutas base del proyecto. Se centralizan aqui para que todos los modulos
+# compartan la misma convencion de carpetas al leer y escribir artefactos.
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT_DIR / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 RESULTS_DIR = ROOT_DIR / "results"
 RESULTS_CODE_DIR = RESULTS_DIR / "code"
 RESULTS_LOGS_DIR = RESULTS_DIR / "logs"
+RESULTS_DATA_REQUESTS_DIR = RESULTS_DIR / "data_requests"
+RESULTS_DATA_RAW_DIR = RESULTS_DIR / "data_raw"
+RESULTS_DATA_NORMALIZED_DIR = RESULTS_DIR / "data_normalized"
 
 DEFAULT_OPENAI_MODEL = "openai/gpt-oss-20b"
 
 if load_dotenv is not None:
+    # En desarrollo preferimos cargar automaticamente el .env del repositorio.
     load_dotenv(ROOT_DIR / ".env")
 else:
+    # Fallback minimo por si python-dotenv no esta instalado.
     env_path = ROOT_DIR / ".env"
     if env_path.exists():
         for raw_line in env_path.read_text(encoding="utf-8").splitlines():
@@ -37,6 +44,7 @@ else:
 
 
 def _env_int(name: str, default: int) -> int:
+    # Helper pequeno para evitar repetir parseos de enteros en la configuracion.
     value = os.getenv(name)
     if value is None or not value.strip():
         return default
@@ -44,6 +52,7 @@ def _env_int(name: str, default: int) -> int:
 
 
 def _env_float(name: str, default: float) -> float:
+    # Igual que _env_int, pero pensado para temperatura y otros floats.
     value = os.getenv(name)
     if value is None or not value.strip():
         return default
@@ -52,12 +61,16 @@ def _env_float(name: str, default: float) -> float:
 
 @dataclass(frozen=True)
 class ExecutionConfig:
+    """Configuracion de ejecucion del codigo Python generado por el flujo."""
+
     python_executable: str = sys.executable
     timeout_seconds: int = 60
 
 
 @dataclass(frozen=True)
 class LLMConfig:
+    """Configuracion normalizada del proveedor LLM para todo el proyecto."""
+
     provider: str
     profile: str
     base_url: str | None
@@ -70,6 +83,8 @@ class LLMConfig:
 
     @classmethod
     def from_env(cls) -> "LLMConfig":
+        # Permitimos varios aliases porque en el proyecto se contemplan
+        # entornos OpenAI, vLLM local y despliegues de universidad.
         verify_ssl_value = os.getenv("OPENAI_VERIFY_SSL") or os.getenv("LLM_VERIFY_SSL")
 
         return cls(
@@ -99,6 +114,7 @@ class LLMConfig:
 
     @property
     def is_configured(self) -> bool:
+        # Consideramos "no configurado" tanto un valor vacio como claves de ejemplo.
         api_key = self.api_key.strip()
         model = self.model.strip()
         placeholder_keys = {

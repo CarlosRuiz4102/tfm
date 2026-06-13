@@ -6,6 +6,9 @@ from src.graph.nodes import (
     code_execution_node,
     code_generation_node,
     code_security_node,
+    data_download_node,
+    data_request_planning_node,
+    data_request_structural_validation_node,
     execution_error_node,
     ingest_node,
     interpretation_node,
@@ -20,8 +23,13 @@ NodeFn = Callable[[WorkflowState], WorkflowState]
 
 class SimpleFinancialWorkflow:
     def __init__(self) -> None:
+        # El pipeline refleja el orden del flujo nuevo: primero resolvemos datos,
+        # luego analizamos, generamos código, validamos, ejecutamos e interpretamos.
         self.pipeline: list[NodeFn] = [
             ingest_node,
+            data_request_planning_node,
+            data_request_structural_validation_node,
+            data_download_node,
             llm_analysis_node,
             code_generation_node,
             code_security_node,
@@ -30,10 +38,14 @@ class SimpleFinancialWorkflow:
         ]
 
     def invoke(self, query_input: FinancialQueryInput) -> WorkflowState:
+        # invoke recorre el pipeline y decide en qué tipos de estado terminal
+        # debe cortar la ejecución sin seguir al siguiente nodo.
         state = WorkflowState.from_input(query_input)
         for node in self.pipeline:
             state = node(state)
             if state.status == "invalid":
+                return invalid_request_node(state)
+            if state.status == "blocked":
                 return invalid_request_node(state)
             if state.status == "error":
                 return execution_error_node(state)
