@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from src.schemas.analysis import AnalysisPlan
+from src.schemas.code_validation import CodeValidationDecision
 from src.schemas.data import DataDownloadArtifacts, DataDownloadSummary, FinancialDataRequest
 from src.schemas.execution import ExecutionArtifacts
 from src.schemas.input import FinancialQueryInput, ResolvedQueryContext
@@ -26,6 +27,7 @@ class WorkflowState:
     download_summary: DataDownloadSummary | None = None
     analysis_plan: AnalysisPlan | None = None
     generated_code: str | None = None
+    code_validation_decision: CodeValidationDecision | None = None
     execution_stdout: str = ""
     execution_stderr: str = ""
     execution_returncode: int | None = None
@@ -37,6 +39,7 @@ class WorkflowState:
     status: str = "created"
     structural_repair_attempts: int = 0
     operational_repair_attempts: int = 0
+    code_repair_attempts: int = 0
 
     @classmethod
     def from_input(cls, query_input: FinancialQueryInput) -> "WorkflowState":

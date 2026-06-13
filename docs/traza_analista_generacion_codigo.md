@@ -34,7 +34,6 @@ La idea aqui es ver de forma concreta:
 
 - que entra exactamente al Agente 2;
 - que plan analitico sale;
-- como se valida localmente ese plan;
 - que entra exactamente al Agente 3;
 - que script se genera;
 - que queda listo para entregar al Agente 4.
@@ -155,8 +154,7 @@ Que hace internamente:
 1. reconstruye `FinancialQueryInput` desde el contexto resuelto;
 2. construye `phase2_input_payload`;
 3. llama a `build_llm_analysis(...)`;
-4. valida el plan con `validate_analysis_plan(...)`;
-5. guarda el resultado en `state.analysis_plan`.
+4. guarda el resultado en `state.analysis_plan`.
 
 ## Plan analitico observado
 
@@ -186,36 +184,6 @@ Salida real del Agente 2 en esta traza controlada:
   "reasoning": "La consulta pide una vision general breve de un solo activo sobre los datos ya descargados."
 }
 ```
-
-## Validacion local del plan
-
-Antes de pasar al Agente 3, existe una capa breve de validacion local en
-`src/analysis/validation.py`.
-
-Su papel es revisar si el `AnalysisPlan` ya puede actuar como contrato real de
-implementacion y no solo como una respuesta con buen aspecto.
-
-En esta traza, el sistema valida que:
-
-- `analytical_goal` no venga vacio;
-- `analysis_type` pertenezca a un catalogo permitido;
-- `metrics` no venga vacio;
-- `required_columns` no venga vacio;
-- las columnas pedidas existan en `data_context.available_columns`;
-- `data_requirements` no venga vacio;
-- `output_requirements` describa la salida esperada;
-- `presentation_preferences` y `reasoning` no vengan vacios.
-
-Esta validacion es importante porque evita pasar al codegen un plan analitico que suena razonable pero no encaja con la descarga real de la fase 1.
-
-Ademas, esta capa puede generar avisos no bloqueantes. Por ejemplo:
-
-- metricas duplicadas;
-- ausencia de una referencia explicita a salida JSON en `output_requirements`.
-
-Por tanto, entre el Agente 2 y el Agente 3 no hay un paso vacio. Hay una
-pequena barrera de control que comprueba si el plan es coherente con los datos
-que realmente se descargaron.
 
 ## Estado al salir del Agente 2
 
@@ -248,7 +216,7 @@ Que hace internamente:
 1. toma `state.analysis_plan`;
 2. reconstruye `FinancialQueryInput`;
 3. vuelve a construir `phase2_input_payload`;
-4. llama a `build_llm_code(...)` con el plan ya validado;
+4. llama a `build_llm_code(...)` con el plan ya generado por el Agente 2;
 5. guarda el script completo en `state.generated_code`.
 
 ## Entrada conceptual al Agente 3
@@ -302,7 +270,7 @@ Aunque el script de esta traza es intencionadamente simple, permite ver bien el 
 - usa el `analysis_plan` ya calculado;
 - usa el contexto que viene de la fase de datos;
 - construye un unico JSON de salida;
-- deja el script listo para pasar a validacion estatica.
+- deja el script listo para pasar a la validacion de la parte 3.
 
 ## Estado al salir del Agente 3
 
@@ -371,8 +339,7 @@ La conexion fase 1 -> fase 2 se puede defender bien asi:
 1. la fase de datos no entrega solo un CSV, sino un contexto resuelto y validado;
 2. ese contexto se empaqueta en un handoff explicito con `_build_phase2_input_payload(...)`;
 3. el Agente 2 planifica sobre ese contexto y no sobre una consulta ambigua;
-4. el plan se valida localmente contra la descarga real;
-5. el Agente 3 implementa ese plan sobre el mismo contexto compartido.
+4. el Agente 3 implementa ese plan sobre el mismo contexto compartido.
 
 Por eso esta conexion puede considerarse buena desde el punto de vista del TFM:
 

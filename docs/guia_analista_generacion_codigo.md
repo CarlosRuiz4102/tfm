@@ -2,7 +2,7 @@
 
 ## Objetivo de esta fase
 
-Esta guia cubre el tramo del flujo que empieza cuando la fase de datos ya ha terminado bien y acaba cuando el sistema deja preparado un script Python listo para validacion estatica.
+Esta guia cubre el tramo del flujo que empieza cuando la fase de datos ya ha terminado bien y acaba cuando el sistema deja preparado un script Python listo para la validacion de la parte 3.
 
 Su objetivo no es:
 
@@ -34,7 +34,6 @@ Consulta del usuario
 -> Normalizacion tipada del plan
 -> Agente 3: Generador de codigo
 -> Script Python en JSON
--> Chequeo minimo de contrato
 -> Agente 4
 ```
 
@@ -361,76 +360,24 @@ La pregunta que responde este paso es:
 
 - "Tenemos ya un contrato analitico suficientemente claro para pedir implementacion?"
 
-## Capa breve de validacion entre Agente 2 y Agente 3
+## Transicion entre Agente 2 y Agente 3
 
-Antes de pasar el plan al generador de codigo, existe una validacion local en
-`src/analysis/validation.py`.
+En el planteamiento actual no existe una validacion local intermedia separada
+entre ambos agentes.
 
-Esta capa es deliberadamente pequena, pero cumple una funcion importante:
-asegurar que el `AnalysisPlan` no solo tiene forma de JSON correcta, sino que
-ademas es utilizable sobre los datos reales que ha dejado la fase 1.
+Lo que ocurre aqui es una transicion directa:
 
-En concreto, esta validacion comprueba que:
+1. el JSON del Agente 2 se parsea;
+2. se convierte a `AnalysisPlan`;
+3. se guarda en el estado;
+4. se entrega como contrato analitico al Agente 3.
 
-- `analytical_goal` no este vacio;
-- `analysis_type` pertenezca al catalogo permitido;
-- `metrics` no venga vacio;
-- `required_columns` no venga vacio;
-- las columnas de `required_columns` existan de verdad en `data_context.available_columns`;
-- `data_requirements` no venga vacio;
-- `output_requirements` no venga vacio;
-- `presentation_preferences` no venga vacio;
-- `reasoning` no venga vacio.
+La idea de diseno es que esta parte siga la figura general del flujo sin
+compuertas locales ocultas entre ambos agentes:
 
-Ademas, puede anadir avisos no bloqueantes. Por ejemplo, si `metrics` trae
-duplicados o si `output_requirements` no menciona explicitamente que la salida
-del script debe ser JSON.
-
-Desde el punto de vista del diseno, esta pieza hace en la parte 2 algo muy
-parecido a lo que la validacion estructural hace en la fase de datos: revisar
-el contrato del LLM antes de dejar que el flujo siga avanzando.
-
-## Que pasa si esta validacion falla
-
-Si el plan no supera esta comprobacion:
-
-- no se llama al Agente 3;
-- el workflow no genera codigo sobre un contrato inestable;
-- el estado se marca con error y se conserva el detalle del problema.
-
-Esto evita un fallo muy importante: generar codigo sobre un plan que parece
-razonable en texto, pero que no encaja realmente con el CSV descargado.
-
-## Por que puede fallar esta validacion
-
-Este fallo puede aparecer aunque la respuesta del Agente 2 parezca razonable a
-simple vista.
-
-Las causas mas tipicas son:
-
-- el agente propone columnas que no existen realmente en el CSV normalizado;
-- devuelve un `analysis_type` fuera del catalogo permitido;
-- deja vacio alguno de los campos obligatorios del plan;
-- formula un plan demasiado generico, sin requisitos de datos o sin salida bien definida.
-
-En la practica, esta capa existe precisamente para detectar ese tipo de
-desalineacion antes de pasar al codegen.
-
-## Que implica este fallo dentro del flujo
-
-Cuando ocurre, el sistema no intenta "arreglarlo por debajo" generando codigo
-de todas formas.
-
-Lo que hace es:
-
-- detener la transicion entre Agente 2 y Agente 3;
-- registrar el motivo concreto en `state.error_message`;
-- dejar trazabilidad suficiente para revisar despues si el problema estaba en
-  el plan, en las columnas disponibles o en el propio contrato pedido al LLM.
-
-Dicho de forma simple: si esta comprobacion falla, la parte 2 no entrega un
-script. Entrega un bloqueo controlado que evita propagar un error hacia la
-parte 3.
+- Agente 2 produce el plan;
+- Agente 3 implementa ese plan;
+- la validacion fuerte del codigo pertenece a la parte 3 y al Agente 4.
 
 ## Bloque 4: Agente 3, Generador de codigo
 
@@ -548,15 +495,7 @@ En la implementacion real, este bloque hace estas cosas:
 2. llamar al LLM en modo JSON con `client.complete_json(...)`;
 3. intentar extraer el campo `code` con `_code_from_text(...)`;
 4. tolerar, solo como compatibilidad, que el modelo haya devuelto el script sin wrapper JSON;
-5. reintentar hasta `MAX_LLM_ATTEMPTS = 3` si el formato falla;
-6. aplicar un chequeo minimo local antes de seguir.
-
-Ese chequeo minimo exige al menos:
-
-- `def main(`
-- `json.dumps`
-
-Este chequeo no reemplaza la validacion de seguridad posterior, pero evita continuar si el modelo ni siquiera ha generado un script con forma minima razonable.
+5. reintentar hasta `MAX_LLM_ATTEMPTS = 3` si el formato falla.
 
 ## Prompt base usado por el Agente 3
 
@@ -638,12 +577,15 @@ Una forma clara de explicarlo seria:
 
 Aunque esta guia se centra en Agente 2 y Agente 3, conviene dejar clara la frontera con el siguiente bloque.
 
-La salida del Agente 3 no se considera automaticamente valida. Despues pasan al menos dos comprobaciones:
+La salida del Agente 3 no se considera automaticamente valida. Despues pasa a
+la parte 3, donde se decide si el codigo puede aceptarse, corregirse o
+bloquearse antes de su ejecucion.
 
-1. validacion estatica y de seguridad del codigo;
-2. validacion de ejecucion cuando el script ya se lanza.
+Eso permite mantener separadas tres responsabilidades distintas:
 
-Eso es precisamente lo que permite defender que esta arquitectura no confia ciegamente en el LLM aunque el prompt este bien disenado.
+1. planificar el analisis;
+2. generar el codigo;
+3. validar ese codigo antes de ejecutarlo.
 
 ## Salida final deseada de esta fase
 

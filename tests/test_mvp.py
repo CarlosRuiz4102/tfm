@@ -8,7 +8,7 @@ import pandas as pd
 
 from src.examples.sample_inputs import SAMPLE_INPUTS
 from src.graph.build_graph import build_workflow
-from src.schemas import AnalysisPlan, FinancialDataRequest, FinancialQueryInput
+from src.schemas import AnalysisPlan, CodeValidationDecision, FinancialDataRequest, FinancialQueryInput
 
 
 def _mock_yfinance_output(csv_path: str) -> pd.DataFrame:
@@ -106,6 +106,19 @@ if __name__ == "__main__":
             patch("src.graph.nodes.download_market_data", return_value=_mock_yfinance_output(sample["csv_paths"][0])),
             patch("src.graph.nodes.build_llm_analysis", side_effect=_fake_analysis),
             patch("src.graph.nodes.build_llm_code", side_effect=_fake_code),
+            patch(
+                "src.graph.nodes.build_llm_code_validation",
+                return_value=(
+                    CodeValidationDecision(
+                        decision="valid",
+                        errors=[],
+                        warnings=[],
+                        required_fixes=[],
+                        reasoning="El codigo puede continuar.",
+                    ),
+                    [],
+                ),
+            ),
             patch("src.graph.nodes.build_llm_interpretation", side_effect=_fake_interpretation),
         ):
             return self.workflow.invoke(FinancialQueryInput.from_dict(SAMPLE_INPUTS[example_name]))
@@ -287,6 +300,19 @@ if __name__ == "__main__":
             patch("src.graph.nodes.download_market_data", side_effect=[pd.DataFrame(), _mock_yfinance_output(sample["csv_paths"][0])]),
             patch("src.graph.nodes.build_llm_analysis", side_effect=_fake_analysis),
             patch("src.graph.nodes.build_llm_code", side_effect=_fake_code),
+            patch(
+                "src.graph.nodes.build_llm_code_validation",
+                return_value=(
+                    CodeValidationDecision(
+                        decision="valid",
+                        errors=[],
+                        warnings=[],
+                        required_fixes=[],
+                        reasoning="El codigo puede continuar.",
+                    ),
+                    [],
+                ),
+            ),
             patch("src.graph.nodes.build_llm_interpretation", return_value=("ok", [])),
         ):
             state = self.workflow.invoke(FinancialQueryInput.from_dict(sample))

@@ -7,13 +7,14 @@ from src.config import LLMConfig
 from src.llm.client import LLMClientError, create_llm_client
 from src.llm.prompts import (
     build_analysis_messages,
+    build_code_validation_messages,
     build_code_repair_messages,
     build_codegen_messages,
     build_data_request_messages,
     build_data_request_repair_messages,
     build_interpretation_messages,
 )
-from src.schemas import AnalysisPlan, FinancialDataRequest, FinancialQueryInput
+from src.schemas import AnalysisPlan, CodeValidationDecision, FinancialDataRequest, FinancialQueryInput
 
 
 MAX_LLM_ATTEMPTS = 3
@@ -58,7 +59,21 @@ def _code_from_text(text: str) -> str:
     # mantenemos una ruta de tolerancia si el modelo devuelve el script crudo.
     try:
         payload = _json_from_text(text)
-        return str(payload.get("code") or "").strip()
+        code = str(payload.get("code") or "").strip()
+        # Algunos modelos devuelven un segundo wrapper JSON dentro del propio
+        # campo code. Si ocurre, lo desanidamos para recuperar el script real.
+        for _ in range(2):
+            if not code.startswith("{"):
+                break
+            try:
+                nested_payload = _json_from_text(code)
+            except json.JSONDecodeError:
+                break
+            nested_code = str(nested_payload.get("code") or "").strip()
+            if not nested_code:
+                break
+            code = nested_code
+        return code
     except json.JSONDecodeError:
         # Ruta de compatibilidad por si el modelo devuelve el script directamente
         # en vez de cumplir exactamente el wrapper JSON pedido.
@@ -282,7 +297,7 @@ def build_llm_code(
     # - pedimos JSON
     # - parseamos
     # - extraemos el campo "code"
-    # - comprobamos contrato minimo
+    # - extraemos el script que el workflow tratara despues como artefacto
     llm_config = LLMConfig.from_env()
     if not llm_config.is_configured:
         raise LLMClientError("Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para usar openai/gpt-oss-20b sobre vLLM.")
@@ -309,13 +324,52 @@ def build_llm_code(
                 ]
         if not code:
             raise LLMClientError(str(last_error))
-        # Este chequeo no sustituye a la validacion de seguridad posterior, pero
-        # evita continuar si el LLM ni siquiera devolvio un script con la forma minima esperada.
-        if "def main(" not in code or "json.dumps" not in code:
-            raise LLMClientError("El codigo LLM no cumple el contrato minimo.")
         return code, []
     except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
         raise LLMClientError(f"No se pudo generar codigo con LLM: {exc}") from exc
+
+
+def build_llm_code_validation(
+    query_input: FinancialQueryInput,
+    plan: AnalysisPlan,
+    generated_code: str,
+    input_payload: dict[str, Any] | None = None,
+) -> tuple[CodeValidationDecision, list[str]]:
+    """Llama al Agente 4 y devuelve su decision estructurada."""
+    llm_config = LLMConfig.from_env()
+    if not llm_config.is_configured:
+        raise LLMClientError("Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para validar codigo con LLM.")
+
+    try:
+        client = create_llm_client(llm_config)
+        if client is None:
+            raise LLMClientError("No se pudo crear el cliente LLM para validacion de codigo.")
+        messages = build_code_validation_messages(
+            query_input,
+            plan,
+            generated_code,
+            input_payload=input_payload,
+        )
+        last_error: Exception | None = None
+        payload = None
+        for _attempt in range(MAX_LLM_ATTEMPTS):
+            try:
+                response = client.complete_json(messages)
+                payload = _json_from_text(response.content)
+                break
+            except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                last_error = exc
+                messages = messages + [
+                    messages[-1].__class__(
+                        "user",
+                        "La respuesta anterior no fue JSON valido. Devuelve de nuevo exclusivamente un objeto JSON valido con decision, errors, warnings, required_fixes y reasoning.",
+                    )
+                ]
+        if payload is None:
+            raise LLMClientError(str(last_error))
+        return CodeValidationDecision.from_dict(payload), []
+    except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise LLMClientError(f"No se pudo validar codigo con LLM: {exc}") from exc
 
 
 def repair_llm_code(
@@ -326,12 +380,12 @@ def repair_llm_code(
     input_payload: dict[str, Any] | None = None,
 ) -> tuple[str, list[str]]:
     """Llama a la reparación de código usando el detalle observable del fallo."""
-    # Esta funcion se activa despues de dos tipos de problema:
-    # - rechazo en la validacion de seguridad
+    # Esta funcion se activa cuando el flujo detecta un problema reparable:
+    # - rechazo del validador de codigo
     # - error real al ejecutar el script
     #
-    # El patron vuelve a ser el mismo: error observable -> feedback al LLM ->
-    # script completo corregido -> nueva validacion local.
+    # El patron es siempre el mismo: error observable -> feedback al LLM ->
+    # script completo corregido -> nueva validacion en el flujo.
     llm_config = LLMConfig.from_env()
     if not llm_config.is_configured:
         raise LLMClientError("Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para usar openai/gpt-oss-20b sobre vLLM.")
@@ -364,8 +418,6 @@ def repair_llm_code(
                 ]
         if not code:
             raise LLMClientError(str(last_error))
-        if "def main(" not in code or "json.dumps" not in code:
-            raise LLMClientError("El codigo reparado no cumple el contrato minimo.")
         return code, ["Se reparo codigo generado tras un error previo."]
     except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
         raise LLMClientError(f"No se pudo reparar codigo con LLM: {exc}") from exc

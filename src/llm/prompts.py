@@ -160,7 +160,9 @@ def build_analysis_messages(query_input: FinancialQueryInput, input_payload: dic
             "Tu tarea es convertir la peticion del usuario y los datos ya descargados en un plan verificable para un script Python posterior. "
             "No calcules cifras y no redactes la respuesta final.\n"
             "Debes apoyarte solo en el contexto de entrada ya resuelto por la fase de datos.\n"
-            "required_columns debe referirse a columnas de los datos disponibles y output_requirements debe dejar claro que el script devolvera JSON estructurado.\n"
+            "required_columns debe referirse a columnas de los datos disponibles.\n"
+            "output_requirements y presentation_preferences no pueden quedar vacios: deben reflejar de forma explicita "
+            "que salida estructurada devolvera el script y como debe presentarse el resultado.\n"
             f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
         ),
     ]
@@ -224,6 +226,47 @@ def build_codegen_messages(
     ]
 
 
+def build_code_validation_messages(
+    query_input: FinancialQueryInput,
+    plan: AnalysisPlan,
+    generated_code: str,
+    input_payload: dict[str, Any] | None = None,
+) -> list[LLMMessage]:
+    """Prompt del Agente 4: validar el codigo generado antes de ejecutarlo."""
+    payload = {
+        "original_user_message": query_input.query,
+        "input": input_payload or query_input.to_dict(),
+        "analysis_plan": plan.to_dict(),
+        "generated_code": generated_code,
+        "expected_code_output_contract": {
+            "stdout": "un unico JSON valido",
+            "required_top_level_keys": ["metrics", "summary", "limitations"],
+            "optional_top_level_keys": ["analysis_type", "tables", "series", "diagnostics"],
+        },
+        "required_json_schema": {
+            "decision": "valid | repairable | blocked",
+            "errors": ["str"],
+            "warnings": ["str"],
+            "required_fixes": ["str"],
+            "reasoning": "str",
+        },
+    }
+    return [
+        LLMMessage("system", ANALYSIS_SYSTEM_PROMPT),
+        LLMMessage(
+            "user",
+            "Agente 4 - VALIDADOR DE CODIGO.\n"
+            "Tu tarea es revisar el script generado y decidir si puede pasar a ejecucion, si necesita correccion o si debe bloquearse.\n"
+            "Devuelve exclusivamente JSON valido con los campos decision, errors, warnings, required_fixes y reasoning. No incluyas markdown.\n"
+            "No ejecutes el codigo. No reescribas el script. No cambies el AnalysisPlan.\n"
+            "Debes evaluar si el codigo implementa el plan recibido, si respeta el contexto de entrada y si mantiene una salida estructurada coherente con el workflow.\n"
+            "No confundas el esquema JSON de tu propia respuesta como validador con el JSON que debe imprimir el script.\n"
+            "El script debe imprimir metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.\n"
+            f"{json.dumps(payload, ensure_ascii=False)}",
+        ),
+    ]
+
+
 def build_code_repair_messages(
     query_input: FinancialQueryInput,
     plan: AnalysisPlan,
@@ -238,15 +281,22 @@ def build_code_repair_messages(
         "analysis_plan": plan.to_dict(),
         "previous_code": previous_code,
         "error_detail": error_detail,
+        "expected_code_output_contract": {
+            "stdout": "un unico JSON valido",
+            "required_top_level_keys": ["metrics", "summary", "limitations"],
+            "optional_top_level_keys": ["analysis_type", "tables", "series", "diagnostics"],
+        },
         "required_json_schema": {"code": "str"},
     }
     return [
         LLMMessage("system", ANALYSIS_SYSTEM_PROMPT),
         LLMMessage(
             "user",
-            "Subagente 3/4 - REPARACION DE CODIGO.\n"
+            "Subagente 3 - REPARACION DE CODIGO.\n"
             "El codigo anterior fallo o fue rechazado. Devuelve exclusivamente JSON valido con un unico campo code. "
             "El script corregido debe ser completo, no un parche parcial.\n"
+            "No cambies el contrato de entrada ni el contrato de salida del workflow.\n"
+            "El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),
     ]

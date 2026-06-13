@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-from src.analysis.validation import validate_analysis_plan
 from src.data.provider_yfinance import download_market_data, normalize_downloaded_data, persist_download_artifacts
 from src.data.validation import validate_financial_data_request_structure, validate_operational_download
 from src.execution.code_runner import run_generated_code
-from src.execution.code_security import validate_generated_code
 from src.graph.validation import validate_input
 from src.llm.client import LLMClientError
 from src.llm.pipeline import (
     build_llm_analysis,
     build_llm_code,
+    build_llm_code_validation,
     build_llm_data_request,
     build_llm_interpretation,
     repair_llm_code,
     repair_llm_data_request,
 )
-from src.schemas.analysis import AnalysisPlan, Phase2DataContext, Phase2PromptContext, TemporalContext
+from src.schemas.analysis import Phase2DataContext, Phase2PromptContext, TemporalContext
 from src.schemas.data import FinancialDataRequest
 from src.schemas.input import FinancialQueryInput
 from src.schemas.workflow import WorkflowState
@@ -23,6 +22,7 @@ from src.schemas.workflow import WorkflowState
 
 MAX_STRUCTURAL_REPAIR_ATTEMPTS = 2
 MAX_OPERATIONAL_REPAIR_ATTEMPTS = 2
+MAX_CODE_REPAIR_ATTEMPTS = 2
 
 
 def _compact_for_interpretation(value, max_list_items: int = 40, max_string_chars: int = 2000):
@@ -100,6 +100,27 @@ def _build_phase2_input_payload(state: WorkflowState) -> Phase2PromptContext:
         data_context=data_context,
         warnings=list(state.warnings),
     )
+
+
+def _build_code_validation_feedback(state: WorkflowState) -> str:
+    """
+    Compacta la decision del Agente 4 para pasarsela al subagente.
+
+    El objetivo es que la correccion trabaje con errores, avisos y fixes
+    pedidos por el validador sin arrastrar logica adicional al prompt.
+    """
+    decision = state.code_validation_decision
+    if decision is None:
+        return "El Agente 4 marco el codigo como reparable, pero no se conservo detalle adicional."
+
+    lines = [f"decision={decision.decision}", f"reasoning={decision.reasoning}"]
+    if decision.errors:
+        lines.append("errors=" + " | ".join(decision.errors))
+    if decision.required_fixes:
+        lines.append("required_fixes=" + " | ".join(decision.required_fixes))
+    if decision.warnings:
+        lines.append("warnings=" + " | ".join(decision.warnings))
+    return "\n".join(lines)
 
 
 def ingest_node(state: WorkflowState) -> WorkflowState:
@@ -259,15 +280,7 @@ def llm_analysis_node(state: WorkflowState) -> WorkflowState:
         state.error_message = str(exc)
         return state
 
-    available_columns = state.download_summary.columns if state.download_summary else None
-    validation = validate_analysis_plan(plan, available_columns=available_columns)
-    if not validation.is_valid:
-        state.status = "error"
-        state.error_message = "AnalysisPlan invalido: " + " | ".join(validation.errors)
-        return state
-
     state.warnings.extend(warnings)
-    state.warnings.extend(validation.warnings)
     state.analysis_plan = plan
     state.status = "planned"
     return state
@@ -294,40 +307,76 @@ def code_generation_node(state: WorkflowState) -> WorkflowState:
     return state
 
 
-def code_security_node(state: WorkflowState) -> WorkflowState:
-    """Agente 4: valida el codigo generado antes de ejecutarlo."""
-    if not state.generated_code:
+def code_validation_node(state: WorkflowState) -> WorkflowState:
+    """
+    Agente 4: decide si el codigo es valido, reparable o bloqueado.
+
+    Esta fase sigue la misma filosofia que las partes anteriores:
+    salida LLM estructurada, reintentos acotados y un subagente propio cuando
+    el fallo todavia parece corregible.
+    """
+    if not state.generated_code or not state.analysis_plan:
         state.status = "error"
-        state.error_message = "No existe generated_code para validar."
+        state.error_message = "Faltan generated_code o analysis_plan para validar codigo."
         return state
 
-    result = validate_generated_code(state.generated_code)
-    if not result.is_valid:
-        if state.analysis_plan:
-            query_input = state.normalized_query.to_query_input()
-            error_detail = "Codigo rechazado por seguridad: " + " | ".join(result.errors)
-            try:
-                repaired_code, warnings = repair_llm_code(
-                    query_input,
-                    state.analysis_plan,
-                    state.generated_code,
-                    error_detail,
-                    input_payload=_build_phase2_input_payload(state).to_dict(),
-                )
-                repaired_result = validate_generated_code(repaired_code)
-                if repaired_result.is_valid:
-                    state.generated_code = repaired_code
-                    state.warnings.extend(warnings)
-                    state.status = "code_validated"
-                    return state
-                result = repaired_result
-            except LLMClientError as exc:
-                state.warnings.append(str(exc))
-        state.status = "code_rejected"
-        state.error_message = "Codigo rechazado por seguridad: " + " | ".join(result.errors)
-        return state
-    state.status = "code_validated"
-    return state
+    query_input = state.normalized_query.to_query_input()
+    phase2_input_payload = _build_phase2_input_payload(state)
+    state.status = "code_validating"
+
+    while True:
+        try:
+            decision, warnings = build_llm_code_validation(
+                query_input,
+                state.analysis_plan,
+                state.generated_code,
+                input_payload=phase2_input_payload.to_dict(),
+            )
+        except LLMClientError as exc:
+            state.status = "error"
+            state.error_message = str(exc)
+            return state
+
+        state.code_validation_decision = decision
+        state.warnings.extend(warnings)
+        state.warnings.extend(decision.warnings)
+
+        if decision.decision == "valid":
+            state.status = "code_validated"
+            return state
+
+        if decision.decision == "blocked":
+            state.status = "code_rejected"
+            detail = " | ".join(decision.errors) if decision.errors else decision.reasoning
+            state.error_message = "Codigo bloqueado por el Agente 4: " + detail
+            return state
+
+        if state.code_repair_attempts >= MAX_CODE_REPAIR_ATTEMPTS:
+            state.status = "code_rejected"
+            detail = " | ".join(decision.errors) if decision.errors else decision.reasoning
+            state.error_message = (
+                "Se supero el numero maximo de intentos de reparacion de codigo. "
+                + detail
+            )
+            return state
+
+        try:
+            state.status = "code_repairing"
+            repaired_code, repair_warnings = repair_llm_code(
+                query_input,
+                state.analysis_plan,
+                state.generated_code,
+                _build_code_validation_feedback(state),
+                input_payload=phase2_input_payload.to_dict(),
+            )
+        except LLMClientError as exc:
+            state.status = "error"
+            state.error_message = str(exc)
+            return state
+
+        state.generated_code = repaired_code
+        state.code_repair_attempts += 1
+        state.warnings.extend(repair_warnings)
 
 
 def code_execution_node(state: WorkflowState) -> WorkflowState:
@@ -353,26 +402,6 @@ def code_execution_node(state: WorkflowState) -> WorkflowState:
         "download_summary": state.download_summary.to_dict() if state.download_summary else None,
     }
     execution = run_generated_code(state.generated_code, payload)
-    if execution.returncode != 0:
-        query_input = state.normalized_query.to_query_input()
-        error_detail = execution.stderr.strip() or "El script fallo sin stderr."
-        try:
-            repaired_code, warnings = repair_llm_code(
-                query_input,
-                state.analysis_plan,
-                state.generated_code,
-                error_detail,
-                input_payload=phase2_input_payload.to_dict(),
-            )
-            repaired_result = validate_generated_code(repaired_code)
-            if repaired_result.is_valid:
-                state.generated_code = repaired_code
-                state.warnings.extend(warnings)
-                execution = run_generated_code(repaired_code, payload)
-            else:
-                state.warnings.append("La reparacion no supero seguridad: " + " | ".join(repaired_result.errors))
-        except LLMClientError as exc:
-            state.warnings.append(str(exc))
     state.execution_stdout = execution.stdout
     state.execution_stderr = execution.stderr
     state.execution_returncode = execution.returncode

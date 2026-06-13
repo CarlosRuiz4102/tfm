@@ -8,7 +8,7 @@ import pandas as pd
 
 from src.examples.sample_inputs import SAMPLE_INPUTS
 from src.graph.build_graph import build_workflow
-from src.schemas import AnalysisPlan, FinancialDataRequest, FinancialQueryInput
+from src.schemas import AnalysisPlan, CodeValidationDecision, FinancialDataRequest, FinancialQueryInput
 
 
 def _mock_yfinance_output(csv_path: str) -> pd.DataFrame:
@@ -114,6 +114,19 @@ if __name__ == "__main__":
             patch("src.graph.nodes.download_market_data", return_value=_mock_yfinance_output(sample["csv_paths"][0])),
             patch("src.graph.nodes.build_llm_analysis", side_effect=_fake_analysis),
             patch("src.graph.nodes.build_llm_code", side_effect=_fake_code),
+            patch(
+                "src.graph.nodes.build_llm_code_validation",
+                return_value=(
+                    CodeValidationDecision(
+                        decision="valid",
+                        errors=[],
+                        warnings=[],
+                        required_fixes=[],
+                        reasoning="El codigo puede continuar.",
+                    ),
+                    [],
+                ),
+            ),
             patch("src.graph.nodes.build_llm_interpretation", return_value=("ok", [])),
         ):
             state = self.workflow.invoke(FinancialQueryInput.from_dict(sample))
@@ -124,8 +137,9 @@ if __name__ == "__main__":
         self.assertEqual(observed_payloads["analysis"]["data_context"]["row_count"], 60)
         self.assertEqual(observed_payloads["codegen"]["temporal_context"]["interval"], "1d")
 
-    def test_invalid_analysis_plan_stops_before_codegen(self) -> None:
+    def test_analysis_plan_no_longer_has_hidden_local_gate_before_codegen(self) -> None:
         sample = SAMPLE_INPUTS["overview_aapl"]
+        observed: dict[str, bool] = {"codegen_called": False}
 
         def _fake_data_request(query_input):
             return (
@@ -147,8 +161,8 @@ if __name__ == "__main__":
             )
 
         def _invalid_analysis(query_input, input_payload=None):
-            # Este plan parece correcto de forma superficial, pero pide una
-            # columna que no existe en la descarga normalizada de la fase 1.
+            # Aunque este plan sea discutible, ya no existe una validacion
+            # local intermedia que lo bloquee antes del codegen.
             return (
                 AnalysisPlan(
                     analytical_goal="Analizar AAPL.",
@@ -163,17 +177,52 @@ if __name__ == "__main__":
                 [],
             )
 
+        def _fake_code(query_input, plan, input_payload=None):
+            observed["codegen_called"] = True
+            return (
+                """
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def main() -> None:
+    payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+    print(json.dumps({"metrics": {"tickers": payload["tickers"]}, "summary": "ok", "limitations": []}, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
+                """.strip(),
+                [],
+            )
+
         with (
             patch("src.graph.nodes.build_llm_data_request", side_effect=_fake_data_request),
             patch("src.graph.nodes.download_market_data", return_value=_mock_yfinance_output(sample["csv_paths"][0])),
             patch("src.graph.nodes.build_llm_analysis", side_effect=_invalid_analysis),
-            patch("src.graph.nodes.build_llm_code", side_effect=AssertionError("No deberia llamarse al codegen.")),
+            patch("src.graph.nodes.build_llm_code", side_effect=_fake_code),
+            patch(
+                "src.graph.nodes.build_llm_code_validation",
+                return_value=(
+                    CodeValidationDecision(
+                        decision="valid",
+                        errors=[],
+                        warnings=[],
+                        required_fixes=[],
+                        reasoning="El codigo puede continuar.",
+                    ),
+                    [],
+                ),
+            ),
+            patch("src.graph.nodes.build_llm_interpretation", return_value=("ok", [])),
         ):
             state = self.workflow.invoke(FinancialQueryInput.from_dict(sample))
 
-        self.assertEqual(state.status, "completed_with_error")
-        self.assertIn("AnalysisPlan invalido", state.final_answer)
-        self.assertIn("NoExiste", state.final_answer)
+        self.assertEqual(state.status, "completed")
+        self.assertTrue(observed["codegen_called"])
 
 
 if __name__ == "__main__":

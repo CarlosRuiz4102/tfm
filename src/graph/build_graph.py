@@ -5,7 +5,7 @@ from typing import Callable
 from src.graph.nodes import (
     code_execution_node,
     code_generation_node,
-    code_security_node,
+    code_validation_node,
     data_download_node,
     data_request_planning_node,
     data_request_structural_validation_node,
@@ -32,7 +32,7 @@ class SimpleFinancialWorkflow:
             data_download_node,
             llm_analysis_node,
             code_generation_node,
-            code_security_node,
+            code_validation_node,
             code_execution_node,
             interpretation_node,
         ]
