@@ -163,6 +163,11 @@ def build_analysis_messages(query_input: FinancialQueryInput, input_payload: dic
             "required_columns debe referirse a columnas de los datos disponibles.\n"
             "output_requirements y presentation_preferences no pueden quedar vacios: deben reflejar de forma explicita "
             "que salida estructurada devolvera el script y como debe presentarse el resultado.\n"
+            "En output_requirements debes describir siempre el contrato minimo del workflow: "
+            "metrics debe ser un objeto JSON, summary debe ser un texto plano y limitations debe ser una lista.\n"
+            "Si la consulta pide tabla, serie, ranking, drawdown u otros bloques estructurados, describelos como claves "
+            "opcionales adicionales, pero sin sustituir metrics, summary ni limitations.\n"
+            "No dejes output_requirements ni presentation_preferences en blanco ni con frases genericas vacias.\n"
             f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
         ),
     ]
@@ -205,6 +210,13 @@ def build_codegen_messages(
                 "Si faltan datos, devuelve limitations en vez de inventar resultados.",
                 "No cambies tickers, fechas, intervalo ni objetivo analitico.",
                 "No generes texto final para el usuario fuera del JSON.",
+                "metrics debe ser siempre un objeto JSON, no una lista ni una cadena.",
+                "summary debe ser siempre un texto plano no vacio, no un objeto ni una tabla.",
+                "limitations debe ser siempre una lista; si no hay limitaciones, usa [].",
+                "tables, series y diagnostics son opcionales y nunca deben sustituir a metrics, summary o limitations.",
+                "Prefiere codigo simple, autocontenido y facil de validar frente a soluciones recargadas.",
+                "No uses matplotlib, graficos ni archivos adicionales salvo que analysis_plan.output_requirements los pida de forma explicita.",
+                "Los helpers de src.execution.market_data forman parte del contrato soportado por el workflow.",
             ],
             "mandatory_data_loader": (
                 "Usa from src.execution.market_data import load_close_prices, load_market_data, ticker_summary, make_json_safe. "
@@ -226,6 +238,8 @@ def build_codegen_messages(
             "Devuelve exclusivamente un objeto JSON valido con un unico campo code. No incluyas markdown.\n"
             "El valor code debe ser un script Python completo, autocontenido y ejecutable.\n"
             "Debes implementar el AnalysisPlan recibido, no reinterpretar la consulta desde cero.\n"
+            "La prioridad es cumplir el contrato minimo del workflow con un script robusto y simple.\n"
+            "No conviertas summary en un objeto, no uses metrics como lista y no sustituyas la salida minima por tablas o series.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),
     ]
@@ -267,6 +281,9 @@ def build_code_validation_messages(
             "Debes evaluar si el codigo implementa el plan recibido, si respeta el contexto de entrada y si mantiene una salida estructurada coherente con el workflow.\n"
             "No confundas el esquema JSON de tu propia respuesta como validador con el JSON que debe imprimir el script.\n"
             "El script debe imprimir metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.\n"
+            "Considera validos, por contrato del workflow, los helpers importados desde src.execution.market_data cuando el script use solo "
+            "load_close_prices, load_market_data, ticker_summary y make_json_safe.\n"
+            "No bloquees un script solo por mejoras opcionales si el contrato minimo y la logica principal estan bien.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),
     ]
@@ -302,6 +319,9 @@ def build_code_repair_messages(
             "El script corregido debe ser completo, no un parche parcial.\n"
             "No cambies el contrato de entrada ni el contrato de salida del workflow.\n"
             "El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.\n"
+            "Asegura especificamente que metrics sea un objeto, summary sea un texto y limitations sea una lista.\n"
+            "Si la consulta pedia tablas o series, mantenlas como claves opcionales, pero no sustituyas el contrato minimo.\n"
+            "Prefiere corregir con cambios pequenos y codigo simple antes que rehacer el script con mas complejidad.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),
     ]
@@ -337,24 +357,35 @@ def build_execution_repair_messages(
             "El script corregido debe ser completo, no un parche parcial.\n"
             "No uses analysis_plan y no cambies el contrato de entrada ni el contrato de salida del workflow.\n"
             "El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.\n"
+            "Asegura especificamente que metrics sea un objeto, summary sea un texto y limitations sea una lista.\n"
+            "Si el problema observado es de forma de salida, repara solo el contrato sin complicar innecesariamente la logica analitica.\n"
+            "Si stdout ya estaba cerca de ser util, prioriza conservar el contenido analitico y corregir la estructura.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),
     ]
 
 
-def build_interpretation_messages(output: dict, plan: AnalysisPlan) -> list[LLMMessage]:
-    """Prompt del Agente 5: redactar la respuesta final sin recalcular metricas."""
-    payload = {
-        "execution_output": output,
-        "analysis_plan": plan.to_dict(),
-    }
+def build_interpretation_messages(interpretation_payload: dict[str, Any]) -> list[LLMMessage]:
+    """Prompt del Agente 5: redactar la respuesta final sin pistas del plan analitico."""
+    # A diferencia de los prompts de la parte 2 y la parte 3, aqui evitamos
+    # deliberadamente meter analysis_plan, analysis_type o preferencias de
+    # presentacion. El interpretador debe inferir la elaboracion necesaria
+    # leyendo la query y los resultados reales.
     return [
         LLMMessage("system", ANALYSIS_SYSTEM_PROMPT),
         LLMMessage(
             "user",
             "Agente 5 - INTERPRETE.\n"
-            "Redacta la respuesta final para el usuario usando unicamente execution_output y analysis_plan. "
+            "Redacta la respuesta final para el usuario usando solo la consulta original, "
+            "el contexto resuelto minimo, execution_output y los warnings relevantes. "
             "No recalcules, no completes cifras ausentes y no incorpores datos externos.\n"
-            f"{json.dumps(payload, ensure_ascii=False, indent=2)}",
+            "Debes inferir por ti mismo cuanta elaboracion necesita la respuesta segun la query "
+            "y segun la riqueza real de los resultados obtenidos.\n"
+            "Si la consulta es simple, responde de forma simple y evita convertir la salida "
+            "en un informe recargado. Si la consulta pide comparacion, desglose o estructura, "
+            "adapta el formato en consecuencia.\n"
+            "Si execution_output incluye limitations vacias, no fuerces una seccion artificial "
+            "de limitaciones. Si existen limitaciones relevantes, integralas con naturalidad.\n"
+            f"{json.dumps(interpretation_payload, ensure_ascii=False, indent=2)}",
         ),
     ]

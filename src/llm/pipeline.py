@@ -104,6 +104,38 @@ def _is_json_only_answer(text: str) -> bool:
     return True
 
 
+def _normalize_code_validation_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """
+    Rellena campos minimos del Agente 4 cuando el LLM omite algun detalle menor.
+
+    La parte 3 sigue exigiendo una decision estructurada, pero no conviene que
+    toda la ejecucion se rompa solo porque falte `reasoning` si ya tenemos una
+    decision util y errores observables.
+    """
+    normalized = dict(payload)
+    decision = str(normalized.get("decision") or "").strip().lower()
+    reasoning = str(normalized.get("reasoning") or "").strip()
+    if reasoning:
+        return normalized
+
+    errors = _as_str_list(normalized.get("errors"), [])
+    required_fixes = _as_str_list(normalized.get("required_fixes"), [])
+
+    if errors:
+        normalized["reasoning"] = "El Agente 4 detecto problemas en el script: " + " | ".join(errors)
+        return normalized
+    if required_fixes:
+        normalized["reasoning"] = "El Agente 4 pidio correcciones concretas: " + " | ".join(required_fixes)
+        return normalized
+    if decision == "valid":
+        normalized["reasoning"] = "El Agente 4 considera que el codigo puede continuar."
+    elif decision == "repairable":
+        normalized["reasoning"] = "El Agente 4 considera que el codigo es corregible."
+    elif decision == "blocked":
+        normalized["reasoning"] = "El Agente 4 considera que el codigo debe bloquearse."
+    return normalized
+
+
 def _build_data_request_from_payload(payload: dict, query_input: FinancialQueryInput) -> FinancialDataRequest:
     """Normaliza la respuesta del LLM a un FinancialDataRequest robusto."""
     # Este punto es clave: aunque el LLM "acierte", no dejamos pasar su salida
@@ -368,7 +400,8 @@ def build_llm_code_validation(
                 ]
         if payload is None:
             raise LLMClientError(str(last_error))
-        return CodeValidationDecision.from_dict(payload), []
+        normalized_payload = _normalize_code_validation_payload(payload)
+        return CodeValidationDecision.from_dict(normalized_payload), []
     except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
         raise LLMClientError(f"No se pudo validar codigo con LLM: {exc}") from exc
 
@@ -469,11 +502,15 @@ def repair_llm_execution_code(
         raise LLMClientError(f"No se pudo reparar el codigo tras un error de ejecucion: {exc}") from exc
 
 
-def build_llm_interpretation(output: dict, plan: AnalysisPlan) -> tuple[str, list[str]]:
+def build_llm_interpretation(interpretation_payload: dict[str, Any]) -> tuple[str, list[str]]:
     """Llama al Agente 5 y fuerza una salida textual utilizable como respuesta final."""
     # A diferencia de Agente 1, 2 y 3, aqui si queremos texto natural.
     # Por eso esta funcion usa complete_text y luego comprueba que el modelo no
     # haya devuelto JSON puro por error.
+    #
+    # Importante: esta capa no valida si la lectura financiera es "buena" o
+    # "mala". Solo impone controles minimos para que la salida sea texto
+    # utilizable por el workflow y no un blob JSON crudo o una respuesta vacia.
     llm_config = LLMConfig.from_env()
     if not llm_config.is_configured:
         raise LLMClientError("Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para usar openai/gpt-oss-20b sobre vLLM.")
@@ -482,7 +519,7 @@ def build_llm_interpretation(output: dict, plan: AnalysisPlan) -> tuple[str, lis
         client = create_llm_client(llm_config)
         if client is None:
             raise LLMClientError("No se pudo crear el cliente LLM para interpretacion.")
-        messages = build_interpretation_messages(output, plan)
+        messages = build_interpretation_messages(interpretation_payload)
         last_answer = ""
         for attempt in range(MAX_LLM_ATTEMPTS):
             response = client.complete_text(messages)
@@ -501,7 +538,7 @@ def build_llm_interpretation(output: dict, plan: AnalysisPlan) -> tuple[str, lis
                 messages[-1].__class__(
                     "user",
                     "La respuesta anterior fue JSON puro. Devuelve una interpretacion textual en espanol, "
-                    "con frases completas, basada solo en execution_output y analysis_plan.",
+                    "con frases completas, basada solo en user_query, resolved_context, execution_output y warnings.",
                 )
             ]
         raise LLMClientError(

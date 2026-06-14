@@ -420,6 +420,15 @@ Semantica recomendada:
 
 La salida se guarda como `execution_output` y el flujo puede continuar.
 
+Nota importante sobre la conexion con la parte 5:
+
+- la parte 4 no intenta decidir como debe sonar la respuesta final;
+- su responsabilidad termina cuando deja una `execution_output` util para el
+  workflow;
+- si esa salida contiene etiquetas internas como `analysis_type` u otras pistas
+  heredadas del analisis previo, la limpieza de esos campos pertenece ya a la
+  parte 5 y no a esta parte.
+
 ### Caso `repairable`
 
 Se activa el Subagente 4.
@@ -613,7 +622,34 @@ Minimo recomendable:
 - `execution_returncode`
 - avisos relevantes acumulados
 
+En la implementacion actual, la parte 5 construye ademas un
+`interpretation_payload` a partir de esta salida valida. Esa carga:
+
+- conserva `user_query`, contexto resuelto, `execution_output` y `warnings`;
+- elimina pistas internas que no deberian llegar al interpretador;
+- queda guardada en el estado para poder trazar despues la conexion entre ambas
+  partes.
+
 La siguiente fase no deberia recibir una salida dudosa ni un intento fallido como si fuera resultado bueno.
+
+## Conexion con la trazabilidad global
+
+La implementacion actual deja esta parte conectada con una traza global por
+ejecucion:
+
+- `results/traces/<run_id>/manifest.json`
+- `results/traces/<run_id>/events.jsonl`
+- `results/traces/<run_id>/snapshots/`
+
+Eso permite comprobar despues:
+
+- con que payload real se ejecuto el script;
+- cuantas reparaciones hubo;
+- que `execution_output` quedo realmente validado;
+- que se entrego exactamente a la parte 5.
+
+Si en una bateria de ejemplos aparece un fallo raro, esta carpeta de traza
+deberia revisarse antes de tocar prompts o logica del reparador.
 
 ## Condiciones para considerar esta parte completada
 

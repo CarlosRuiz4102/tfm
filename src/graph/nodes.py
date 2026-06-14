@@ -27,6 +27,14 @@ MAX_STRUCTURAL_REPAIR_ATTEMPTS = 2
 MAX_OPERATIONAL_REPAIR_ATTEMPTS = 2
 MAX_CODE_REPAIR_ATTEMPTS = 2
 MAX_EXECUTION_ATTEMPTS = 3
+INTERPRETATION_HINT_KEYS = {
+    "analysis_plan",
+    "analysis_type",
+    "analysis_level",
+    "level",
+    "presentation_preferences",
+    "output_requirements",
+}
 
 
 def _compact_for_interpretation(value, max_list_items: int = 40, max_string_chars: int = 2000):
@@ -57,6 +65,54 @@ def _compact_for_interpretation(value, max_list_items: int = 40, max_string_char
     if isinstance(value, str) and len(value) > max_string_chars:
         return value[:max_string_chars] + "... [texto truncado para interpretacion]"
     return value
+
+
+def _strip_interpretation_hints(value):
+    """
+    El Agente 5 no debe ver pistas del plan analitico ni etiquetas de nivel.
+
+    Esta limpieza se aplica sobre la carga que llega al interprete para que
+    infiera la elaboracion de la respuesta desde la query y los resultados
+    reales, no desde metadatos internos del flujo.
+    """
+    if isinstance(value, dict):
+        return {
+            key: _strip_interpretation_hints(item)
+            for key, item in value.items()
+            if key not in INTERPRETATION_HINT_KEYS
+        }
+    if isinstance(value, list):
+        return [_strip_interpretation_hints(item) for item in value]
+    return value
+
+
+def _build_interpretation_payload(state: WorkflowState) -> dict:
+    """
+    Construye un payload limpio para el Agente 5.
+
+    El interpretador solo debe recibir la consulta original, contexto resuelto,
+    resultados de ejecucion y avisos relevantes. No debe depender de
+    analysis_plan ni de pistas equivalentes.
+    """
+    resolved_context = {
+        "tickers": list(state.normalized_query.tickers),
+        "temporal_context": {
+            "start": state.normalized_query.start,
+            "end": state.normalized_query.end,
+            "period": state.normalized_query.period,
+            "interval": state.normalized_query.interval,
+        },
+    }
+    # La salida de la parte 4 puede contener metricas, tablas o series utiles
+    # para el usuario, pero no debe arrastrar pistas que le digan al Agente 5
+    # como "deberia" interpretar o estructurar la respuesta.
+    execution_output = _strip_interpretation_hints(state.execution_output or {})
+    return {
+        "user_query": state.user_query,
+        "resolved_context": resolved_context,
+        "execution_output": _compact_for_interpretation(execution_output),
+        "warnings": list(state.warnings),
+    }
 
 
 def _apply_data_request_to_state(state: WorkflowState, request: FinancialDataRequest) -> None:
@@ -498,18 +554,16 @@ def code_execution_node(state: WorkflowState) -> WorkflowState:
 
 def interpretation_node(state: WorkflowState) -> WorkflowState:
     """Agente 5: transforma los resultados ejecutados en una respuesta final."""
-    output = state.execution_output or {}
     if state.execution_returncode != 0:
         return execution_error_node(state)
-    if not state.analysis_plan:
-        state.status = "completed_with_error"
-        state.error_message = "No existe analysis_plan para interpretar resultados."
-        state.final_answer = state.error_message
-        return state
-
-    output_for_llm = _compact_for_interpretation(output)
+    state.status = "interpretation_preparing"
+    interpretation_payload = _build_interpretation_payload(state)
+    # Conservamos la carga exacta que vio el interpretador para poder trazar
+    # despues como se conectan la parte 4 y la parte 5.
+    state.interpretation_payload = interpretation_payload
     try:
-        final_answer, warnings = build_llm_interpretation(output_for_llm, state.analysis_plan)
+        state.status = "interpreting"
+        final_answer, warnings = build_llm_interpretation(interpretation_payload)
     except LLMClientError as exc:
         state.status = "completed_with_error"
         state.error_message = str(exc)
@@ -519,8 +573,12 @@ def interpretation_node(state: WorkflowState) -> WorkflowState:
         )
         return state
 
+    # No validamos semanticamente la interpretacion aqui. Esta parte acepta la
+    # respuesta textual del agente tal como venga, salvo los controles minimos
+    # de formato que ya viven en build_llm_interpretation(...).
     state.warnings.extend(warnings)
     state.final_answer = final_answer
+    state.status = "interpreted"
     state.status = "completed"
     return state
 

@@ -8,7 +8,8 @@ import pandas as pd
 
 from src.examples.sample_inputs import SAMPLE_INPUTS
 from src.graph.build_graph import build_workflow
-from src.schemas import AnalysisPlan, CodeValidationDecision, FinancialDataRequest, FinancialQueryInput
+from src.graph.nodes import interpretation_node
+from src.schemas import AnalysisPlan, CodeValidationDecision, FinancialDataRequest, FinancialQueryInput, WorkflowState
 
 
 def _mock_yfinance_output(csv_path: str) -> pd.DataFrame:
@@ -203,6 +204,36 @@ if __name__ == "__main__":
         self.assertIsNotNone(state.execution_validation_decision)
         self.assertEqual(state.execution_validation_decision.decision, "blocked")
         self.assertIn("Se agotaron los intentos maximos de ejecucion", state.final_answer)
+
+    def test_interpretation_no_longer_depends_on_analysis_plan_or_analysis_hints(self) -> None:
+        observed_payload: dict[str, object] = {}
+        state = WorkflowState.from_input(FinancialQueryInput(query="Compara Nvidia y AMD en 2 anos"))
+        state.normalized_query.tickers = ["NVDA", "AMD"]
+        state.normalized_query.period = "2y"
+        state.normalized_query.interval = "1d"
+        state.execution_returncode = 0
+        state.execution_output = {
+            "analysis_type": "comparative_return_analysis",
+            "analysis_level": "C",
+            "metrics": {"retorno_total": {"NVDA": 10.0, "AMD": 5.0}},
+            "summary": "NVDA rindio mejor.",
+            "limitations": [],
+        }
+
+        def _fake_interpretation(payload: dict) -> tuple[str, list[str]]:
+            observed_payload.update(payload)
+            return "ok", []
+
+        with patch("src.graph.nodes.build_llm_interpretation", side_effect=_fake_interpretation):
+            interpreted = interpretation_node(state)
+
+        self.assertEqual(interpreted.status, "completed")
+        self.assertEqual(interpreted.final_answer, "ok")
+        self.assertEqual(observed_payload["user_query"], "Compara Nvidia y AMD en 2 anos")
+        self.assertIn("execution_output", observed_payload)
+        self.assertNotIn("analysis_plan", observed_payload)
+        self.assertNotIn("analysis_type", observed_payload["execution_output"])
+        self.assertNotIn("analysis_level", observed_payload["execution_output"])
 
 
 if __name__ == "__main__":

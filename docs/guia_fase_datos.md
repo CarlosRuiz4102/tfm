@@ -811,6 +811,25 @@ Ejemplo conceptual:
 }
 ```
 
+### Conexion con la traza global del workflow
+
+Ademas de entregar estos datos al Agente 2, la implementacion actual deja una
+traza transversal desde el inicio del workflow en:
+
+- `results/traces/<run_id>/manifest.json`
+- `results/traces/<run_id>/events.jsonl`
+- `results/traces/<run_id>/snapshots/`
+
+Eso permite revisar despues, para cada ejemplo ejecutado:
+
+- que `FinancialDataRequest` se genero realmente;
+- si hubo correccion estructural u operativa;
+- que CSVs y artefactos quedaron persistidos;
+- con que estado exacto se entro en la parte analitica.
+
+Para depurar el proyecto completo, esta carpeta de traza deberia ser el punto
+de partida antes de revisar artefactos aislados.
+
 ### Condiciones para considerar la fase completada
 
 - existe un `FinancialDataRequest` estructuralmente valido;

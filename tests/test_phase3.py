@@ -8,6 +8,7 @@ import pandas as pd
 
 from src.examples.sample_inputs import SAMPLE_INPUTS
 from src.graph.build_graph import build_workflow
+from src.llm.pipeline import _normalize_code_validation_payload
 from src.schemas import AnalysisPlan, CodeValidationDecision, FinancialDataRequest, FinancialQueryInput
 
 
@@ -182,6 +183,21 @@ if __name__ == "__main__":
 
         self.assertEqual(state.status, "completed_with_error")
         self.assertIn("Agente 4", state.final_answer)
+
+    def test_code_validation_payload_can_recover_missing_reasoning(self) -> None:
+        payload = {
+            "decision": "repairable",
+            "errors": ["La salida no sigue el formato esperado."],
+            "warnings": [],
+            "required_fixes": ["Devolver metrics, summary y limitations."],
+        }
+
+        normalized = _normalize_code_validation_payload(payload)
+        decision = CodeValidationDecision.from_dict(normalized)
+
+        self.assertEqual(decision.decision, "repairable")
+        self.assertTrue(decision.reasoning)
+        self.assertIn("La salida no sigue el formato esperado.", decision.reasoning)
 
 
 if __name__ == "__main__":

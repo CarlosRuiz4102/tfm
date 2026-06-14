@@ -98,8 +98,8 @@ if __name__ == "__main__":
                 [],
             )
 
-        def _fake_interpretation(output: dict, plan) -> tuple[str, list[str]]:
-            return f"Respuesta LLM: {output['summary']}", []
+        def _fake_interpretation(payload: dict) -> tuple[str, list[str]]:
+            return f"Respuesta LLM: {payload['execution_output']['summary']}", []
 
         with (
             patch("src.graph.nodes.build_llm_data_request", side_effect=_fake_data_request),

@@ -252,6 +252,23 @@ Esquema conceptual:
 - `required_fixes` acota que deberia corregir el subagente.
 - `reasoning` deja una justificacion breve y revisable de la decision.
 
+### Nota de robustez importante
+
+En la implementacion actual, el workflow sigue exigiendo que exista un
+`reasoning` util en la decision del Agente 4. Sin embargo, se ha anadido una
+normalizacion local para tolerar un fallo frecuente del LLM: que devuelva una
+decision valida y errores claros, pero omita ese campo.
+
+La regla actual es esta:
+
+- si el LLM ya devuelve `reasoning`, se usa tal cual;
+- si no lo devuelve, el pipeline construye un razonamiento minimo a partir de
+  `errors`, `required_fixes` o, en ultimo termino, de la propia `decision`.
+
+Esto no cambia el contrato conceptual de la parte 3, pero evita que toda la
+ejecucion se rompa por una omision menor de formato en una respuesta que por lo
+demas ya resultaba util.
+
 ## Que cosas nos interesa validar aqui
 
 Esta parte es importante porque el Agente 4 debe revisar propiedades distintas

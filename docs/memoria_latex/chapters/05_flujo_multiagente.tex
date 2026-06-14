@@ -121,9 +121,72 @@ En consecuencia, la parte 4 refuerza una idea central del TFM: el codigo generad
 
 \subsection{Interpretacion y respuesta final}
 
-\textit{Completar aqui como se transforma la salida estructurada en una respuesta final en espanol. Lo importante es explicar que esta etapa no recalcula ni inventa resultados, sino que interpreta lo ya obtenido y lo comunica de forma clara, prudente y ajustada a la consulta del usuario.}
+La ultima etapa del flujo corresponde al Agente 5, encargado de transformar una
+salida de ejecucion ya validada en una respuesta final comprensible para el
+usuario. Esta fase no recalcula metricas, no reabre la planificacion analitica
+y no vuelve a cuestionar la descarga realizada. Su funcion es distinta: tomar
+los resultados ya obtenidos, leerlos a la luz de la consulta original y
+redactar una respuesta fiel, prudente y ajustada a lo que realmente se ha
+conseguido producir.
 
-\textit{Este apartado es un buen lugar para destacar la explicabilidad externa del sistema: no solo interesa que el flujo sea auditable por dentro, sino que la respuesta final tambien sea comprensible para un lector humano y deje claros los resultados observados, su lectura y sus limitaciones.}
+La entrada del interpretador no coincide con todo el estado compartido. Antes
+de llamar al Agente 5, el workflow construye un \texttt{interpretation\_payload}
+limpio. Ese paquete incluye la consulta original, el contexto resuelto minimo
+---por ejemplo, tickers y marco temporal---, la \texttt{execution\_output} ya
+confirmada como valida y los avisos relevantes acumulados durante el flujo.
+Esta eleccion de diseno es importante porque protege al interpretador frente a
+ruido interno innecesario y, al mismo tiempo, mantiene la conexion explicita
+entre la parte 4 y la respuesta final.
+
+En coherencia con la filosofia adoptada para esta fase, el payload del Agente 5
+no debe incluir \texttt{analysis\_plan} ni pistas equivalentes sobre el nivel de
+analisis esperado. Tampoco deberian llegarle etiquetas como \texttt{A},
+\texttt{B} o \texttt{C}, preferencias internas de presentacion ni artefactos
+tecnicos como rutas de scripts, \texttt{stdout} completo o mensajes largos de
+infraestructura. La razon metodologica es clara: se quiere observar la capacidad
+del interpretador para decidir por si mismo cuanta elaboracion necesita la
+respuesta a partir de dos fuentes legitimas de informacion, la intencion
+expresada en la consulta y la riqueza real de los resultados ejecutados.
+
+Esta separacion permite defender que el Agente 5 no actua como un mero
+reformateador ciego del \texttt{summary} producido por el script. Su tarea es
+mas sutil. Debe decidir si la respuesta conviene ser breve o desarrollada, si
+debe enfatizar una comparacion entre activos, si tiene sentido presentar
+bloques visibles o si basta una lectura sintetica. Esa decision no viene
+impuesta por una etiqueta externa, sino por la combinacion entre la consulta del
+usuario y el contenido factual de \texttt{execution\_output}. Si la consulta es
+simple y la salida tambien lo es, la respuesta debe ser simple. Si la consulta
+pide comparacion, desglose o una lectura mas estructurada, el interpretador
+puede extenderse, pero sin fingir resultados adicionales ni sonar mas concluyente
+de lo que permiten los datos.
+
+Desde el punto de vista del control del flujo, esta etapa se apoya en una
+condicion previa fuerte: solo se alcanza cuando la parte 4 ya ha dejado una
+\texttt{execution\_output} valida para el workflow. Eso significa que el
+interpretador no trabaja sobre un \texttt{returncode} dudoso ni sobre una salida
+rota. El sistema evita asi una degradacion frecuente en arquitecturas
+generativas mas simples, donde el modelo final acaba improvisando una respuesta
+``razonable'' incluso cuando las etapas anteriores no han dejado una evidencia
+tecnica suficientemente solida. En este diseno, la interpretacion solo se
+produce cuando existe una base estructurada utilizable.
+
+La salida principal de esta fase es \texttt{final\_answer}, es decir, el texto
+final que vera el usuario. Sin embargo, la arquitectura conserva ademas una
+evidencia interna muy util: el propio \texttt{interpretation\_payload} que vio
+el Agente 5. Esta decision mejora la trazabilidad de la ultima fase, porque
+permite reconstruir despues que hechos exactos se entregaron al interpretador y
+como se conectaron la validacion de ejecucion y la formulacion final de la
+respuesta. En la practica, esa informacion queda recogida dentro de la traza
+global del workflow y puede inspeccionarse en los snapshots finales de cada
+\texttt{run\_id}.
+
+Este bloque es tambien el mejor lugar para destacar la explicabilidad externa
+del sistema. No basta con que el flujo sea auditable por dentro; la respuesta
+final debe ser comprensible para un lector humano y debe distinguir con claridad
+entre hechos observados, lectura interpretativa y limitaciones relevantes.
+Cuando esta parte funciona bien, el sistema no solo ``ha calculado algo'', sino
+que consigue cerrar el recorrido multiagente con una comunicacion clara,
+honesta y alineada con la peticion original del usuario.
 
 \section{Subagentes de correccion y recuperacion}
 
@@ -148,7 +211,7 @@ En consecuencia, la parte 4 refuerza una idea central del TFM: el codigo generad
 \midrule
 Agente de analisis & Consulta original mas payload compacto con tickers, contexto temporal, CSV normalizado y columnas disponibles & \texttt{AnalysisPlan} en JSON tipado & Objetivo analitico, catalogo de tipos de analisis, columnas disponibles, metricas requeridas y contrato de salida estructurada. \\
 Agente de codigo & Consulta original, payload compacto y \texttt{AnalysisPlan} generado por el analista & JSON con un unico campo \texttt{code} que contiene el script completo & Contrato tecnico de lectura del payload, cargadores permitidos, imports autorizados, salida JSON unica y restricciones de implementacion. \\
-Agente de interpretacion & \textit{Completar} & \textit{Completar} & \textit{Uso exclusivo de resultados ejecutados, tono, prudencia y estructura de respuesta.} \\
+Agente de interpretacion & Consulta original, contexto resuelto minimo, \texttt{execution\_output} valida y avisos relevantes & Texto final para el usuario en \texttt{final\_answer} & Uso exclusivo de resultados ejecutados, eliminacion de pistas internas, adaptacion de profundidad segun la query y prudencia frente a limitaciones reales. \\
 Subagentes de correccion & \textit{Completar} & \textit{Completar} & \textit{Tipo de error que reciben, alcance de la reparacion y limites de actuacion.} \\
 \bottomrule
 \end{tabularx}

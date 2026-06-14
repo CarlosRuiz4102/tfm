@@ -22,6 +22,8 @@ class WorkflowState:
     user_query: str
     normalized_query: ResolvedQueryContext
     csv_paths: list[str]
+    run_id: str = ""
+    trace_dir: str | None = None
     financial_data_request: FinancialDataRequest | None = None
     download_artifacts: DataDownloadArtifacts | None = None
     download_summary: DataDownloadSummary | None = None
@@ -34,6 +36,7 @@ class WorkflowState:
     execution_output: dict[str, Any] | None = None
     execution_artifacts: ExecutionArtifacts | None = None
     execution_validation_decision: ExecutionValidationDecision | None = None
+    interpretation_payload: dict[str, Any] | None = None
     final_answer: str = ""
     warnings: list[str] = field(default_factory=list)
     error_message: str | None = None
@@ -48,6 +51,8 @@ class WorkflowState:
     def from_input(cls, query_input: FinancialQueryInput) -> "WorkflowState":
         return cls(
             user_query=query_input.query,
+            run_id="",
+            trace_dir=None,
             normalized_query=ResolvedQueryContext.from_query_input(query_input),
             csv_paths=[],
             warnings=[],

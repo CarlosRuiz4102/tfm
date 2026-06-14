@@ -322,6 +322,9 @@ Ademas del texto anterior, el prompt incluye:
 - `input` con la consulta enriquecida;
 - `quality_guidelines` para modular la profundidad esperada;
 - `required_json_schema` con el contrato exacto de salida.
+- una regla explicita para que `output_requirements` describa siempre el
+  contrato minimo del workflow: `metrics` como objeto, `summary` como texto y
+  `limitations` como lista.
 
 ## Que se guarda al salir
 
@@ -540,6 +543,17 @@ El `code_contract` actual especifica, entre otras cosas:
 - `allowed_imports`: `json`, `sys`, `pathlib`, `math`, `statistics`, `pandas`, `numpy`, `src.execution.market_data`;
 - `mandatory_data_loader`: obliga a usar `load_close_prices`, `load_market_data`, `ticker_summary` y `make_json_safe`;
 - `payload_loading`: obliga a leer el payload con `Path(...).read_text(...)`.
+
+Ademas, la version actual del prompt refuerza estas reglas practicas:
+
+- `metrics` debe ser un objeto JSON, no una lista;
+- `summary` debe ser texto plano, no una tabla ni un objeto;
+- `limitations` debe ser siempre una lista;
+- `tables`, `series` y `diagnostics` son opcionales y no pueden sustituir el
+  contrato minimo;
+- se prioriza codigo simple y autocontenido;
+- no se deben usar graficos o archivos adicionales salvo que el plan lo pida de
+  forma explicita.
 
 ## Que se guarda al salir
 
