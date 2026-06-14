@@ -181,7 +181,11 @@ def build_codegen_messages(
         "analysis_plan": plan.to_dict(),
         "required_json_schema": {"code": "str"},
         "code_contract": {
-            "argv_1": "ruta a un JSON payload con query, tickers, csv_paths y analysis_plan",
+            "argv_1": (
+                "ruta a un JSON payload compacto con estas claves: "
+                "query, tickers, temporal_context, csv_paths, data_context, warnings "
+                "y opcionalmente download_summary"
+            ),
             "stdout": "un unico JSON valido",
             "required_top_level_keys": ["metrics", "summary", "limitations"],
             "optional_top_level_keys": ["analysis_type", "tables", "series", "diagnostics"],
@@ -197,6 +201,7 @@ def build_codegen_messages(
             ],
             "implementation_rules": [
                 "Implementa solo los calculos pedidos en analysis_plan.",
+                "No dependas de analysis_plan dentro del payload de ejecucion: ese contrato solo existe en este prompt.",
                 "Si faltan datos, devuelve limitations en vez de inventar resultados.",
                 "No cambies tickers, fechas, intervalo ni objetivo analitico.",
                 "No generes texto final para el usuario fuera del JSON.",
@@ -296,6 +301,41 @@ def build_code_repair_messages(
             "El codigo anterior fallo o fue rechazado. Devuelve exclusivamente JSON valido con un unico campo code. "
             "El script corregido debe ser completo, no un parche parcial.\n"
             "No cambies el contrato de entrada ni el contrato de salida del workflow.\n"
+            "El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.\n"
+            f"{json.dumps(payload, ensure_ascii=False)}",
+        ),
+    ]
+
+
+def build_execution_repair_messages(
+    query_input: FinancialQueryInput,
+    previous_code: str,
+    error_detail: str,
+    input_payload: dict[str, Any] | None = None,
+) -> list[LLMMessage]:
+    """Prompt del Subagente 4 para reparar errores observados en runtime."""
+    payload = {
+        "original_user_message": query_input.query,
+        "execution_input": input_payload or query_input.to_dict(),
+        "previous_code": previous_code,
+        "execution_error": error_detail,
+        "execution_output_contract": {
+            "stdout": "un unico JSON valido",
+            "required_top_level_keys": ["metrics", "summary", "limitations"],
+            "optional_top_level_keys": ["analysis_type", "tables", "series", "diagnostics"],
+        },
+        "required_json_schema": {"code": "str"},
+    }
+    return [
+        LLMMessage("system", ANALYSIS_SYSTEM_PROMPT),
+        LLMMessage(
+            "user",
+            "Subagente 4 - REPARADOR DE ERRORES DE EJECUCION.\n"
+            "Tu tarea es corregir un script Python que ya fue aceptado por la validacion estatica, "
+            "pero que fallo durante la ejecucion real.\n"
+            "Devuelve exclusivamente JSON valido con un unico campo code. "
+            "El script corregido debe ser completo, no un parche parcial.\n"
+            "No uses analysis_plan y no cambies el contrato de entrada ni el contrato de salida del workflow.\n"
             "El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.\n"
             f"{json.dumps(payload, ensure_ascii=False)}",
         ),

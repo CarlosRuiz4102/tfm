@@ -131,6 +131,12 @@ Salida real observada en esta traza:
       "Adj Close",
       "Volume"
     ]
+  },
+  "warnings": [],
+  "download_summary": {
+    "provider": "yfinance",
+    "tickers_requested": ["AAPL"],
+    "tickers_found": ["AAPL"]
   }
 }
 ```
@@ -252,10 +258,10 @@ from pathlib import Path
 def main() -> None:
     payload = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
     output = {
-        'analysis_type': payload['analysis_plan']['analysis_type'],
+        'analysis_type': 'historical_overview',
         'metrics': {
             'tickers': payload['tickers'],
-            'row_count': payload['input']['data_context']['row_count'],
+            'row_count': payload['data_context']['row_count'],
             'csv_count': len(payload['csv_paths']),
         },
         'summary': 'Analisis completado para AAPL.',
@@ -304,9 +310,10 @@ Y cuando se prepara la ejecucion, el payload incorpora ademas:
 
 - `query`
 - `tickers`
+- `temporal_context`
 - `csv_paths`
-- `input` con el handoff compacto de fase 2
-- `download_artifacts`
+- `data_context`
+- `warnings`
 - `download_summary`
 
 Por eso la parte 3 no empieza desde cero: arranca con el contrato analitico, el

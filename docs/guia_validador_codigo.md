@@ -114,9 +114,10 @@ Y cuando se prepara la ejecucion, ese contexto se completa con:
 
 - `query`
 - `tickers`
+- `temporal_context`
 - `csv_paths`
-- `input` con el handoff compacto de fase 2
-- `download_artifacts`
+- `data_context`
+- `warnings`
 - `download_summary`
 
 La idea importante aqui es esta:
@@ -515,7 +516,6 @@ La salida final deseada de esta parte es un script que:
 Minimo recomendable:
 
 - el script ya validado;
-- el `AnalysisPlan`;
 - el payload completo de ejecucion;
 - los avisos que convenga conservar.
 

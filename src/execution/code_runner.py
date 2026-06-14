@@ -16,6 +16,12 @@ def _timestamp() -> str:
 
 
 def run_generated_code(code: str, payload: dict[str, Any]) -> ExecutionResult:
+    """
+    Ejecuta el script generado y persiste la evidencia del intento.
+
+    Esta funcion solo lanza el proceso y recoge artefactos. La decision de si el intento fue valido, reparable 
+    o bloqueado pertenece a la validacion de la parte 4, no al runner.
+    """
     RESULTS_CODE_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -32,25 +38,50 @@ def run_generated_code(code: str, payload: dict[str, Any]) -> ExecutionResult:
     existing_pythonpath = env.get("PYTHONPATH")
     env["PYTHONPATH"] = str(ROOT_DIR) if not existing_pythonpath else f"{ROOT_DIR}{os.pathsep}{existing_pythonpath}"
 
-    completed = subprocess.run(
-        [EXECUTION_CONFIG.python_executable, str(script_path), str(payload_path)],
-        capture_output=True,
-        cwd=ROOT_DIR,
-        env=env,
-        text=True,
-        timeout=EXECUTION_CONFIG.timeout_seconds,
-        check=False,
-    )
+    stdout = ""
+    stderr = ""
+    returncode: int | None = None
+    timed_out = False
+    launch_error: str | None = None
 
-    stdout_path.write_text(completed.stdout, encoding="utf-8")
-    stderr_path.write_text(completed.stderr, encoding="utf-8")
+    try:
+        completed = subprocess.run(
+            [EXECUTION_CONFIG.python_executable, str(script_path), str(payload_path)],
+            capture_output=True,
+            cwd=ROOT_DIR,
+            env=env,
+            text=True,
+            timeout=EXECUTION_CONFIG.timeout_seconds,
+            check=False,
+        )
+        stdout = completed.stdout
+        stderr = completed.stderr
+        returncode = completed.returncode
+    except subprocess.TimeoutExpired as exc:
+        # Guardamos la evidencia del timeout igual que cualquier otro intento
+        # para que el subagente pueda repararlo con trazas reales.
+        timed_out = True
+        stdout = exc.stdout or ""
+        stderr = exc.stderr or ""
+        if stderr and not stderr.endswith("\n"):
+            stderr += "\n"
+        stderr += f"Tiempo maximo de ejecucion superado ({EXECUTION_CONFIG.timeout_seconds}s)."
+    except OSError as exc:
+        # Si el proceso ni siquiera puede lanzarse, lo tratamos como error
+        # observable de infraestructura para que el workflow pueda bloquear o
+        # reparar con un mensaje entendible.
+        launch_error = f"No se pudo lanzar el script generado: {exc}"
+        stderr = launch_error
+
+    stdout_path.write_text(stdout, encoding="utf-8")
+    stderr_path.write_text(stderr, encoding="utf-8")
 
     parsed_output = None
-    if completed.stdout.strip():
+    if stdout.strip():
         try:
-            parsed_output = json.loads(completed.stdout)
+            parsed_output = json.loads(stdout)
         except json.JSONDecodeError:
-            parsed_output = {"raw_stdout": completed.stdout}
+            parsed_output = None
 
     artifacts = ExecutionArtifacts(
         script_path=str(script_path),
@@ -59,9 +90,11 @@ def run_generated_code(code: str, payload: dict[str, Any]) -> ExecutionResult:
         stderr_path=str(stderr_path),
     )
     return ExecutionResult(
-        stdout=completed.stdout,
-        stderr=completed.stderr,
-        returncode=completed.returncode,
+        stdout=stdout,
+        stderr=stderr,
+        returncode=returncode,
         parsed_output=parsed_output,
         artifacts=artifacts,
+        timed_out=timed_out,
+        launch_error=launch_error,
     )

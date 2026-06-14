@@ -12,6 +12,7 @@ from src.llm.prompts import (
     build_codegen_messages,
     build_data_request_messages,
     build_data_request_repair_messages,
+    build_execution_repair_messages,
     build_interpretation_messages,
 )
 from src.schemas import AnalysisPlan, CodeValidationDecision, FinancialDataRequest, FinancialQueryInput
@@ -421,6 +422,51 @@ def repair_llm_code(
         return code, ["Se reparo codigo generado tras un error previo."]
     except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
         raise LLMClientError(f"No se pudo reparar codigo con LLM: {exc}") from exc
+
+
+def repair_llm_execution_code(
+    query_input: FinancialQueryInput,
+    previous_code: str,
+    error_detail: str,
+    input_payload: dict[str, Any] | None = None,
+) -> tuple[str, list[str]]:
+    """Llama al Subagente 4 usando el error real observado al ejecutar."""
+    llm_config = LLMConfig.from_env()
+    if not llm_config.is_configured:
+        raise LLMClientError(
+            "Falta configurar VLLM_API_KEY/OPENAI_API_KEY o LLM_API_KEY para reparar errores de ejecucion con LLM."
+        )
+
+    try:
+        client = create_llm_client(llm_config)
+        if client is None:
+            raise LLMClientError("No se pudo crear el cliente LLM para reparar errores de ejecucion.")
+        messages = build_execution_repair_messages(
+            query_input,
+            previous_code,
+            error_detail,
+            input_payload=input_payload,
+        )
+        last_error: Exception | None = None
+        code = ""
+        for _attempt in range(MAX_LLM_ATTEMPTS):
+            try:
+                response = client.complete_json(messages)
+                code = _code_from_text(response.content)
+                break
+            except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                last_error = exc
+                messages = messages + [
+                    messages[-1].__class__(
+                        "user",
+                        "La reparacion anterior no fue JSON valido. Devuelve de nuevo un objeto JSON estricto con un unico campo code.",
+                    )
+                ]
+        if not code:
+            raise LLMClientError(str(last_error))
+        return code, ["Se reparo codigo tras un error de ejecucion."]
+    except (LLMClientError, json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise LLMClientError(f"No se pudo reparar el codigo tras un error de ejecucion: {exc}") from exc
 
 
 def build_llm_interpretation(output: dict, plan: AnalysisPlan) -> tuple[str, list[str]]:

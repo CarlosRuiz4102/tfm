@@ -92,10 +92,10 @@ from pathlib import Path
 def main() -> None:
     payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     output = {
-        "analysis_type": payload["analysis_plan"]["analysis_type"],
+        "analysis_type": "historical_overview",
         "metrics": {
             "tickers": payload["tickers"],
-            "row_count": payload["input"]["data_context"]["row_count"],
+            "row_count": payload["data_context"]["row_count"],
         },
         "summary": "Analisis completado para AAPL.",
         "limitations": [],

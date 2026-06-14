@@ -3,6 +3,7 @@ from __future__ import annotations
 from src.data.provider_yfinance import download_market_data, normalize_downloaded_data, persist_download_artifacts
 from src.data.validation import validate_financial_data_request_structure, validate_operational_download
 from src.execution.code_runner import run_generated_code
+from src.execution.validation import validate_execution_result
 from src.graph.validation import validate_input
 from src.llm.client import LLMClientError
 from src.llm.pipeline import (
@@ -12,10 +13,12 @@ from src.llm.pipeline import (
     build_llm_data_request,
     build_llm_interpretation,
     repair_llm_code,
+    repair_llm_execution_code,
     repair_llm_data_request,
 )
 from src.schemas.analysis import Phase2DataContext, Phase2PromptContext, TemporalContext
 from src.schemas.data import FinancialDataRequest
+from src.schemas.execution import ExecutionValidationDecision
 from src.schemas.input import FinancialQueryInput
 from src.schemas.workflow import WorkflowState
 
@@ -23,6 +26,7 @@ from src.schemas.workflow import WorkflowState
 MAX_STRUCTURAL_REPAIR_ATTEMPTS = 2
 MAX_OPERATIONAL_REPAIR_ATTEMPTS = 2
 MAX_CODE_REPAIR_ATTEMPTS = 2
+MAX_EXECUTION_ATTEMPTS = 3
 
 
 def _compact_for_interpretation(value, max_list_items: int = 40, max_string_chars: int = 2000):
@@ -99,6 +103,7 @@ def _build_phase2_input_payload(state: WorkflowState) -> Phase2PromptContext:
         csv_paths=list(state.csv_paths),
         data_context=data_context,
         warnings=list(state.warnings),
+        download_summary=summary.to_dict() if summary else None,
     )
 
 
@@ -120,6 +125,40 @@ def _build_code_validation_feedback(state: WorkflowState) -> str:
         lines.append("required_fixes=" + " | ".join(decision.required_fixes))
     if decision.warnings:
         lines.append("warnings=" + " | ".join(decision.warnings))
+    return "\n".join(lines)
+
+
+def _compact_runtime_text(value: str, max_chars: int = 2000) -> str:
+    """Recorta stdout y stderr largos para no saturar el prompt del subagente."""
+    cleaned = value.strip()
+    if len(cleaned) <= max_chars:
+        return cleaned
+    return cleaned[:max_chars] + "... [texto truncado]"
+
+
+def _build_execution_repair_feedback(state: WorkflowState) -> str:
+    """
+    Compacta la evidencia del fallo real para el Subagente 4.
+
+    La idea es pasarle al subagente el contexto minimo que necesita:
+    que intento acaba de fallar, con que error observable y que contrato de
+    salida seguia incumpliendo el script.
+    """
+    decision = state.execution_validation_decision
+    lines = [f"execution_attempt={state.execution_attempts}"]
+    if decision is not None:
+        lines.append(f"decision={decision.decision}")
+        lines.append(f"reasoning={decision.reasoning}")
+        if decision.errors:
+            lines.append("errors=" + " | ".join(decision.errors))
+        if decision.warnings:
+            lines.append("warnings=" + " | ".join(decision.warnings))
+    if state.execution_returncode is not None:
+        lines.append(f"returncode={state.execution_returncode}")
+    if state.execution_stdout.strip():
+        lines.append("stdout=" + _compact_runtime_text(state.execution_stdout))
+    if state.execution_stderr.strip():
+        lines.append("stderr=" + _compact_runtime_text(state.execution_stderr))
     return "\n".join(lines)
 
 
@@ -380,34 +419,80 @@ def code_validation_node(state: WorkflowState) -> WorkflowState:
 
 
 def code_execution_node(state: WorkflowState) -> WorkflowState:
-    """Ejecuta el script generado y recoge artefactos mas salida estructurada."""
-    if not state.generated_code or not state.analysis_plan:
+    """
+    Parte 4: ejecutar, validar la salida y reparar si el fallo es recuperable.
+
+    Esta fase ya no usa analysis_plan dentro del payload de ejecucion. El
+    contrato analitico se resolvio antes; aqui solo importa si el script corre
+    y si deja una salida util para la siguiente fase.
+    """
+    if not state.generated_code:
         state.status = "error"
-        state.error_message = "Faltan generated_code o analysis_plan."
+        state.error_message = "Falta generated_code para ejecutar."
         return state
 
     phase2_input_payload = _build_phase2_input_payload(state)
-    temporal_context = phase2_input_payload.temporal_context
-    payload = {
-        "query": state.user_query,
-        "tickers": list(state.normalized_query.tickers),
-        "csv_paths": list(state.csv_paths),
-        "start": temporal_context.start,
-        "end": temporal_context.end,
-        "period": temporal_context.period,
-        "interval": temporal_context.interval,
-        "input": phase2_input_payload.to_dict(),
-        "analysis_plan": state.analysis_plan.to_dict(),
-        "download_artifacts": state.download_artifacts.to_dict() if state.download_artifacts else None,
-        "download_summary": state.download_summary.to_dict() if state.download_summary else None,
-    }
-    execution = run_generated_code(state.generated_code, payload)
-    state.execution_stdout = execution.stdout
-    state.execution_stderr = execution.stderr
-    state.execution_returncode = execution.returncode
-    state.execution_output = execution.parsed_output
-    state.execution_artifacts = execution.artifacts
-    state.status = "executed" if execution.returncode == 0 else "execution_failed"
+    # El payload de ejecucion reutiliza el mismo contrato compacto que ya vio
+    # el Agente 3. Asi evitamos duplicidades entre codegen y runtime.
+    execution_payload = phase2_input_payload.to_dict()
+    query_input = state.normalized_query.to_query_input()
+
+    while state.execution_attempts < MAX_EXECUTION_ATTEMPTS:
+        state.status = "executing"
+        execution = run_generated_code(state.generated_code, execution_payload)
+        state.execution_attempts += 1
+        state.execution_stdout = execution.stdout
+        state.execution_stderr = execution.stderr
+        state.execution_returncode = execution.returncode
+        state.execution_output = execution.parsed_output
+        state.execution_artifacts = execution.artifacts
+
+        state.status = "execution_validating"
+        decision = validate_execution_result(execution)
+        state.execution_validation_decision = decision
+        state.warnings.extend(decision.warnings)
+
+        if decision.decision == "valid":
+            state.status = "executed"
+            return state
+
+        if state.execution_attempts >= MAX_EXECUTION_ATTEMPTS:
+            state.execution_validation_decision = ExecutionValidationDecision(
+                decision="blocked",
+                errors=list(decision.errors),
+                warnings=list(decision.warnings),
+                reasoning="Se agotaron los intentos maximos de ejecucion sin obtener una salida valida.",
+            )
+            state.status = "execution_failed"
+            detail = " | ".join(decision.errors) if decision.errors else decision.reasoning
+            state.error_message = (
+                "Se agotaron los intentos maximos de ejecucion. "
+                + detail
+            )
+            return state
+
+        try:
+            state.status = "execution_repairing"
+            repaired_code, repair_warnings = repair_llm_execution_code(
+                query_input,
+                state.generated_code,
+                _build_execution_repair_feedback(state),
+                input_payload=execution_payload,
+            )
+        except LLMClientError as exc:
+            state.status = "error"
+            state.error_message = str(exc)
+            return state
+
+        # El Subagente 4 no certifica que el codigo ya este bien: solo propone
+        # una nueva version. La validacion real llega en la siguiente
+        # reejecucion del bucle.
+        state.generated_code = repaired_code
+        state.execution_repair_attempts += 1
+        state.warnings.extend(repair_warnings)
+
+    state.status = "execution_failed"
+    state.error_message = "La parte 4 termino en un estado inconsistente."
     return state
 
 

@@ -43,6 +43,7 @@ class Phase2PromptContext:
     csv_paths: list[str]
     data_context: Phase2DataContext
     warnings: list[str] = field(default_factory=list)
+    download_summary: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -63,4 +64,3 @@ class AnalysisPlan:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-

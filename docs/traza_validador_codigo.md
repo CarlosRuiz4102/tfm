@@ -300,8 +300,8 @@ Cuando la parte 3 termina bien, la siguiente fase recibe:
 - `state.generated_code`
 - `state.analysis_plan`
 - `state.code_validation_decision`
-- el payload de ejecucion con `query`, `tickers`, `csv_paths`, `input`,
-  `download_artifacts` y `download_summary`
+- el payload de ejecucion compacto con `query`, `tickers`, `temporal_context`,
+  `csv_paths`, `data_context`, `warnings` y `download_summary`
 
 Por eso puede decirse que la conexion parte 2 -> parte 3 esta bien resuelta:
 

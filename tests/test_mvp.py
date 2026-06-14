@@ -84,7 +84,7 @@ def main() -> None:
     payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     tickers = payload["tickers"]
     output = {
-        "analysis_type": payload["analysis_plan"]["analysis_type"],
+        "analysis_type": "historical_overview",
         "metrics": {"tickers": tickers, "csv_count": len(payload["csv_paths"])},
         "summary": f"Analisis completado para {', '.join(tickers)}",
         "limitations": ["Salida simulada para pruebas automatizadas."],

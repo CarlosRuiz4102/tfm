@@ -6,7 +6,7 @@ from typing import Any
 from src.schemas.analysis import AnalysisPlan
 from src.schemas.code_validation import CodeValidationDecision
 from src.schemas.data import DataDownloadArtifacts, DataDownloadSummary, FinancialDataRequest
-from src.schemas.execution import ExecutionArtifacts
+from src.schemas.execution import ExecutionArtifacts, ExecutionValidationDecision
 from src.schemas.input import FinancialQueryInput, ResolvedQueryContext
 
 
@@ -33,6 +33,7 @@ class WorkflowState:
     execution_returncode: int | None = None
     execution_output: dict[str, Any] | None = None
     execution_artifacts: ExecutionArtifacts | None = None
+    execution_validation_decision: ExecutionValidationDecision | None = None
     final_answer: str = ""
     warnings: list[str] = field(default_factory=list)
     error_message: str | None = None
@@ -40,6 +41,8 @@ class WorkflowState:
     structural_repair_attempts: int = 0
     operational_repair_attempts: int = 0
     code_repair_attempts: int = 0
+    execution_attempts: int = 0
+    execution_repair_attempts: int = 0
 
     @classmethod
     def from_input(cls, query_input: FinancialQueryInput) -> "WorkflowState":

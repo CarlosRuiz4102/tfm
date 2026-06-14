@@ -625,6 +625,16 @@ Lo que le entra directamente al Agente 2 en la implementacion actual es:
       "Adj Close",
       "Volume"
     ]
+  },
+  "warnings": [],
+  "download_summary": {
+    "provider": "yfinance",
+    "tickers_requested": [
+      "AAPL"
+    ],
+    "tickers_found": [
+      "AAPL"
+    ]
   }
 }
 ```
@@ -646,7 +656,6 @@ Esto significa que, realmente, el Agente 2 ve:
 Aunque ya existen en `WorkflowState`, en la implementacion actual no se le pasan de forma directa al prompt del Agente 2:
 
 - `financial_data_request`
-- `download_summary` completo
 - `download_artifacts`
 
 Es decir:

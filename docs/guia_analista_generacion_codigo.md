@@ -178,6 +178,12 @@ En la implementacion actual, el prompt del Agente 2 recibe:
         "Adj Close",
         "Volume"
       ]
+    },
+    "warnings": [],
+    "download_summary": {
+      "provider": "yfinance",
+      "tickers_requested": ["NVDA", "AMD"],
+      "tickers_found": ["NVDA", "AMD"]
     }
   }
 }
@@ -244,7 +250,12 @@ Entrada conceptual:
         "Volume"
       ]
     },
-    "warnings": []
+    "warnings": [],
+    "download_summary": {
+      "provider": "yfinance",
+      "tickers_requested": ["NVDA", "AMD"],
+      "tickers_found": ["NVDA", "AMD"]
+    }
   },
   "quality_guidelines": {
     "simple_queries": "Consulta simple...",
@@ -439,7 +450,12 @@ Entrada conceptual:
         "Volume"
       ]
     },
-    "warnings": []
+    "warnings": [],
+    "download_summary": {
+      "provider": "yfinance",
+      "tickers_requested": ["NVDA", "AMD"],
+      "tickers_found": ["NVDA", "AMD"]
+    }
   },
   "analysis_plan": {
     "analytical_goal": "Comparar rendimiento historico de NVDA y AMD",
@@ -518,7 +534,7 @@ Ademas, el prompt incluye:
 
 El `code_contract` actual especifica, entre otras cosas:
 
-- `argv_1`: ruta a un JSON payload con query, tickers, csv_paths y analysis_plan;
+- `argv_1`: ruta a un JSON payload compacto con `query`, `tickers`, `temporal_context`, `csv_paths`, `data_context`, `warnings` y opcionalmente `download_summary`;
 - `stdout`: un unico JSON valido;
 - `required_top_level_keys`: `metrics`, `summary`, `limitations`;
 - `allowed_imports`: `json`, `sys`, `pathlib`, `math`, `statistics`, `pandas`, `numpy`, `src.execution.market_data`;
@@ -606,10 +622,10 @@ Y, cuando prepara la ejecucion, el sistema les suma:
 
 - `query`
 - `tickers`
-- `csv_paths`
 - `temporal_context`
+- `csv_paths`
 - `data_context`
-- `download_artifacts`
+- `warnings`
 - `download_summary`
 
 Eso significa que la parte 3 no recibe solo un script aislado. Recibe un script
