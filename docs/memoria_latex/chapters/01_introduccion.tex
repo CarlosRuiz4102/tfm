@@ -1,50 +1,84 @@
-\chapter{Introduccion}
+\chapter{Introducci\'on}
 
-\section{Contexto y definicion del problema}
+\section{Contexto y definici\'on del problema}
 
-Los modelos de lenguaje de gran escala han ampliado de forma notable las posibilidades de interaccion con los sistemas informaticos. Ademas de producir texto, pueden interpretar instrucciones, proponer procedimientos y generar codigo ejecutable. Buena parte de este avance se apoya en la arquitectura Transformer y en el mecanismo de atencion, que constituyen una de las bases de los modelos de lenguaje actuales.
+Los modelos de lenguaje de gran escala han ampliado de forma notable las posibilidades de interacci\'on con los sistemas inform\'aticos. Adem\'as de producir texto,
+pueden interpretar instrucciones, proponer procedimientos y generar c\'odigo ejecutable. Buena parte de este avance se apoya en la arquitectura Transformer y en
+el mecanismo de atenci\'on, que constituyen una de las bases de los modelos de lenguaje actuales.
 
-La capacidad de generar codigo resulta especialmente interesante en tareas de analisis de datos. Una consulta expresada en lenguaje natural puede transformarse en operaciones de carga, filtrado, calculo y presentacion de resultados. Sin embargo, esta flexibilidad introduce un problema de confianza: que el codigo sea plausible no significa que sea correcto, y que una respuesta este bien redactada no garantiza que respete los datos de partida.
+La capacidad de generar c\'odigo resulta especialmente interesante en tareas de an\'alisis de datos. Una consulta expresada en lenguaje natural puede transformarse en
+operaciones de carga, filtrado, c\'alculo y presentaci\'on de resultados. Sin embargo, esta flexibilidad introduce un problema de confianza: que el c\'odigo sea 
+plausible no significa que sea correcto, y que una respuesta est\'e bien redactada no garantiza que respete los datos de partida.
 
-Este problema cobra especial importancia en el ambito financiero. Incluso cuando el analisis se limita a informacion historica, una cifra incorrecta o una interpretacion poco prudente puede conducir a conclusiones equivocadas. Por ello, no basta con pedir al modelo que responda directamente a una consulta: tambien es necesario conocer que datos ha utilizado, que metricas ha calculado, que codigo ha ejecutado y que limitaciones presenta el resultado.
+Este problema cobra especial importancia en el \'ambito financiero. Incluso cuando el an\'alisis se limita a informaci\'on hist\'orica, una cifra incorrecta o una
+interpretaci\'on poco prudente puede conducir a conclusiones equivocadas. Por ello, no basta con pedir al modelo que responda directamente a una consulta: tambi\'en es
+necesario conocer qu\'e datos ha utilizado, qu\'e m\'etricas ha calculado, qu\'e c\'odigo ha ejecutado y qu\'e limitaciones presenta el resultado.
 
-Este trabajo aborda el problema desde la integracion de sistemas, no desde el entrenamiento de un nuevo modelo. Para ello, se desarrolla un prototipo que recibe una consulta financiera y un conjunto de datos historicos almacenados en CSV, organiza el analisis mediante agentes LLM y mantiene los calculos dentro de un flujo programatico. El sistema separa la planificacion, la generacion de codigo y la interpretacion final, valida el codigo antes de ejecutarlo y conserva los principales artefactos de cada ejecucion.
+Este trabajo aborda el problema desde la integraci\'on de sistemas, no desde el entrenamiento de un nuevo modelo. Para ello, se desarrolla un prototipo que recibe una
+consulta financiera en lenguaje natural, resuelve y descarga los datos hist\'oricos necesarios, organiza el an\'alisis mediante varios agentes LLM y mantiene los
+c\'alculos dentro de un flujo program\'atico controlado. El sistema separa la fase de datos, la planificaci\'on anal\'itica, la generaci\'on y validaci\'on de c\'odigo, 
+la ejecuci\'on y la interpretaci\'on final, y conserva artefactos que permiten reconstruir cada ejecuci\'on completa.
 
-\section{Motivacion}
+\section{Motivaci\'on}
 
-El proyecto nace del interes por combinar tres ambitos que a menudo se estudian por separado: los modelos de lenguaje, la programacion para el analisis de datos y la interpretacion financiera. Los LLM permiten construir con rapidez interfaces capaces de entender peticiones diversas, pero esa misma facilidad puede ocultar errores cuando todo el proceso queda reducido a una unica respuesta generativa.
+El proyecto nace del inter\'es por combinar tres \'ambitos que a menudo se estudian por separado: los modelos de lenguaje, la programaci\'on para el an\'alisis de datos y la
+interpretaci\'on financiera. Los LLM permiten construir con rapidez interfaces capaces de entender peticiones diversas, pero esa misma facilidad puede ocultar errores
+cuando todo el proceso queda reducido a una \'unica respuesta generativa.
 
-La motivacion principal es comprobar hasta que punto puede aprovecharse la flexibilidad del modelo sin renunciar a mecanismos basicos de control. En el sistema propuesto, el LLM decide como abordar la consulta y genera el codigo necesario, pero el resultado financiero procede de la ejecucion de ese codigo sobre datos locales. Esta separacion permite revisar tanto el planteamiento seguido como los calculos obtenidos.
+La motivaci\'on principal es comprobar hasta qu\'e punto puede aprovecharse la flexibilidad del modelo sin renunciar a mecanismos claros de control. En el sistema propuesto,
+el LLM no act\'ua como una caja negra que responde directamente, sino como parte de un flujo en el que primero se resuelven los datos, despu\'es se planifica el an\'alisis,
+m\'as tarde se genera y valida el c\'odigo, y solo al final se redacta la respuesta. Esta separaci\'on permite revisar tanto el planteamiento seguido como los c\'alculos
+realmente obtenidos.
 
-Otro criterio importante es que los fallos sean visibles. Si el prototipo no puede generar codigo valido, la ejecucion no termina correctamente o la salida supera las capacidades del modelo, el sistema registra el problema y devuelve un error controlado. Este comportamiento resulta preferible a completar una respuesta con cifras no verificadas. La evaluacion mediante los casos de estudio definidos para el proyecto permite observar estos fallos, especialmente en los escenarios de mayor dificultad, e identificar en que parte del proceso se producen.
+Otro criterio importante es que los fallos sean visibles. Si la petici\'on de datos no puede resolverse con fiabilidad, si la descarga no devuelve informaci\'on \'util, si
+el c\'odigo generado no es aceptable o si la ejecuci\'on no produce una salida v\'alida, el sistema registra el problema y devuelve un resultado controlado. Este
+comportamiento resulta preferible a completar una respuesta con cifras no verificadas. La evaluaci\'on mediante una bater\'ia de consultas de distinta dificultad permite
+observar estos fallos e identificar en qu\'e parte del proceso se producen.
 
-El prototipo se construyo de forma incremental, desde consultas sencillas hasta un flujo con tres agentes, validacion, reparacion y conservacion de evidencias.
+El prototipo se construy\'o de forma incremental, desde consultas sencillas hasta una arquitectura multiagente con validaciones intermedias, reparaci\'on acotada y
+trazabilidad completa. La idea de fondo de este trabajo es que, en un dominio sensible como el financiero, la utilidad de un sistema basado en LLM depende no solo de
+que responda, sino de que pueda explicarse c\'omo se ha llegado a esa respuesta.
 
 \section{Objetivos}
 
-El objetivo general del trabajo es disenar, implementar y evaluar un sistema basado en un modelo de lenguaje capaz de transformar consultas sobre datos financieros historicos en calculos ejecutables y respuestas trazables.
+El objetivo general del trabajo es dise\~nar, implementar y evaluar un sistema basado en un modelo de lenguaje capaz de transformar consultas sobre datos financieros
+hist\'oricos en c\'alculos ejecutables y respuestas trazables.
 
-Los objetivos especificos son:
+Los objetivos espec\'ificos son:
 
 \begin{itemize}
-    \item Disenar una arquitectura modular que separe la planificacion, la generacion de codigo, su validacion, la ejecucion de los calculos y la elaboracion de la respuesta final.
-    \item Desarrollar un flujo capaz de interpretar consultas con diferentes requisitos analiticos y determinar los datos, metricas y operaciones necesarios.
-    \item Generar y ejecutar codigo Python adaptado a cada consulta, aplicando controles que limiten las operaciones permitidas.
-    \item Garantizar la trazabilidad del proceso mediante la conservacion del plan, el codigo generado, los resultados estructurados y los registros de error.
-    \item Generar respuestas financieras basadas exclusivamente en los calculos realizados, sin incorporar predicciones ni recomendaciones de inversion.
-    \item Evaluar la capacidad del modelo de lenguaje para comprender y adaptarse a las tareas planteadas, generar codigo acorde con sus requisitos y redactar respuestas claras, precisas y fundamentadas.
+    \item Dise\~nar una arquitectura modular que separe la resoluci\'on de datos, la planificaci\'on del an\'alisis, la generaci\'on y validaci\'on de c\'odigo, la 
+    ejecuci\'on de los c\'alculos y la elaboraci\'on de la respuesta final.
+    \item Desarrollar un flujo capaz de interpretar consultas con diferentes requisitos anal\'iticos y determinar de forma expl\'icita qu\'e datos, m\'etricas y 
+    operaciones necesita cada caso.
+    \item Resolver, validar y descargar datos hist\'oricos de mercado de forma controlada antes de pasar a la fase anal\'itica.
+    \item Generar y ejecutar c\'odigo Python adaptado a cada consulta, aplicando controles que limiten errores de estructura, de ejecuci\'on y de formato de salida.
+    \item Garantizar la trazabilidad del proceso mediante la conservaci\'on de contratos intermedios, c\'odigo generado, resultados estructurados, artefactos de 
+    ejecuci\'on y registros de error.
+    \item Generar respuestas financieras basadas exclusivamente en los c\'alculos realizados, sin incorporar predicciones ni recomendaciones de inversi\'on.
+    \item Evaluar la capacidad del sistema para comprender la consulta, seleccionar m\'etricas pertinentes, ejecutar el an\'alisis de forma correcta y producir 
+    respuestas claras, prudentes y fundamentadas.
 \end{itemize}
 
 \section{Alcance}
 
-El sistema se limita al analisis historico y descriptivo de activos financieros a partir de datos descargados previamente y almacenados en ficheros CSV. Los casos utilizados incluyen acciones, indices, fondos cotizados, divisas, una materia prima y un criptoactivo, con diferentes periodos e intervalos temporales.
+El sistema se limita al an\'alisis hist\'orico y descriptivo de activos financieros. Trabaja con datos de mercado obtenidos dentro del propio flujo y reutiliza tambi\'en 
+artefactos persistidos para pruebas, trazas y evaluaci\'on. Los casos utilizados incluyen acciones, \'indices, fondos cotizados, divisas, una materia prima y un 
+criptoactivo, con diferentes periodos e intervalos temporales.
 
-El prototipo no obtiene precios en tiempo real durante la ejecucion, no incorpora noticias ni informacion macroeconomica y tampoco realiza analisis fundamental. No pretende predecir movimientos futuros ni recomendar la compra o venta de activos. Estas restricciones responden al proposito del trabajo: evaluar una arquitectura LLM trazable, no construir un asesor financiero.
+El prototipo no obtiene precios en tiempo real durante la ejecuci\'on, no incorpora noticias ni informaci\'on macroecon\'omica y tampoco realiza an\'alisis fundamental. 
+No pretende predecir movimientos futuros ni recomendar la compra o venta de activos. Estas restricciones responden al prop\'osito del trabajo: evaluar una arquitectura 
+LLM trazable, no construir un asesor financiero.
 
 \section{Estructura de la memoria}
 
-La memoria se organiza en torno a los tres bloques que mas peso tendran en el desarrollo del TFM: la metodologia, el flujo multiagente y la evaluacion del sistema. El Capitulo~2 revisa los trabajos previos y situa la propuesta dentro del estado de la cuestion. El Capitulo~3 resume el material de trabajo y el planteamiento experimental de partida.
+La memoria se organiza en torno a tres ejes principales: la metodolog\'ia, el flujo multiagente y la evaluaci\'on del sistema. El Cap\'itulo~2 revisa los trabajos previos
+y sit\'ua la propuesta dentro del estado de la cuesti\'on. El Cap\'itulo~3 resume el material de trabajo y el planteamiento experimental de partida.
 
-El Capitulo~4 define la metodologia con la que se estudiara el sistema: unidad de analisis, protocolo de ejecucion, criterios de evaluacion y amenazas a la validez. El Capitulo~5 se reserva para el flujo multiagente del sistema y para la explicacion detallada de sus etapas, contratos, validaciones y rutas de recuperacion. El Capitulo~6 recogera los resultados y la evaluacion final del proyecto.
+El Cap\'itulo~4 define la metodolog\'ia con la que se estudiar\'a el sistema: unidad de an\'alisis, protocolo de ejecuci\'on, criterios de evaluaci\'on y amenazas a la
+validez. El Cap\'itulo~5 se reserva para el flujo multiagente del sistema y para la explicaci\'on detallada de sus etapas, contratos, validaciones y rutas de
+recuperaci\'on. El Cap\'itulo~6 recoger\'a los resultados y la evaluaci\'on final del proyecto.
 
-Los ultimos capitulos se plantean de forma mas compacta. El Capitulo~7 reunira las limitaciones, los aspectos eticos y las condiciones de reproducibilidad, mientras que el Capitulo~8 cerrara la memoria con las conclusiones y el trabajo futuro. Por ultimo, los anexos conservaran solo la informacion operativa de apoyo que siga siendo util para ejecutar el sistema, documentar su configuracion LLM y describir los artefactos tecnicos que deja cada corrida.
+Los \'ultimos cap\'itulos se plantean de forma m\'as compacta. El Cap\'itulo~7 reunir\'a las limitaciones, los aspectos \'eticos y las condiciones de reproducibilidad,
+mientras que el Cap\'itulo~8 cerrar\'a la memoria con las conclusiones y el trabajo futuro. Por \'ultimo, los anexos conservar\'an solo la informaci\'on operativa de
+apoyo que siga siendo \'util para ejecutar el sistema, documentar su configuraci\'on LLM y describir los artefactos t\'ecnicos que deja cada ejecuci\'on.

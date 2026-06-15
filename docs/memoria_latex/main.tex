@@ -40,11 +40,9 @@
 
 \chapter*{Resumen}
 \addcontentsline{toc}{chapter}{Resumen}
-Este trabajo estudia el dise\~no de un sistema multiagente basado en modelos de lenguaje para realizar an\'alisis financiero hist\'orico a partir de consultas formuladas en lenguaje natural. El foco del proyecto no est\'a en predecir el mercado, sino en organizar un flujo trazable en el que la petici\'on se transforme en una estructura de datos interpretable, se validen los datos necesarios, se genere c\'odigo ejecutable, se controle su ejecuci\'on y se redacte una respuesta final apoyada en evidencias.
+Este trabajo presenta el dise\~no, implementaci\'on y evaluaci\'on de un sistema multiagente basado en modelos de lenguaje para realizar an\'alisis financiero hist\'orico a partir de consultas en lenguaje natural. El objetivo del proyecto no es predecir el mercado ni recomendar inversiones, sino estudiar si un LLM puede integrarse en un flujo m\'as controlado que transforme una petici\'on abierta en una respuesta sustentada por datos y c\'alculos observables.
 
-La memoria queda preparada para documentar ese recorrido por etapas. En particular, se refuerzan la metodolog\'ia, la descripci\'on del flujo y el marco de evaluaci\'on, de manera que el trabajo final pueda explicar no solo si el sistema produce respuestas, sino tambi\'en c\'omo llega a ellas, d\'onde falla y qu\'e garant\'ias ofrece cada bloque del proceso.
-
-En esta versi\'on, varias secciones se han dejado como plantilla guiada para completar conforme se implemente y eval\'ue el flujo definitivo. El objetivo es que la memoria final mantenga coherencia entre dise\~no, ejecuci\'on, resultados y limitaciones, y que cada afirmaci\'on importante pueda apoyarse en artefactos observables del sistema.
+El sistema desarrollado organiza el proceso en varias etapas: resoluci\'on y validaci\'on de datos hist\'oricos, planificaci\'on del an\'alisis, generaci\'on de c\'odigo Python, validaci\'on previa a la ejecuci\'on, ejecuci\'on controlada e interpretaci\'on final. Como aportaci\'on principal, la arquitectura incorpora trazabilidad completa y mecanismos de control que permiten conservar artefactos intermedios, detectar fallos por fase y acotar las reparaciones cuando aparecen errores. La evaluaci\'on se apoya en pruebas automatizadas y en una bater\'ia de consultas financieras de distinta dificultad. En conjunto, los resultados muestran la viabilidad de una arquitectura LLM m\'as explicable, revisable y robusta que una respuesta generativa directa de una sola etapa.
 
 \vspace{0.5cm}
 \noindent\textbf{Palabras clave:} an\'alisis financiero hist\'orico, modelos de lenguaje, generaci\'on de c\'odigo, agentes LLM, ejecuci\'on controlada, trazabilidad.
@@ -52,11 +50,9 @@ En esta versi\'on, varias secciones se han dejado como plantilla guiada para com
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-This work studies the design of a multi-agent language-model-based system for historical financial analysis from natural-language queries. Rather than predicting market behaviour, the project focuses on defining a traceable workflow in which a request is transformed into structured data, relevant market data are validated, executable code is produced, execution is controlled, and the final answer is grounded in observable evidence.
+This dissertation presents the design, implementation and evaluation of a multi-agent language-model-based system for historical financial analysis from natural-language queries. The aim is not to predict market behaviour or provide investment advice, but to study whether an LLM can be integrated into a controlled workflow that turns an open request into a response grounded in observable data and calculations.
 
-The dissertation has been prepared so that methodology, workflow description and evaluation can be developed rigorously as the final system is implemented. Several sections are therefore kept as guided templates, allowing the final document to explain not only whether the system works, but also how each stage contributes to robustness, traceability and controlled failure handling.
-
-At this stage, the document provides a coherent structure for reporting the final project, with special emphasis on methodological justification, stage-by-stage analysis and evidence-based evaluation.
+The implemented system structures the process into several stages: historical data resolution and validation, analysis planning, Python code generation, pre-execution validation, controlled execution and final interpretation. Its main contribution lies in the combination of full traceability and explicit control mechanisms, which make it possible to preserve intermediate artefacts, identify failures by stage and bound repair attempts when errors occur. The evaluation relies on automated tests and on a graded set of financial-analysis queries with different levels of difficulty. Overall, the results support the feasibility of an LLM-based architecture that is more explainable, reviewable and robust than a single-step direct generative response.
 
 \vspace{0.5cm}
 \noindent\textbf{Keywords:}\\
