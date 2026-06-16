@@ -1,114 +1,191 @@
-\chapter{Metodologia}
+\chapter{Metodolog\'ia}
 
-\section{Funcion de este capitulo}
+Este cap\'itulo define c\'omo se estudia el sistema y con qu\'e criterio se juzgan sus resultados. No describe el funcionamiento interno del flujo, que se
+desarrolla en el cap\'itulo siguiente, sino el marco con el que se analiza su comportamiento de una forma defendible. La idea central es valorar la
+viabilidad de una arquitectura basada en LLM que prioriza la trazabilidad y la explicabilidad frente a una respuesta generativa directa y opaca.
 
-Este capitulo debe explicar como se va a estudiar el sistema y con que criterio se va a juzgar si el trabajo funciona bien o no. No debe confundirse con la descripcion 
-del flujo: aqui lo importante no es como esta construido el sistema, sino como se va a analizar de forma defendible.
+\section{Enfoque metodol\'ogico}
 
-\section{Enfoque metodologico}
+El trabajo se plantea como una evaluaci\'on emp\'irica de un sistema orientado al an\'alisis financiero hist\'orico a partir de consultas en lenguaje natural.
+El inter\'es principal no es medir la m\'axima capacidad posible de un modelo aislado, sino estudiar si una arquitectura m\'as controlada, compuesta por
+fases separadas y artefactos observables, puede producir respuestas \'utiles, comprensibles y prudentes para el usuario final.
 
-\textit{Completar aqui la idea central del enfoque metodologico. Por ejemplo: desarrollo iterativo de un sistema multiagente, evaluacion empirica sobre casos de 
-analisis financiero historico, combinacion de revision tecnica y lectura cualitativa de resultados, etc.}
+Desde este punto de vista, la metodolog\'ia no se centra solo en si el sistema ``responde'', sino en dos cuestiones complementarias. La primera es si logra
+completar una ejecuci\'on de extremo a extremo y entregar una salida final utilizable. La segunda es si esa respuesta final mantiene una calidad
+suficiente en relaci\'on con lo que ped\'ia la consulta. Esta doble lectura obliga a distinguir entre completar t\'ecnicamente el flujo y obtener un
+resultado satisfactorio desde la perspectiva del usuario.
 
-\section{Preguntas guia para escribir bien la metodologia}
+\section{Pregunta de investigaci\'on y objetivo evaluable}
 
-\subsection{Sobre el objetivo de evaluacion}
+La pregunta que orienta este cap\'itulo puede formularse del siguiente modo: \textit{evaluar la viabilidad de una arquitectura LLM trazable y explicable
+para resolver consultas de an\'alisis financiero hist\'orico en lenguaje natural.}
 
-\begin{enumerate}
-    \item ?Que quieres demostrar exactamente con este trabajo?
-    \item ?Quieres demostrar viabilidad del flujo, robustez de la arquitectura, calidad de las respuestas o una combinacion de ellas?
-    \item ?Que seria un buen resultado, pero no necesariamente una demostracion completa?
-    \item ?Que afirmaciones no deberias hacer aunque el prototipo funcione bien?
-\end{enumerate}
+Esta formulaci\'on es coherente con el objetivo general del trabajo, que no busca maximizar la capacidad bruta de un modelo poco interpretable, sino
+comprobar si es posible construir un sistema m\'as controlado, capaz de dejar evidencias del proceso seguido y de acotar mejor d\'onde y por qu\'e se
+producen los errores.
 
-\subsection{Sobre la unidad de analisis}
+En consecuencia, el objetivo evaluable no consiste en demostrar que el sistema puede responder a cualquier consulta financiera, ni en compararlo con un
+analista experto, ni en presentarlo como herramienta de predicci\'on o asesoramiento. Lo que se quiere comprobar es si el flujo propuesto resulta
+viable como sistema de apoyo para an\'alisis hist\'orico: esto es, si puede resolver un conjunto representativo de consultas, mantener un comportamiento
+trazable y producir respuestas finales suficientemente adecuadas para el uso planteado.
 
-\begin{enumerate}
-    \item ?Que vas a considerar como unidad de analisis principal: una consulta, una ejecucion completa, una etapa del flujo o un caso compuesto?
-    \item ?Te interesa medir solo el resultado final o tambien el comportamiento intermedio de cada agente?
-    \item ?Quieres analizar los fallos por etapa o solo por caso completo?
-\end{enumerate}
+\section{Unidad de an\'alisis}
 
-\subsection{Sobre el diseno experimental}
+La unidad de an\'alisis principal es una consulta completa ejecutada de extremo a extremo. Esta decisi\'on implica que el caso evaluado no es una etapa aislada
+del workflow ni un artefacto intermedio concreto, sino el recorrido completo que va desde la petici\'on inicial hasta la respuesta final.
 
-\begin{enumerate}
-    \item ?Como vas a construir o seleccionar la bateria de consultas del trabajo?
-    \item ?Como vas a graduar la dificultad de los casos?
-    \item ?Quieres hablar de complejidad de forma cualitativa sin imponer una etiqueta fija al sistema?
-    \item ?Que tipos de consulta deben estar presentes para que el experimento sea creible?
-    \item ?Que parte del flujo quieres tensionar de forma deliberada?
-\end{enumerate}
+Esta elecci\'on responde a una raz\'on simple. El sistema est\'a pensado para que el usuario formule una consulta y reciba una respuesta final. Por tanto, no
+tiene sentido considerar como caso satisfactorio una ejecuci\'on que no llega a producir una salida utilizable para el usuario, aunque algunas fases internas
+hayan funcionado correctamente. Del mismo modo, tampoco basta con llegar al final del flujo si la respuesta obtenida no mantiene una calidad suficiente en
+relaci\'on con la consulta planteada.
 
-\subsection{Sobre la evaluacion}
+\section{Dise\~no experimental}
 
-\begin{enumerate}
-    \item ?Como distinguiras entre exito tecnico del flujo y calidad real del analisis?
-    \item ?Que metricas tecnicas quieres observar: completitud, tiempo, errores por etapa, reparaciones, trazas conservadas?
-    \item ?Que dimensiones cualitativas quieres valorar: pertinencia de metricas, fidelidad de la interpretacion, prudencia, claridad?
-    \item ?Habra revision humana? Si la hay, ?con que rubrica o con que criterios?
-\end{enumerate}
+La evaluaci\'on se apoya en la bater\'ia de 50 consultas descrita en el cap\'itulo anterior. Esa bater\'ia se organiza en tres niveles de complejidad,
+A, B y C, y se distribuye de forma deliberadamente exigente en 10 casos de nivel A, 20 de nivel B y 20 de nivel C. Esta estructura permite observar no
+solo el comportamiento del sistema en consultas relativamente directas, sino tambi\'en su respuesta cuando aumentan las exigencias anal\'iticas, de formato o
+de prudencia interpretativa.
 
-\subsection{Sobre la validez del estudio}
+Cada caso se ejecuta una \'unica vez y todos los ejemplos se lanzan con la misma configuraci\'on del sistema y del modelo. En particular, la evaluaci\'on
+se realiza con el modelo \texttt{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard}, manteniendo constante la configuraci\'on general para toda la bater\'ia. De 
+este modo, las diferencias observadas entre casos pueden interpretarse en funci\'on de la dificultad de la consulta y del comportamiento del flujo, y no como 
+consecuencia de cambiar de modelo o de criterio de ejecuci\'on entre ejemplos.
 
-\begin{enumerate}
-    \item ?Que amenazas a la validez interna puede tener el experimento?
-    \item ?Que limita la generalizacion del trabajo?
-    \item ?Hasta que punto dependes del modelo concreto, de los prompts o del proveedor de inferencia?
-    \item ?Como evitaras confundir una respuesta convincente con un resultado correcto?
-\end{enumerate}
+\section{Protocolo general de ejecuci\'on}
 
-\section{Estructura recomendada para la metodologia final}
+El protocolo de evaluaci\'on sigue una misma l\'ogica para todos los casos. A partir de una consulta en lenguaje natural, el sistema intenta completar el
+recorrido de extremo a extremo: resoluci\'on de datos, descarga, an\'alisis, generaci\'on y validaci\'on del c\'odigo, ejecuci\'on e interpretaci\'on final.
+Si el flujo consigue terminar y entregar una respuesta final utilizable, el caso pasa a la fase de evaluaci\'on cualitativa. Si no lo consigue, el caso se
+registra como no completado y se analiza aparte seg\'un la familia de error observada.
 
-\subsection{Pregunta de investigacion y objetivos evaluables}
+Aunque el tiempo de ejecuci\'on de cada caso se conserva como informaci\'on complementaria, su interpretaci\'on principal se reserva para el cap\'itulo de resultados.
 
-\textit{Completar aqui la pregunta principal de investigacion y los objetivos que realmente puedan verificarse con el experimento.}
+\section{Criterio general de \'exito}
 
-\subsection{Unidad de analisis}
+Un caso no se considera exitoso solo por llegar a una respuesta final. Para que el resultado se considere satisfactorio dentro del trabajo deben cumplirse dos
+condiciones. La primera es que el flujo complete la ejecuci\'on y produzca una salida final utilizable. La segunda es que esa respuesta alcance una calidad
+suficiente en la revisi\'on manual posterior.
 
-\textit{Completar aqui que se evalua exactamente en cada caso y por que esa unidad de analisis es adecuada para el trabajo.}
+En este sentido, se adopta como criterio de referencia que un resultado satisfactorio es aquel que obtiene al menos 8 puntos sobre 10 en la r\'ubrica de evaluaci\'on. 
+Alcanzar ese umbral significa que la respuesta final presenta una calidad suficientemente alta como para considerarla adecuada, clara y prudente dentro del alcance 
+del sistema. Las respuestas que completan el flujo pero no llegan a ese nivel no se consideran fallos t\'ecnicos del mismo tipo
+que los casos no completados, pero s\'i se interpretan como resultados que todav\'ia requieren mejora para alcanzar una calidad suficiente.
 
-\subsection{Diseno experimental}
+\section{Evaluaci\'on de casos no completados}
 
-\textit{Completar aqui el numero de casos, su clasificacion, su dificultad y el razonamiento que justifica ese diseno. Si se habla de consultas mas simples o mas 
-avanzadas, conviene que esa clasificacion se use solo como herramienta de evaluacion y no como una etiqueta explicita que el sistema reciba en la entrada.}
+Los casos que no consiguen producir una respuesta final utilizable no se eval\'uan con la r\'ubrica cualitativa. En su lugar, se analizan por separado seg\'un la 
+familia de fallo observada. Esta clasificaci\'on no pretende fijar una taxonom\'ia cerrada desde el principio, sino ofrecer un marco inicial ordenado para estudiar
+d\'onde se concentran los bloqueos del sistema. Como familias generales de partida se consideran las siguientes:
 
-\subsection{Protocolo de ejecucion}
+\begin{itemize}
+    \item fallo en resoluci\'on o descarga de datos;
+    \item fallo en generaci\'on o validaci\'on del an\'alisis;
+    \item fallo de ejecuci\'on;
+    \item fallo en la obtenci\'on de una salida final utilizable.
+\end{itemize}
 
-\textit{Completar aqui como se lanza cada caso, que artefactos se conservan, que pasos del flujo deben completarse y como se registran errores, reparaciones y tiempos.}
+La raz\'on para trabajar con familias y no solo con errores aislados es que dos casos distintos pueden fallar por mensajes concretos diferentes y, sin embargo,
+pertenecer al mismo tipo de problema metodol\'ogicamente relevante. Esta agrupaci\'on permite analizar tendencias generales sin perder de vista que, al
+revisar los resultados reales de la bater\'ia, podr\'an aparecer matices o subtipos adicionales. Por tanto, las familias de error se fijan aqu\'i como un
+marco inicial abierto a refinarse si los resultados muestran situaciones nuevas o diferencias que merezcan una separaci\'on m\'as precisa.
 
-\subsection{Metricas de evaluacion}
+\section{Evaluaci\'on de casos completados}
 
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabularx}{\textwidth}{L{0.22\textwidth}L{0.18\textwidth}Y}
-\toprule
-\textbf{Metrica} & \textbf{Tipo} & \textbf{Utilidad dentro de la evaluacion} \\
-\midrule
-\textit{Completar} & \textit{Tecnica / cualitativa} & \textit{Completar} \\
-\textit{Completar} & \textit{Tecnica / cualitativa} & \textit{Completar} \\
-\textit{Completar} & \textit{Tecnica / cualitativa} & \textit{Completar} \\
-\bottomrule
-\end{tabularx}
-\caption{Metricas previstas para la evaluacion del sistema.}
-\label{tab:metricas_metodologia_compacta}
-\end{table}
+Solo los casos que llegan a una respuesta final pasan a la evaluaci\'on cualitativa. En ellos, el inter\'es principal no es inspeccionar artefactos
+internos que el usuario no ve, sino juzgar la calidad de la salida final que el sistema entrega.
 
-\subsection{Revision humana}
+La r\'ubrica se apoya en cinco criterios, todos ellos ponderados por igual:
 
-\textit{Completar aqui si habra rubricado manual, lectura comparada de respuestas, comprobacion de metricas o supervision por etapas.}
+\begin{itemize}
+    \item adecuaci\'on a la consulta;
+    \item cobertura anal\'itica;
+    \item coherencia y solidez aparente;
+    \item claridad y utilidad comunicativa;
+    \item prudencia y tratamiento de limitaciones.
+\end{itemize}
 
-\subsection{Amenazas a la validez}
+El primer criterio valora si la respuesta responde realmente a lo que ped\'ia el usuario, incluyendo activos, periodo, comparaci\'on, tono o formato cuando
+esos elementos se exigen de manera expl\'icita. El segundo comprueba si la respuesta cubre los componentes anal\'iticos esenciales de la consulta, sin
+premiar la longitud por s\'i misma. El tercero se centra en la coherencia interna del resultado y en si las cifras, relaciones y conclusiones aparecen
+integradas de forma consistente. El cuarto estudia si la salida es comprensible y \'util para un lector no especializado. El quinto revisa si la respuesta
+mantiene la prudencia exigible a un sistema de an\'alisis hist\'orico y si trata correctamente sus limitaciones.
 
-\textit{Completar aqui sesgos de seleccion de casos, dependencia de configuracion, sensibilidad a prompts y cualquier otra limitacion metodologica importante.}
+Para que esta evaluaci\'on resulte interpretable, cada criterio debe entenderse de forma operativa. No se trata de asignar una impresi\'on general difusa, sino
+de comprobar qu\'e aparece realmente en la respuesta final y c\'omo se ajusta a la consulta planteada.
 
-\section{Criterio de calidad para este capitulo}
+\begin{itemize}
+    \item \textbf{Adecuaci\'on a la consulta.} Eval\'ua si la respuesta contesta a lo que el usuario pidi\'o. Aqu\'i se revisa si aparecen los activos
+    correctos, el periodo o comparaci\'on solicitados y, cuando procede, el formato pedido por el usuario. Se asigna un 0 cuando la respuesta falla en
+    elementos esenciales de la consulta; un 1 cuando responde solo de forma parcial o altera alguna parte importante; y un 2 cuando responde de manera
+    clara y ajustada a los requisitos principales del caso.
 
-La metodologia final deberia permitir responder sin ambiguedad a cuatro cuestiones:
+    \item \textbf{Cobertura anal\'itica.} Eval\'ua si la respuesta incluye los elementos anal\'iticos que hac\'ian falta para contestar bien a la consulta.
+    No premia decir muchas cosas, sino cubrir lo necesario. Se asigna un 0 cuando faltan componentes esenciales del an\'alisis; un 1 cuando aparece una
+    parte relevante pero se omite alg\'un elemento importante; y un 2 cuando la respuesta recoge de forma suficiente las m\'etricas, comparaciones o bloques
+    que el caso exig\'ia.
 
-\begin{enumerate}
-    \item ?Que se va a evaluar exactamente?
-    \item ?Como se va a ejecutar esa evaluacion?
-    \item ?Con que criterios se juzgara el sistema?
-    \item ?Que limites tendra la interpretacion de los resultados?
-\end{enumerate}
+    \item \textbf{Coherencia y solidez aparente.} Eval\'ua si la respuesta mantiene coherencia interna y si sus cifras, relaciones y conclusiones
+    parecen bien integradas. No equivale a una auditor\'ia financiera experta, pero s\'i exige consistencia visible. Se asigna un 0 cuando hay
+    contradicciones claras, cifras mal integradas o conclusiones incoherentes; un 1 cuando la respuesta es en general razonable, pero presenta alguna
+    imprecisi\'on o una relaci\'on d\'ebil entre datos y conclusi\'on; y un 2 cuando el resultado aparece consistente y bien construido desde el punto de
+    vista del lector.
+
+    \item \textbf{Claridad y utilidad comunicativa.} Eval\'ua si la respuesta puede entenderse con facilidad y si resulta \'util para un lector no
+    especializado. Se asigna un 0 cuando la respuesta es confusa, desordenada o poco aprovechable; un 1 cuando se entiende, pero con carencias de orden o
+    explicaci\'on; y un 2 cuando la salida es clara, legible y transmite una idea \'util para interpretar el resultado.
+
+    \item \textbf{Prudencia y tratamiento de limitaciones.} Eval\'ua si la respuesta respeta el alcance del sistema, evita recomendaciones o
+    predicciones impropias y trata correctamente las limitaciones del an\'alisis hist\'orico. Se asigna un 0 cuando incurre en afirmaciones que exceden ese
+    alcance; un 1 cuando mantiene cierta prudencia, pero trata las limitaciones de forma insuficiente; y un 2 cuando conserva un tono prudente, reconoce
+    los l\'imites relevantes y no presenta el resultado como asesoramiento financiero.
+\end{itemize}
+
+\section{Escala de puntuaci\'on y r\'ubrica}
+
+Cada uno de los cinco criterios anteriores se punt\'ua con una escala discreta de 0, 1 o 2. Esta elecci\'on se adopta por razones de interpretabilidad y
+consistencia. Una escala corta facilita distinguir entre incumplimiento claro, cumplimiento parcial y cumplimiento adecuado, y evita una falsa precisi\'on que
+ser\'ia dif\'icil de sostener en una evaluaci\'on humana de este tipo.
+
+En esta escala, el valor 0 corresponde a un incumplimiento claro del criterio; el valor 1 indica un cumplimiento parcial o insuficiente; y el valor 2
+representa un cumplimiento adecuado. Esta gradaci\'on permite objetivar en la medida de lo posible una revisi\'on que sigue siendo humana, ya que obliga a
+distinguir entre respuestas claramente incorrectas, respuestas aceptables pero todav\'ia mejorables y respuestas que satisfacen bien el criterio evaluado.
+
+La puntuaci\'on total m\'axima es de 10 puntos. Todos los criterios pesan lo mismo, ya que el objetivo no es imponer una ponderaci\'on artificial entre
+dimensiones, sino obtener una lectura equilibrada de la calidad final de la respuesta. En este marco, los resultados se interpretan de la siguiente forma:
+
+\begin{itemize}
+    \item de 8 a 10 puntos: resultado satisfactorio;
+    \item de 6 a 7 puntos: caso completado con calidad insuficiente;
+    \item de 0 a 5 puntos: caso completado con calidad baja.
+\end{itemize}
+
+De esta manera, la metodolog\'ia separa con claridad tres situaciones distintas: casos no completados, casos completados pero todav\'ia insuficientes
+y casos completados con una calidad final satisfactoria.
+
+\section{Revisi\'on humana}
+
+La aplicaci\'on de la r\'ubrica se realiza mediante revisi\'on humana llevada a cabo por el autor del trabajo. Esta decisi\'on se justifica porque varios de
+los criterios evaluados ---como la adecuaci\'on a la consulta, la claridad de la respuesta o la prudencia interpretativa--- requieren una lectura contextual
+que no conviene reducir a una \'unica comprobaci\'on autom\'atica.
+
+Al mismo tiempo, esta revisi\'on no debe interpretarse como una auditor\'ia financiera experta ni como una certificaci\'on profesional del contenido
+econ\'omico. Su funci\'on es valorar el comportamiento del sistema dentro del marco del trabajo y determinar si la respuesta final resulta suficientemente
+adecuada para el objetivo planteado. Precisamente por ello, la r\'ubrica se formula con criterios expl\'icitos y una escala simple, buscando que el juicio
+manual sea lo m\'as interpretable posible.
+
+\section{Amenazas a la validez}
+
+La primera limitaci\'on metodol\'ogica es que la revisi\'on cualitativa depende del juicio del autor del trabajo. Aunque la r\'ubrica reduce parte de esa
+subjetividad al definir criterios expl\'icitos y una escala cerrada, el resultado sigue descansando en una evaluaci\'on humana no experta en finanzas.
+Por tanto, las puntuaciones deben leerse como una valoraci\'on aplicada del comportamiento del sistema y no como una auditor\'ia financiera externa.
+
+La segunda limitaci\'on es la dependencia de una \'unica configuraci\'on del sistema y de un \'unico modelo, \texttt{openai/gpt-oss-20b}
+\cite{openai2025gptossmodelcard}. Esta decisi\'on favorece la comparabilidad interna de la bater\'ia, pero restringe el alcance de las conclusiones: los
+resultados obtenidos no deben generalizarse autom\'aticamente a otras configuraciones, otros proveedores o modelos con distinto perfil de capacidad.
+
+La tercera limitaci\'on procede del propio material de evaluaci\'on. Aunque la bater\'ia de 50 consultas cubre diferentes niveles de dificultad y varios tipos
+de instrumento, sigue siendo un conjunto finito y deliberadamente acotado. En consecuencia, la metodolog\'ia permite estudiar la viabilidad del sistema en ese
+marco concreto, pero no demostrar un comportamiento universal frente a cualquier consulta financiera posible.
+
+Por \'ultimo, el alcance metodol\'ogico de la evaluaci\'on se limita al an\'alisis hist\'orico. Los resultados no deben extrapolarse a tareas de predicci\'on, 
+asesoramiento financiero o interpretaci\'on de factores externos. Las implicaciones generales de este l\'imite se desarrollan con mayor amplitud en el cap\'itulo de limitaciones.

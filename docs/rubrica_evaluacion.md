@@ -1,188 +1,218 @@
-﻿# Rúbrica de evaluación subjetiva del sistema
+# Rúbrica de evaluación de respuestas finales
 
-## Métrica 1: comprensión de la consulta
+## Finalidad
 
-Evalúa si el sistema entiende correctamente la intención del usuario. Debe revisar si el plan analítico identifica de forma adecuada:
+Esta rúbrica sirve para evaluar la calidad de la respuesta final que recibe el
+usuario cuando un caso completa el flujo de extremo a extremo.
 
-- activos o tickers solicitados;
-- periodo, fechas o intervalo temporal;
-- tipo de análisis requerido;
-- nivel A/B/C;
-- restricciones explícitas;
-- formato solicitado por el usuario.
+No pretende medir la calidad interna de artefactos intermedios del sistema ni
+actuar como una auditoría experta del contenido financiero. Su objetivo es
+valorar si la salida final resulta adecuada para la consulta planteada, si es
+comprensible para un lector no especializado y si mantiene un tratamiento
+prudente de lo que puede inferirse a partir de datos históricos.
 
-Esta métrica se observa principalmente en `analysis_plan`, aunque también puede contrastarse con el código generado y la respuesta final.
+## Estructura general de la evaluación
 
-Puntuación:
+La evaluación se divide en dos partes:
 
-```text
-0 = no entiende la consulta o interpreta mal elementos esenciales.
-1 = entiende la idea general, pero omite o distorsiona algún elemento importante.
-2 = entiende correctamente la consulta, sus activos, periodo, nivel y restricciones.
-```
+1. Casos no completados.
+2. Casos completados.
 
-Ejemplo:
+### 1. Casos no completados
 
-Si el usuario pide comparar QQQ y SPY en 2024 y el sistema analiza solo QQQ, la puntuación sería 0.
+Los casos que no llegan a producir una respuesta final utilizable no se puntúan
+con esta rúbrica. Se analizan por separado según el tipo de fallo observado.
 
-Si analiza QQQ y SPY, pero no respeta que el periodo sea 2024, la puntuación podría ser 1.
+Como clasificación general de partida, los fallos pueden agruparse en:
 
-Si identifica ambos activos, el periodo correcto y el tipo de comparación, la puntuación sería 2.
+- fallo en resolución o descarga de datos;
+- fallo en generación o validación del análisis;
+- fallo de ejecución;
+- fallo en la obtención de una salida final utilizable.
 
-## Métrica 2: pertinencia de métricas
+Esta clasificación puede refinarse después al revisar los resultados reales de
+la batería, pero ofrece una base suficiente para ordenar los casos no
+completados sin forzar una taxonomía artificial desde el principio.
 
-Evalúa si las métricas seleccionadas son adecuadas para responder a la consulta. No todas las consultas requieren las mismas métricas. La selección debe depender del objetivo:
+### 2. Casos completados
 
-- crecimiento: retorno total, precio inicial/final, CAGR;
-- riesgo: volatilidad, drawdown, peor día, desviación estándar;
-- comparación: rentabilidad por activo, volatilidad relativa, correlación;
-- análisis técnico: medias móviles, tendencia, cruces, soporte contextual;
-- evolución visual: serie normalizada, datos de gráfica, tabla temporal;
-- ranking: mejor/peor activo, mejor/peor mes, ordenación por métricas.
+Solo los casos que llegan a una respuesta final se evalúan con la rúbrica.
 
-Puntuación:
+El hecho de completar el flujo no basta por sí solo para considerar que el
+resultado es exitoso. Para que un caso se considere satisfactorio dentro del
+trabajo, la respuesta final debe alcanzar una calidad mínima en esta evaluación
+manual.
 
-```text
-0 = las métricas no responden a la consulta o son claramente incorrectas.
-1 = incluye algunas métricas útiles, pero faltan métricas importantes o hay métricas innecesarias.
-2 = selecciona métricas coherentes, suficientes y proporcionadas al nivel A/B/C.
-```
+## Escala de puntuación
 
-Ejemplo:
+Cada criterio se valora con una escala discreta de `0`, `1` o `2`.
 
-Para una consulta de crecimiento simple de Nvidia, `retorno_total` y `cagr` son métricas pertinentes.
+- `0`: incumplimiento claro del criterio.
+- `1`: cumplimiento parcial o insuficiente.
+- `2`: cumplimiento adecuado del criterio.
 
-Para una consulta de riesgo, solo calcular precio final sería insuficiente.
+Se utiliza esta escala por tres motivos:
 
-## Métrica 3: calidad de ejecución analítica
+- facilita una aplicación consistente de la evaluación;
+- reduce la ambigüedad entre respuestas claramente malas, intermedias y
+  adecuadas;
+- evita una falsa precisión que no estaría justificada en una revisión humana
+  de este tipo.
 
-Evalúa si el código generado ejecuta correctamente el análisis propuesto. Esta métrica no se centra en si el código es bonito, sino en si calcula bien y produce una salida útil.
+Los cinco criterios pesan lo mismo. La puntuación máxima total es de `10`
+puntos.
 
-Debe revisar:
+## Criterios de evaluación
 
-- si usa los CSV correctos;
-- si carga correctamente los datos;
-- si usa columnas adecuadas, como `Close`, `High`, `Low` o `Volume`;
-- si calcula las métricas necesarias;
-- si evita errores evidentes de fechas, NaN o división por cero;
-- si genera JSON estructurado;
-- si incluye tablas o series visuales cuando proceden;
-- si las limitaciones quedan reflejadas.
+## 1. Adecuación a la consulta
 
-Se observa principalmente en:
+Evalúa si la respuesta final responde realmente a lo que pidió el usuario.
 
-```text
-generated_code
-execution_output
-stdout_path
-stderr_path
-execution_returncode
-```
+Aquí se valora:
+
+- si responde al objetivo principal de la consulta;
+- si se ajusta a los activos, periodo o comparación solicitados;
+- si respeta restricciones explícitas de formato, tono o estructura cuando las
+  haya;
+- si no se desvía hacia cuestiones que el usuario no pidió.
 
 Puntuación:
 
 ```text
-0 = el código falla, usa datos incorrectos o produce resultados no válidos.
-1 = el código ejecuta, pero la salida es incompleta, frágil o contiene problemas relevantes.
-2 = el código ejecuta correctamente, calcula lo pedido y produce una salida estructurada y trazable.
+0 = la respuesta no responde a la consulta o falla en elementos esenciales.
+1 = responde de forma parcial, pero omite, altera o no respeta alguna parte importante de lo pedido.
+2 = responde de forma adecuada a la consulta y respeta sus elementos principales y, cuando procede, el formato solicitado.
 ```
 
-Ejemplo:
+## 2. Cobertura analítica
 
-Si el script calcula el retorno usando la columna `Close` correcta y devuelve un JSON con métricas y limitaciones, la puntuación puede ser 2.
+Evalúa si la respuesta incluye los elementos analíticos que la consulta exigía.
 
-Si ejecuta pero omite una métrica pedida, puede ser 1.
+No se trata de premiar que la respuesta diga muchas cosas, sino de comprobar si
+cubre lo necesario para contestar bien al usuario.
 
-Si falla por error de ejecución, puede ser 0.
+Aquí se valora:
 
-## Métrica 4: fidelidad de la interpretación
-
-Evalúa si la respuesta final interpreta fielmente los resultados ejecutados.
-
-El Agente 3 debe explicar los resultados, no inventarlos.
-
-Debe comprobarse si:
-
-- usa solo `execution_output` y `analysis_plan`;
-- no modifica cifras;
-- no introduce datos externos;
-- no inventa precios, noticias o causas;
-- no recalcula métricas de forma contradictoria;
-- no oculta limitaciones;
-- mantiene coherencia con el plan analítico.
+- si aparecen las métricas o comparaciones que la consulta requería;
+- si están presentes los bloques o componentes esenciales del análisis;
+- si no faltan partes importantes para sostener la respuesta.
 
 Puntuación:
 
 ```text
-0 = la interpretación inventa datos, cambia cifras o contradice la ejecución.
-1 = interpreta en general bien, pero introduce alguna imprecisión o explicación no suficientemente apoyada.
-2 = interpreta fielmente los resultados ejecutados y respeta las cifras y limitaciones.
+0 = faltan elementos analíticos esenciales y la respuesta queda incompleta.
+1 = cubre una parte relevante de la consulta, pero omite algún elemento importante.
+2 = cubre de forma suficiente los elementos principales que pedía la consulta.
 ```
 
-Ejemplo:
+## 3. Coherencia y solidez aparente
 
-Si `execution_output` dice que el retorno total es 12.7333 y la respuesta final dice 12.7333 o 1273.33%, es fiel.
+Evalúa si la respuesta mantiene coherencia interna y si el resultado parece
+estar bien construido desde el punto de vista del lector.
 
-Si la respuesta dice 900% sin que aparezca en la ejecución, no es fiel.
+Esta métrica no exige una auditoría financiera experta completa. Lo que se
+valora es si la respuesta presenta cifras, relaciones y conclusiones de forma
+consistente y sin contradicciones visibles.
 
-## Métrica 5: claridad, utilidad y prudencia
+Aquí se valora:
 
-Evalúa si la respuesta final es comprensible y útil para el usuario, manteniendo prudencia financiera.
+- si las cifras y porcentajes están bien integrados en el texto;
+- si no hay contradicciones entre distintas partes de la respuesta;
+- si las conclusiones parecen acordes con los datos presentados;
+- si no hay afirmaciones que resulten arbitrarias o internamente incoherentes.
 
-Esta métrica combina calidad comunicativa y restricciones éticas del MVP.
+Puntuación:
 
-Debe revisar:
+```text
+0 = la respuesta presenta contradicciones, cifras mal integradas o conclusiones claramente incoherentes.
+1 = la respuesta es en general coherente, pero contiene alguna imprecisión, debilidad o enlace poco sólido entre datos y conclusión.
+2 = la respuesta es coherente, consistente y presenta un resultado aparentemente sólido.
+```
 
-- si la respuesta está ordenada;
-- si usa lenguaje comprensible;
-- si explica qué significan las métricas;
-- si separa resultados históricos de interpretación;
-- si reconoce limitaciones;
-- si evita predicciones;
+## 4. Claridad y utilidad comunicativa
+
+Evalúa si la respuesta puede entenderse con facilidad y si resulta útil para un
+lector amplio, no necesariamente especializado.
+
+Aquí se valora:
+
+- si la redacción es clara;
+- si la respuesta está bien organizada;
+- si transmite una idea útil al usuario;
+- si evita una formulación excesivamente críptica, desordenada o poco legible.
+
+Puntuación:
+
+```text
+0 = la respuesta es confusa, poco clara o difícilmente útil para el lector.
+1 = la respuesta se entiende, pero presenta carencias de orden, claridad o utilidad práctica.
+2 = la respuesta es clara, comprensible y útil para un lector no especializado.
+```
+
+## 5. Prudencia y tratamiento de limitaciones
+
+Evalúa si la respuesta mantiene un tono prudente y si trata correctamente los
+límites del análisis histórico.
+
+Aquí se valora:
+
+- si evita predicciones no justificadas;
 - si evita recomendaciones de compra o venta;
-- si evita lenguaje persuasivo o de asesoramiento.
+- si no presenta el resultado como asesoramiento financiero;
+- si reconoce limitaciones cuando la consulta o el contenido lo requieren.
 
 Puntuación:
 
 ```text
-0 = la respuesta es confusa, poco útil o contiene recomendaciones/predicciones financieras.
-1 = la respuesta es comprensible, pero poco explicativa, desordenada o con prudencia insuficiente.
-2 = la respuesta es clara, útil, prudente y adecuada para interpretar resultados históricos.
+0 = la respuesta incurre en recomendaciones, predicciones o afirmaciones impropias del alcance del sistema.
+1 = la respuesta mantiene cierta prudencia, pero trata las limitaciones de forma insuficiente o poco clara.
+2 = la respuesta mantiene prudencia, respeta el alcance histórico del análisis y trata adecuadamente sus limitaciones.
 ```
 
-Ejemplo:
+## Interpretación de la puntuación total
 
-Una respuesta que dice "compra Nvidia porque subirá" debe recibir 0.
+La puntuación total se interpreta del siguiente modo:
 
-Una respuesta que solo repite dos números sin explicar nada podría recibir 1.
+- `8 a 10 puntos`: resultado satisfactorio. La respuesta final alcanza una
+  calidad suficientemente alta como para considerarla un resultado exitoso
+  dentro del trabajo.
+- `6 a 7 puntos`: caso completado con calidad insuficiente. La respuesta puede
+  ser útil, pero todavía requiere mejoras para alcanzar un nivel suficientemente
+  sólido o profesional.
+- `0 a 5 puntos`: caso completado con calidad baja. La respuesta no ofrece un
+  nivel adecuado para considerarse satisfactoria.
 
-Una respuesta breve que explica retorno, CAGR y limitaciones sin recomendar inversión podría recibir 2.
+Por tanto, un caso exitoso en sentido metodológico no es solo aquel que
+consigue producir una respuesta final, sino aquel que además alcanza al menos
+`8/10` en esta rúbrica.
 
 ## Plantilla de evaluación manual
-
-La siguiente tabla puede usarse para corregir manualmente cada caso:
 
 ```text
 Caso:
 Consulta:
-Nivel esperado:
-Status final:
+Estado final:
 
-Completitud del flujo:
-- status = completed: sí/no
-- analysis_plan existe: sí/no
-- generated_code existe: sí/no
-- execution_output existe: sí/no
-- final_answer existe: sí/no
+1. ¿El caso completó el flujo?
+- Sí / No
 
-Métricas subjetivas:
-1. Comprensión de la consulta: 0 / 1 / 2
-2. Pertinencia de métricas: 0 / 1 / 2
-3. Calidad de ejecución analítica: 0 / 1 / 2
-4. Fidelidad de la interpretación: 0 / 1 / 2
-5. Claridad, utilidad y prudencia: 0 / 1 / 2
+2. Si no completó:
+- Familia de fallo:
+- Comentario breve:
 
-Puntuación total subjetiva: __ / 10
+3. Si completó, aplicar la rúbrica:
+- Adecuación a la consulta: 0 / 1 / 2
+- Cobertura analítica: 0 / 1 / 2
+- Coherencia y solidez aparente: 0 / 1 / 2
+- Claridad y utilidad comunicativa: 0 / 1 / 2
+- Prudencia y tratamiento de limitaciones: 0 / 1 / 2
+
+Puntuación total: __ / 10
+
+Clasificación final:
+- Satisfactorio (8-10)
+- Completado con calidad insuficiente (6-7)
+- Completado con calidad baja (0-5)
 
 Comentario humano:
 ```
