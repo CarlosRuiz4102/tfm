@@ -1,8 +1,8 @@
-# Ejecucion Completa de la Parte 5
+﻿# Ejecucion Completa de la Parte 5
 
 ## Objetivo
 
-Este documento no resume la parte 5 de forma abstracta.
+Este documento no resume la parte 5 de forma general.
 La idea aqui es ver con claridad como se conectan la parte 4 y la parte 5 para
 entender:
 
@@ -85,7 +85,7 @@ es este:
 La parte 5 no empieza desde cero. Empieza con un estado ya enriquecido por la
 ejecucion.
 
-Estado conceptual minimo al salir de la parte 4:
+Estado minimo relevante al salir de la parte 4:
 
 ```json
 {
@@ -266,7 +266,7 @@ dificil de leer.
 
 ## Paso 3. Payload final que recibe el Agente 5
 
-Tras la limpieza y compactacion, el payload conceptual queda asi:
+Tras la limpieza y compactacion, el payload que recibe el Agente 5 queda asi:
 
 ```json
 {
@@ -339,7 +339,7 @@ No existe aqui una etapa del tipo:
 
 - "comparar respuesta con rubrica";
 - "confirmar que el razonamiento era bueno";
-- "volver a revisar si la lectura financiera convence".
+- "volver a revisar si la narrativa es financieramente convincente".
 
 Los controles que si existen son minimos y de formato:
 
@@ -445,7 +445,7 @@ respuesta mas precisa seria:
 - le llegan los `warnings` relevantes;
 - y no le llega ni el `analysis_plan` ni etiquetas internas sobre el nivel esperado.
 
-## ConclusiÃ³n
+## Conclusion
 
 La parte 5 no es un lector del plan analitico.
 Es un bloque de interpretacion final apoyado en resultados ejecutados.
@@ -454,5 +454,6 @@ La conexion correcta entre ambas partes queda asi:
 
 1. la parte 4 garantiza que la salida exista y sea util para el workflow;
 2. la parte 5 transforma esa salida en lenguaje natural;
-3. antes de llamar al Agente 5 se eliminan las pistas que podrian condicionar su respuesta;
+3. antes de llamar al Agente 5 se eliminan las pistas internas que condicionarian su respuesta si se incluyeran en el payload;
 4. el sistema conserva ademas la carga exacta usada para poder trazar despues la interpretacion final.
+

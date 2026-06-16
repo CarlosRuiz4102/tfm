@@ -71,7 +71,7 @@ La idea importante es esta:
 
 ## Estado compartido minimo
 
-Durante esta parte conviene mantener al menos esta informacion:
+En esta parte, la implementacion mantiene al menos esta informacion:
 
 ```json
 {
@@ -94,22 +94,21 @@ Durante esta parte conviene mantener al menos esta informacion:
 }
 ```
 
-Estados recomendados:
+Estados reales de esta parte en la implementacion:
 
 - `code_validated`
 - `executing`
 - `execution_validating`
 - `execution_repairing`
-- `execution_valid`
-- `execution_blocked`
-- `ready_for_next_phase`
-- `failed_execution_phase`
+- `executed`
+- `execution_failed`
+- `error`
 
 ## Bloque 1: que entra realmente en la parte 4
 
 ### Que entra
 
-La parte 4 recibe como minimo:
+La parte 4 recibe:
 
 - `generated_code`
 - `user_query`
@@ -120,12 +119,11 @@ La parte 4 recibe como minimo:
 - `warnings`
 - `download_summary`
 
-Entrada conceptual:
+Payload de ejecucion efectivo:
 
 ```json
 {
-  "user_query": "Compara Nvidia y AMD en 2 anos",
-  "generated_code": "script Python completo ya aceptado por la parte 3",
+  "query": "Compara Nvidia y AMD en 2 anos",
   "tickers": ["NVDA", "AMD"],
   "temporal_context": {
     "start": null,
@@ -190,7 +188,7 @@ Le entra:
 - el payload operativo ya construido;
 - la configuracion de tiempo maximo y ejecutable Python.
 
-### Payload de ejecucion recomendado
+### Payload de ejecucion real
 
 ```json
 {
@@ -226,7 +224,7 @@ No debe arrastrar contratos viejos que no pertenecen a esta parte.
 
 ## Como se ejecuta
 
-Secuencia conceptual:
+Secuencia real:
 
 1. guardar el script en `results/code/generated_<run_id>.py`;
 2. guardar el payload en `results/logs/payload_<run_id>.json`;
@@ -235,7 +233,7 @@ Secuencia conceptual:
 5. guardar `stdout` y `stderr` en artefactos persistidos;
 6. intentar parsear `stdout` como JSON.
 
-### Pseudocodigo orientativo
+### Pseudocodigo del lanzador
 
 ```python
 script_path.write_text(code, encoding="utf-8")
@@ -254,7 +252,7 @@ stderr = completed.stderr
 returncode = completed.returncode
 ```
 
-## Artefactos recomendados
+## Artefactos persistidos en esta implementacion
 
 - `results/code/generated_<run_id>.py`
 - `results/logs/payload_<run_id>.json`
@@ -279,7 +277,7 @@ Es importante insistir en esto:
 
 ## Idea central de esta validacion
 
-La validacion de ejecucion debe responder a dos preguntas principales:
+La validacion de ejecucion responde a dos preguntas principales:
 
 1. El script se ha ejecutado correctamente como proceso?
 2. La salida generada esta en una forma correcta para que la parte 5 pueda trabajar bien con ella?
@@ -316,9 +314,10 @@ A partir de esas dos preguntas principales, la validacion revisa dos bloques tec
 
 ### 1. Validacion de ejecucion del proceso
 
-- el proceso termina dentro del tiempo maximo;
-- no hay excepcion de infraestructura al lanzar;
-- `returncode` permite distinguir exito de fallo.
+- si existe `launch_error`, la decision es `repairable`;
+- si `timed_out = true`, la decision es `repairable`;
+- si `returncode is None`, la decision es `repairable`;
+- si `returncode != 0`, la decision es `repairable`.
 
 Pregunta que responde:
 
@@ -326,9 +325,10 @@ Pregunta que responde:
 
 ### 2. Validacion de la salida para la parte 5
 
-- `stdout` existe;
-- `stdout` es JSON parseable;
-- el JSON contiene como minimo:
+- `stdout` no puede venir vacio;
+- `stdout` debe ser JSON parseable;
+- la salida parseada debe ser un objeto JSON de primer nivel;
+- el JSON debe contener las claves obligatorias:
   - `metrics`
   - `summary`
   - `limitations`
@@ -339,10 +339,10 @@ Pregunta que responde:
 
 ### 3. Calidad minima del artefacto de salida
 
-- `summary` no viene vacio;
-- `limitations` existe aunque sea una lista vacia;
-- `metrics` no esta ausente;
-- la salida no es texto libre ni logs mezclados con JSON.
+- `summary` debe existir como texto no vacio;
+- `limitations` debe existir como lista;
+- `metrics` no puede ser `null`;
+- la salida no puede ser texto libre ni logs mezclados con JSON.
 
 Pregunta que responde:
 
@@ -354,12 +354,12 @@ Despues de validar ejecucion y salida, el workflow ya puede clasificar el result
 
 Esta clasificacion no es una validacion adicional distinta de las anteriores, sino la consecuencia de lo observado.
 
-Si algo falla, conviene clasificar si el caso parece:
+Si algo falla, la parte 4 clasifica el caso como:
 
 - recuperable con un nuevo intento de codigo;
 - o no recuperable en esta ejecucion.
 
-Ejemplos tipicos de fallo recuperable:
+Fallos que entran en `repairable`:
 
 - `KeyError`
 - `NameError`
@@ -369,7 +369,7 @@ Ejemplos tipicos de fallo recuperable:
 - claves obligatorias ausentes
 - timeout puntual
 
-Ejemplos tipicos de bloqueo:
+Fallos que llevan a `blocked`:
 
 - se agotaron los intentos maximos;
 - el script sigue rompiendo el contrato tras varios intentos;
@@ -379,7 +379,7 @@ Ejemplos tipicos de bloqueo:
 
 Una ejecucion correcta no significa solo "el script no ha explotado".
 
-Conviene considerar correcta una ejecucion cuando:
+En esta implementacion, una ejecucion se considera correcta cuando:
 
 - el proceso termina sin error;
 - `returncode == 0`;
@@ -391,7 +391,7 @@ Conviene considerar correcta una ejecucion cuando:
 
 Una ejecucion no correcta es cualquier intento donde el flujo no puede confiar todavia en la salida.
 
-Casos tipicos:
+Casos que invalidan la ejecucion:
 
 - el script lanza una excepcion;
 - el proceso termina con `returncode != 0`;
@@ -407,12 +407,12 @@ Casos tipicos:
 2. `repairable`
 3. `blocked`
 
-Semantica recomendada:
+Semantica de la implementacion:
 
 - `valid`
   significa: la salida puede pasar a la siguiente fase.
 - `repairable`
-  significa: el error observado parece corregible con un nuevo script.
+  significa: el error observado entra en la ruta de correccion con un nuevo script.
 - `blocked`
   significa: ya no vamos a seguir corrigiendo en esta ejecucion.
 
@@ -459,7 +459,7 @@ Su funcion no es:
 
 ## Que le entra
 
-Entrada conceptual:
+Entrada del Subagente 4:
 
 ```json
 {
@@ -517,7 +517,7 @@ El Subagente 4 no "sabe" con certeza que su reparacion ya es correcta.
 Su funcionamiento real es este:
 
 1. observa el error de ejecucion;
-2. infiere una correccion razonable;
+2. infiere una correccion a partir del error observable;
 3. reescribe el script completo;
 4. devuelve ese script al workflow;
 5. el workflow vuelve a lanzarlo en el ejecutor.
@@ -532,17 +532,17 @@ La idea clave es esta:
 La respuesta correcta aqui debe ser prudente:
 
 - no lo determina de forma definitiva;
-- solo puede producir una version que, segun el error observado, parece mejor alineada con el contrato del workflow;
+- solo puede producir una version que, segun el error observado, quede mejor alineada con el contrato del workflow;
 - la unica validacion real de esa hipotesis es volver a ejecutar el script.
 
-Por tanto, no conviene introducir una validacion local adicional que finja certeza.
+Por tanto, esta parte no introduce una validacion local adicional que finja certeza.
 
-La regla operativa deberia ser:
+La regla operativa es esta:
 
 - si el Subagente 4 devuelve un nuevo script, ese script no se considera bueno por el mero hecho de existir;
 - solo se considera aceptable si el nuevo intento de ejecucion resulta `valid`.
 
-## Prompt base recomendado para Subagente 4
+## Prompt base del Subagente 4
 
 ```text
 Eres el Subagente 4 del flujo de ejecucion de codigo.
@@ -578,7 +578,7 @@ Reglas obligatorias:
 
 ## Reejecucion y bucle de reparacion
 
-La ruta general en esta parte deberia entenderse asi:
+La ruta general en esta parte es esta:
 
 ```text
 Codigo validado por la parte 3
@@ -591,15 +591,13 @@ Codigo validado por la parte 3
 -> si no converge, blocked
 ```
 
-## Regla importante sobre intentos
+## Regla sobre intentos
 
-Conviene fijar un maximo total de ejecuciones.
-
-Recomendacion:
+La implementacion fija un maximo total de ejecuciones:
 
 - `MAX_EXECUTION_ATTEMPTS = 3`
 
-Interpretacion recomendada:
+Interpretacion del limite:
 
 - 1 ejecucion inicial;
 - hasta 2 reintentos tras reparacion.
@@ -607,30 +605,30 @@ Interpretacion recomendada:
 Regla general:
 
 - si la ejecucion es correcta -> `valid`
-- si falla y aun parece corregible -> `repairable`
+- si falla y la ruta de correccion sigue abierta -> `repairable`
 - si ya no existe una correccion razonable -> `blocked`
 - si se han agotado los intentos maximos -> `blocked`
 
-## Que deberia recibir la siguiente fase
+## Que recibe la siguiente fase
 
-Minimo recomendable:
+La siguiente fase recibe:
 
 - `execution_output`
 - `execution_artifacts`
 - `execution_stdout`
 - `execution_stderr`
 - `execution_returncode`
-- avisos relevantes acumulados
+- `warnings`
 
 En la implementacion actual, la parte 5 construye ademas un
 `interpretation_payload` a partir de esta salida valida. Esa carga:
 
 - conserva `user_query`, contexto resuelto, `execution_output` y `warnings`;
-- elimina pistas internas que no deberian llegar al interpretador;
+- elimina pistas internas que no llegan al interpretador;
 - queda guardada en el estado para poder trazar despues la conexion entre ambas
   partes.
 
-La siguiente fase no deberia recibir una salida dudosa ni un intento fallido como si fuera resultado bueno.
+La siguiente fase no recibe una salida dudosa ni un intento fallido como si fuera resultado bueno.
 
 ## Conexion con la trazabilidad global
 
@@ -649,7 +647,7 @@ Eso permite comprobar despues:
 - que se entrego exactamente a la parte 5.
 
 Si en una bateria de ejemplos aparece un fallo raro, esta carpeta de traza
-deberia revisarse antes de tocar prompts o logica del reparador.
+es el primer sitio que revisar antes de tocar prompts o logica del reparador.
 
 ## Condiciones para considerar esta parte completada
 

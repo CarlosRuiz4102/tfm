@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento no resume la parte 3 de forma abstracta.
+Este documento no resume la parte 3 de forma general.
 La idea aqui es ver una ejecucion controlada de esta fase para entender:
 
 - como se conecta la parte 2 con la parte 3;
@@ -106,7 +106,7 @@ _build_phase2_input_payload(state)
 La parte 3 no construye un contexto nuevo desde cero.
 Reutiliza el mismo handoff compacto que ya venia de la parte 2.
 
-Salida conceptual:
+Salida real del handoff compartido:
 
 ```json
 {
@@ -174,7 +174,7 @@ Primera salida observada en esta traza controlada:
   "required_fixes": [
     "Devolver metrics, summary y limitations."
   ],
-  "reasoning": "El script parece recuperable."
+  "reasoning": "El script puede corregirse sin rehacer el plan analitico."
 }
 ```
 
@@ -195,11 +195,11 @@ _build_code_validation_feedback(state)
 Esta funcion compacta la decision del Agente 4 para pasarla al subagente sin
 meter logica extra en el prompt.
 
-Feedback conceptual generado:
+Feedback generado para el subagente:
 
 ```text
 decision=repairable
-reasoning=El script parece recuperable.
+reasoning=El script puede corregirse sin rehacer el plan analitico.
 errors=La salida no sigue el formato esperado.
 required_fixes=Devolver metrics, summary y limitations.
 ```
@@ -268,7 +268,7 @@ code_generated
 
 ## Estado final al salir de la parte 3
 
-Estado conceptual:
+Estado al salir del nodo:
 
 ```json
 {

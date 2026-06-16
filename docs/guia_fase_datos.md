@@ -1,4 +1,4 @@
-# Guia de la fase de datos
+﻿# Guia de la fase de datos
 
 ## Objetivo de esta fase
 
@@ -65,34 +65,36 @@ El significado de "valido" en esta fase debe ser fuerte:
 
 ## Estado compartido minimo
 
-Durante esta fase conviene mantener un estado comun. Conceptualmente deberia existir al menos esta informacion:
+En esta fase, la implementacion mantiene un estado compartido con al menos esta
+informacion:
 
 ```json
 {
   "user_query": "Compara Nvidia y AMD en 2 anos",
-  "status": "query_received",
+  "normalized_query": {
+    "query": "Compara Nvidia y AMD en 2 anos"
+  },
+  "csv_paths": [],
+  "status": "created",
   "financial_data_request": null,
   "download_artifacts": null,
   "download_summary": null,
   "warnings": [],
-  "errors": [],
+  "error_message": null,
   "structural_repair_attempts": 0,
   "operational_repair_attempts": 0
 }
 ```
 
-Estados recomendados:
+Estados reales de esta fase en la implementacion:
 
-- `query_received`
+- `created`
+- `ingested`
 - `data_request_planned`
-- `data_request_structurally_validating`
-- `data_request_structurally_repairing`
-- `data_request_operationally_validating`
-- `data_request_operationally_repairing`
+- `data_request_validated`
 - `data_downloaded`
-- `ready_for_agent_2`
-- `blocked_for_clarification`
-- `failed_data_phase`
+- `blocked`
+- `error`
 
 ## Bloque 1: entrada del usuario
 
@@ -142,19 +144,16 @@ Su trabajo no es:
 
 ### Que le entra
 
-Le entra la consulta del usuario y, si se quiere, un contexto de configuracion con restricciones conocidas.
+Le entra la consulta del usuario. En la implementacion actual,
+`build_llm_data_request(...)` recibe un `FinancialQueryInput` con la query
+original. Las restricciones del sistema forman parte del contrato del prompt,
+no de un segundo payload variable.
 
-Entrada conceptual:
+Ejemplo de entrada:
 
 ```json
 {
-  "user_query": "Quiero el oro en 1 semana a 1h",
-  "allowed_provider": "yfinance",
-  "allowed_intervals": ["1h", "1d", "1wk", "1mo"],
-  "notes": [
-    "Debes producir solo un FinancialDataRequest JSON",
-    "No debes hacer analisis financiero final"
-  ]
+  "user_query": "Quiero el oro en 1 semana a 1h"
 }
 ```
 
@@ -162,7 +161,7 @@ Entrada conceptual:
 
 Debe devolver exclusivamente un `FinancialDataRequest JSON`.
 
-Esquema propuesto:
+Contrato de salida:
 
 ```json
 {
@@ -189,7 +188,7 @@ Esquema propuesto:
 - `provider` deja claro que la descarga se hara en `yfinance`.
 - `instruments` evita depender de una lista suelta de tickers.
 - `interval` fija la granularidad.
-- `period` y `start/end` no deberian competir entre si.
+- `period` y `start/end` son mutuamente excluyentes dentro del request.
 - `required_fields` deja explicito que columnas esperamos.
 - `needs_clarification` permite frenar el flujo si la consulta es demasiado ambigua.
 
@@ -197,14 +196,12 @@ Esquema propuesto:
 
 Estos dos campos existen para evitar que el Agente 1 invente silenciosamente una peticion de datos cuando la consulta no da informacion suficiente.
 
-Regla conceptual:
+Reglas del contrato:
 
 - `needs_clarification = false`
-  significa: "con la informacion disponible se puede construir una peticion de datos razonable y ejecutable".
+  significa: "la fase de datos puede continuar sin aclaracion adicional".
 - `needs_clarification = true`
   significa: "la consulta no permite construir una peticion fiable sin asumir demasiado".
-
-Regla recomendada:
 
 - si `needs_clarification = false`, entonces `clarification_reason = null`
 - si `needs_clarification = true`, entonces `clarification_reason` debe contener un motivo breve y concreto
@@ -225,7 +222,7 @@ Ejemplos correctos:
 }
 ```
 
-### Cuando deberia activarse
+### Cuando se activa
 
 Cuando falta informacion critica para descargar datos de forma fiable. Por ejemplo:
 
@@ -241,9 +238,10 @@ Cuando falta informacion critica para descargar datos de forma fiable. Por ejemp
 2. Si puede hacerlo, devuelve `needs_clarification=false` y `clarification_reason=null`.
 3. Si no puede hacerlo sin asumir demasiado, devuelve `needs_clarification=true` y un motivo.
 4. La validacion estructural revisa que ambos campos sean coherentes.
-5. Si `needs_clarification=true`, el flujo no debe pasar a descarga normal; debe bloquearse o pedir aclaracion.
+5. Si `needs_clarification=true`, la validacion estructural devuelve
+   `blocked` y la fase de datos no pasa a descarga.
 
-### Prompt base recomendado para Agente 1
+### Prompt base del Agente 1
 
 ```text
 Eres el Agente 1 del flujo de analisis financiero.
@@ -257,7 +255,7 @@ No debes:
 
 Debes:
 - identificar el o los instrumentos;
-- inferir ticker si es razonable y evidente;
+- inferir ticker solo si la resolucion es directa y univoca;
 - inferir rango temporal e intervalo;
 - usar period o start/end segun corresponda;
 - marcar needs_clarification=true si la consulta no permite una descarga fiable;
@@ -289,7 +287,7 @@ Comprobar que el `FinancialDataRequest JSON` generado por el Agente 1 esta bien 
 
 Pregunta que responde esta validacion:
 
-- "¿La peticion tiene forma tecnica correcta para merecer un intento real de descarga?"
+- "Â¿La peticion tiene forma tecnica correcta para merecer un intento real de descarga?"
 
 Es importante insistir en esto: aqui todavia no se comprueba si `yfinance` devuelve datos.
 Solo se comprueba si el request esta formalmente bien planteado.
@@ -307,83 +305,38 @@ En implementacion real, esto se traduce en:
 
 ### Que se valida
 
-La validacion estructural se compone de cuatro capas.
-La idea es no responder solo "esta mal", sino detectar exactamente en que tipo de error estamos.
+En esta version, la validacion estructural no aplica capas semanticas
+adicionales fuera del propio contrato del `FinancialDataRequest`. Las
+comprobaciones exactas son estas:
 
-### 1. Validacion estructural
+1. Si `needs_clarification = true`, la validacion devuelve directamente
+   `blocked` y usa `clarification_reason` como motivo principal del bloqueo.
+2. `user_query` debe existir y no puede estar vacia.
+3. `provider` debe existir y debe ser exactamente `yfinance`.
+4. Debe existir al menos un instrumento.
+5. Todos los instrumentos deben incluir un `ticker` no vacio.
+6. `interval` debe existir y pertenecer a la lista permitida por la
+   implementacion.
+7. No pueden coexistir `period` y `start/end` en el mismo request.
+8. Debe existir `period` o `start`.
+9. `start` y `end`, si aparecen, deben tener formato ISO `YYYY-MM-DD`.
+10. Si existen `start` y `end`, entonces `end >= start`.
 
-- el JSON existe y es parseable;
-- los campos obligatorios existen;
-- los tipos son correctos;
-- `instruments` es una lista;
-- `interval` es texto;
-- `needs_clarification` es booleano.
-
-Esto responde a una pregunta muy basica:
-
-- "¿El Agente 1 ha devuelto realmente un objeto con la forma esperada?"
-
-Si esto falla, el problema suele ser de formato o de serializacion.
-
-### 2. Validacion de contrato
-
-- existe al menos un instrumento si `needs_clarification=false`;
-- existe `period` o `start`;
-- si existe `end`, debe tener sentido con `start`;
-- no deberia usarse simultaneamente `period` y `start/end` sin una regla explicita;
-- el proveedor debe ser uno permitido.
-
-Esto ya no revisa formato puro, sino reglas del contrato de datos.
-
-Pregunta que responde:
-
-- "¿Aunque el JSON exista, representa una peticion tecnica coherente?"
-
-### 3. Validacion temporal y de granularidad
-
-- fechas con formato ISO si aparecen;
-- `end >= start`;
-- el intervalo pertenece a una lista permitida;
-- la combinacion rango-intervalo es razonable para `yfinance`.
-
-Aqui se protege una de las zonas que mas errores generan en este tipo de sistemas:
-
-- fechas mal formadas;
-- rangos invertidos;
-- intervalos que el proveedor no soporta;
-- combinaciones poco realistas.
-
-Pregunta que responde:
-
-- "¿La parte temporal del request esta planteada de forma utilizable?"
-
-### 4. Validacion de negocio
-
-- los tickers no estan vacios;
-- existe coherencia minima entre consulta e instrumentos detectados;
-- si la consulta es ambigua, `needs_clarification` lo refleja.
-
-Esta capa es importante para defender la arquitectura.
-No basta con tener un JSON valido y con fechas correctas.
-Tambien hace falta que el request respete la intencion de la consulta.
-
-Pregunta que responde:
-
-- "¿El request parece realmente la traduccion razonable de lo que pidio el usuario?"
+La validacion estructural de esta implementacion no comprueba todavia si la
+descarga funciona contra el proveedor ni si la combinacion rango-intervalo
+produce datos utiles en la practica. Todo eso pertenece a la validacion
+operativa.
 
 ### Como se valida realmente
 
-En terminos practicos, la validacion estructural revisa reglas como estas:
+En la implementacion actual, el recorrido exacto es este:
 
-- `provider` debe ser `yfinance`;
-- debe existir al menos un instrumento;
-- todos los instrumentos deben tener ticker;
-- `interval` debe pertenecer a una lista permitida;
-- no deben coexistir `period` y `start/end`;
-- debe existir `period` o `start`;
-- `start` y `end` deben tener formato ISO si aparecen;
-- si existen ambas fechas, `end >= start`;
-- si `needs_clarification=true`, el flujo no intenta seguir descargando.
+1. Se parsea la salida del Agente 1 a un `FinancialDataRequest`.
+2. Se evalua si `needs_clarification` obliga a bloquear el caso.
+3. Se revisan los campos obligatorios del contrato.
+4. Se revisan las restricciones temporales y de granularidad.
+5. Se devuelve una `ValidationDecision` con uno de estos tres estados:
+   `valid`, `repairable` o `blocked`.
 
 ### Como defender esta parte en una exposicion
 
@@ -396,7 +349,7 @@ Una forma clara de explicarlo seria:
 Lo importante es dejar claro que esta validacion no comprueba todavia si la descarga funciona.
 Solo decide si tiene sentido intentarla.
 
-### Posibles errores tipicos
+### Errores que detecta esta validacion
 
 - el agente devuelve texto adicional fuera del JSON;
 - usa `daily` en vez de `1d`;
@@ -412,7 +365,7 @@ Solo decide si tiene sentido intentarla.
 
 Estas tres salidas deben entenderse como la regla general para medir el estado del flujo dentro de las validaciones y de los subagentes.
 
-Semantica recomendada:
+Semantica de la implementacion:
 
 - `valid`
   significa: no hay errores y el flujo puede continuar.
@@ -432,7 +385,7 @@ El request puede pasar a la validacion operativa de descarga.
 El request tiene errores corregibles y se activa el Subagente 1.
 
 Este caso se usa cuando todavia tiene sentido intentar una correccion automatica.
-Ejemplos tipicos:
+Errores que caen en `repairable` dentro de esta validacion:
 
 - ticker vacio;
 - intervalo no permitido;
@@ -497,7 +450,7 @@ Su funcion no es:
 
 Una version corregida del `FinancialDataRequest`.
 
-### Prompt base recomendado para Subagente 1
+### Prompt base del Subagente 1
 
 ```text
 Eres el Subagente 1 del flujo de datos.
@@ -530,7 +483,7 @@ Esta validacion incluye la descarga real. No es solo una comprobacion teorica.
 
 Pregunta que responde esta validacion:
 
-- "Aunque el request este bien construido, ¿la descarga real produce datos utiles para continuar?"
+- "Aunque el request este bien construido, Â¿la descarga real produce datos utiles para continuar?"
 
 Aqui esta la diferencia clave con la validacion estructural:
 
@@ -550,12 +503,13 @@ Y durante la ejecucion se construyen dos objetos intermedios:
 
 1. Extraer tickers e informacion temporal.
 2. Ejecutar la descarga real en `yfinance`.
-3. Comprobar que la respuesta no viene vacia.
-4. Comprobar que aparecen los tickers esperados.
-5. Comprobar que la estructura devuelta permite generar un dataframe normalizado util.
-6. Persistir la descarga si todo sale bien.
+3. Normalizar la respuesta bruta a un formato canonico del sistema.
+4. Comprobar que la respuesta no viene vacia.
+5. Comprobar que aparecen los tickers esperados.
+6. Comprobar que la estructura devuelta permite generar un dataframe normalizado util.
+7. Persistir la descarga si todo sale bien.
 
-### Pseudocodigo orientativo
+### Llamada real de descarga
 
 ```python
 tickers = [item["ticker"] for item in financial_data_request["instruments"]]
@@ -573,26 +527,112 @@ data = yf.download(
 )
 ```
 
+## Por que la normalizacion va antes de validar
+
+Entre la descarga bruta y la validacion operativa existe un paso intermedio de
+normalizacion. Esto no es una validacion en si misma, sino un preprocesado
+estructural de los datos descargados.
+
+La razon de incluirlo aqui es que `yfinance` no siempre devuelve la informacion
+con la misma forma. En consultas con un solo ticker puede devolver columnas
+simples, mientras que en consultas con varios tickers puede devolver un
+`MultiIndex`. Si la validacion operativa trabajara directamente sobre esa salida
+bruta, tendria que conocer demasiadas variantes del proveedor y mezclar dos
+responsabilidades distintas:
+
+- interpretar la estructura variable de `yfinance`;
+- decidir si los datos sirven realmente para continuar.
+
+La normalizacion separa ambos problemas. Primero transforma la salida del
+proveedor a un formato tabular canonico comun del sistema. Despues, la
+validacion operativa comprueba si esa representacion normalizada es
+suficientemente consistente y utilizable.
+
+En otras palabras:
+
+- la descarga responde a la pregunta "que ha devuelto el proveedor";
+- la normalizacion responde a la pregunta "como convertimos eso al contrato interno del sistema";
+- la validacion operativa responde a la pregunta "ese contrato interno ya sirve para continuar".
+
+## Que hace exactamente la normalizacion
+
+La normalizacion convierte la salida bruta de `yfinance` en un dataframe comun
+con columnas explicitas como `Date`, `Ticker`, `Open`, `High`, `Low`, `Close`,
+`Adj Close` y `Volume`.
+
+En la implementacion actual, este tratamiento previo realiza exactamente estas
+operaciones:
+
+- si la descarga viene vacia, devuelve un dataframe vacio pero ya con las
+  columnas esperadas por el sistema;
+- si `yfinance` devuelve un `MultiIndex`, corrige el orden de niveles si hace
+  falta para poder localizar correctamente los tickers;
+- separa los datos por ticker cuando la descarga contiene varios activos;
+- hace explicita la columna `Date` si la fecha venia como indice;
+- inserta explicitamente la columna `Ticker` para que cada fila quede asociada
+  a un instrumento concreto;
+- convierte `Open`, `High`, `Low`, `Close`, `Adj Close` y `Volume` a valores
+  numericos cuando es posible;
+- convierte `Date` a tipo temporal;
+- elimina filas invalidas en campos minimos como fecha o ticker;
+- ordena el resultado por `Ticker` y `Date`.
+
+Este paso es importante porque el resto del flujo no consume la salida bruta
+del proveedor, sino esta representacion canonica. Por eso tambien tiene sentido
+que la validacion operativa se apoye sobre el dataset ya normalizado: lo que se
+valida no es solo que `yfinance` haya respondido, sino que la respuesta ya haya
+quedado transformada a un formato util para el Agente 2 y para los scripts
+posteriores.
+
 ### Que se considera valido operativamente
 
-- `yfinance` devuelve datos;
-- no viene un dataset vacio;
-- aparecen los tickers solicitados o, si falta alguno, el caso se detecta claramente;
-- la estructura resultante se puede normalizar a columnas utiles como `Date`, `Ticker` y `Close`;
-- se puede generar el artefacto final esperado de esta fase.
+- el `FinancialDataRequest` ha podido ejecutarse contra `yfinance` sin quedar bloqueado por un fallo terminal;
+- la salida bruta se ha podido transformar a un dataframe normalizado del sistema;
+- el dataframe normalizado no esta vacio;
+- el dataframe normalizado contiene las columnas minimas obligatorias `Date`, `Ticker` y `Close`;
+- aparecen todos los tickers solicitados en el request;
+- la columna `Close` contiene al menos algun valor no nulo utilizable.
 
 ### Como se valida realmente
 
-En terminos practicos, la validacion operativa comprueba cosas como estas:
+En la implementacion actual, la validacion operativa aplica exactamente estas
+comprobaciones sobre la descarga ya normalizada:
 
-- el dataframe normalizado no esta vacio;
-- existen columnas minimas obligatorias, al menos `Date`, `Ticker` y `Close`;
-- aparecen los tickers pedidos en el request;
-- la columna `Close` tiene valores utilizables;
-- si todo eso se cumple, la descarga se persiste como artefacto.
+1. Comprobacion de vacio.
+Si el dataframe normalizado esta vacio, la validacion devuelve `repairable`
+con el error `La descarga no devolvio filas utilizables.`.
 
-Es decir, la pregunta ya no es "¿el request tiene buena pinta?",
-sino "¿lo que ha devuelto el proveedor sirve de verdad para el sistema?".
+2. Comprobacion de columnas minimas obligatorias.
+Se exige la presencia de `Date`, `Ticker` y `Close`.
+Si falta alguna, la validacion devuelve `repairable` indicando exactamente que
+columnas faltan.
+
+3. Comprobacion de tickers encontrados.
+Se extraen los tickers presentes en la columna `Ticker` del dataframe
+normalizado y se comparan con los tickers pedidos en el request.
+Si falta al menos uno de los tickers solicitados, la validacion devuelve
+`repairable` indicando cuales no aparecieron.
+
+4. Comprobacion de valores utiles en `Close`.
+Si la columna `Close` existe pero todos sus valores son nulos o no
+utilizables, la validacion devuelve `repairable` con el error
+`La descarga no contiene valores validos en Close.`.
+
+5. Decision final de la validacion.
+Si falla cualquiera de las comprobaciones anteriores, la descarga no se
+considera valida operativamente.
+Si no falla ninguna, la validacion devuelve `valid`.
+
+Conviene distinguir una cosa importante:
+
+- persistir artefactos no forma parte de la validacion en si misma;
+- la persistencia ocurre despues, y solo despues, de que la validacion haya
+  devuelto `valid`.
+
+Por tanto, la pregunta precisa de esta fase ya no es si el request parecia
+formalmente correcto, sino si la descarga ya normalizada cumple exactamente
+las condiciones minimas para que el resto del sistema pueda trabajar con ella.
+
 
 ### Como defender esta parte en una exposicion
 
@@ -617,10 +657,11 @@ dar por buena una peticion solo porque el modelo la redacto bien.
 Todos esos casos significan que el request era descargable "en teoria", pero no util "en la practica".
 Por eso pertenecen al Subagente 2 y no al Subagente 1.
 
-### Artefactos recomendados
+### Artefactos persistidos en esta implementacion
 
 - `results/data_requests/request_<id>.json`
-- `results/data_raw/raw_<id>.parquet`
+- `results/data_raw/raw_<id>.csv`
+- `results/data_normalized/normalized_<id>.csv`
 - `results/data_raw/raw_<id>.metadata.json`
 
 Contenido util del metadata:
@@ -695,7 +736,7 @@ La idea de fondo es esta:
 - el Subagente 1 corrige forma;
 - el Subagente 2 corrige viabilidad real de descarga.
 
-### Prompt base recomendado para Subagente 2
+### Prompt base del Subagente 2
 
 ```text
 Eres el Subagente 2 del flujo de datos.
@@ -743,9 +784,9 @@ FinancialDataRequest estructuralmente valido
 -> si descarga bien, continua
 ```
 
-### Regla importante
+### Limites de reintento en la implementacion
 
-Conviene fijar maximos de reintentos. Recomendacion:
+La implementacion fija estos maximos de reintento:
 
 - `max_structural_repair_attempts = 2`
 - `max_operational_repair_attempts = 2`
@@ -753,7 +794,7 @@ Conviene fijar maximos de reintentos. Recomendacion:
 Regla general de transicion de estado:
 
 - si no hay errores -> `valid`
-- si hay errores y todavia existe una correccion razonable -> `repairable`
+- si hay errores y la ruta de correccion automatica de esa validacion sigue abierta -> `repairable`
 - si no existe una correccion fiable -> `blocked`
 - si se han agotado los intentos maximos de reparacion -> `blocked`
 
@@ -763,50 +804,59 @@ Esto debe tenerse en cuenta porque es la forma de medir el estado de trabajo de 
 - el Subagente 2 actua mientras el caso siga en `repairable` dentro de la validacion operativa;
 - cuando cualquiera de los dos alcanza `blocked`, la fase deja de avanzar en esa ejecucion.
 
-Si tras esos ciclos no se consigue una peticion descargable y util, el flujo deberia pasar a un estado terminal de bloqueo, por ejemplo:
-
-- `blocked_for_clarification`
-- o `failed_data_phase`
+Si tras esos ciclos no se consigue una peticion descargable y util, el estado
+de la fase de datos queda en `blocked`.
 
 ## Salida final de la fase de datos
 
 La salida final deseada de esta fase es una descarga realizada correctamente en `yfinance`, respaldada por un `FinancialDataRequest` ya validado, y lista para entregarse al Agente 2.
 
-### Que deberia recibir el Agente 2
+### Que recibe el Agente 2 en esta implementacion
 
-Minimo recomendable:
+El Agente 2 no recibe directamente todo `WorkflowState`.
+Recibe dos entradas:
 
-- consulta original;
-- request resuelto y validado;
-- ruta a los artefactos descargados;
-- metadatos de descarga;
-- resumen basico de lo descargado.
+- `query_input`, que conserva la consulta original;
+- `input_payload`, construido por `_build_phase2_input_payload(state)`.
 
-Ejemplo conceptual:
+Ese `input_payload` contiene:
+
+- `query`;
+- `tickers`;
+- `temporal_context`;
+- `csv_paths`;
+- `data_context` con `row_count` y `available_columns`;
+- `warnings`;
+- `download_summary`.
+
+Ejemplo de payload:
 
 ```json
 {
-  "user_query": "Compara Nvidia y AMD en 2 anos",
-  "resolved_request": {
+  "query": "Compara Nvidia y AMD en 2 anos",
+  "tickers": ["NVDA", "AMD"],
+  "temporal_context": {
+    "start": null,
+    "end": null,
+    "period": "2y",
+    "interval": "1d"
+  },
+  "csv_paths": [
+    "results/data_normalized/normalized_id-unico.csv"
+  ],
+  "data_context": {
+    "row_count": 503,
+    "available_columns": ["Date", "Ticker", "Open", "High", "Low", "Close", "Adj Close", "Volume"]
+  },
+  "warnings": [],
+  "download_summary": {
     "provider": "yfinance",
-    "instruments": [
-      {"ticker": "NVDA"},
-      {"ticker": "AMD"}
-    ],
+    "tickers_requested": ["NVDA", "AMD"],
+    "tickers_found": ["NVDA", "AMD"],
     "interval": "1d",
     "period": "2y",
     "start": null,
     "end": null
-  },
-  "artifacts": {
-    "raw_data_path": "results/data_raw/raw_id-unico.parquet",
-    "metadata_path": "results/data_raw/raw_id-unico.metadata.json"
-  },
-  "download_summary": {
-    "provider": "yfinance",
-    "tickers_requested": ["NVDA", "AMD"],
-    "interval": "1d",
-    "period": "2y"
   }
 }
 ```
@@ -827,8 +877,8 @@ Eso permite revisar despues, para cada ejemplo ejecutado:
 - que CSVs y artefactos quedaron persistidos;
 - con que estado exacto se entro en la parte analitica.
 
-Para depurar el proyecto completo, esta carpeta de traza deberia ser el punto
-de partida antes de revisar artefactos aislados.
+Para depurar el proyecto completo, esta carpeta de traza es el punto de
+partida mas util antes de revisar artefactos aislados.
 
 ### Condiciones para considerar la fase completada
 

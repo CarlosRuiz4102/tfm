@@ -9,6 +9,12 @@ def _raw(path_name: str) -> str:
     return str((RAW_DATA_DIR / path_name).resolve())
 
 
+# Nota de transicion:
+# estos ejemplos conservan algunos campos auxiliares heredados de una etapa
+# anterior basada en CSV locales. La ejecucion normal del proyecto parte de la
+# query y resuelve los datos dentro del flujo; aun asi, se mantienen aqui por
+# compatibilidad con material de prueba y trazas antiguas.
+
 SAMPLE_INPUTS = {
     "growth_nvda": {
         "query": "Cuanto ha crecido Nvidia en 5 anos",

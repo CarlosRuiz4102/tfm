@@ -12,6 +12,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{csquotes}
+\usepackage[numbers,sort&compress]{natbib}
 
 \geometry{left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
 \onehalfspacing
@@ -27,6 +28,7 @@
 \newcommand{\thesisDate}{2026}
 \newcommand{\supervisor}{Adri\'an Gir\'on Jim\'enez}
 \newcommand{\cosupervisor}{Alejandro Delgado Perib\'a\~nez}
+\renewcommand{\bibname}{Bibliograf\'ia}
 
 \begin{document}
 
@@ -62,8 +64,8 @@ historical financial analysis, language models, code generation, LLM agents, tra
 \tableofcontents
 \listoftables
 \listoffigures
-\chapter*{Abreviaturas y acronimos}
-\addcontentsline{toc}{chapter}{Abreviaturas y acronimos}
+\chapter*{Abreviaturas y acr\'onimos}
+\addcontentsline{toc}{chapter}{Abreviaturas y acr\'onimos}
 \begin{description}
 \item[API] Application Programming Interface.
 \item[CSV] Comma-Separated Values.
@@ -85,6 +87,9 @@ historical financial analysis, language models, code generation, LLM agents, tra
 \include{chapters/06_resultados_evaluacion_compacta}
 \include{chapters/07_limitaciones_etica_reproducibilidad}
 \include{chapters/08_conclusiones_trabajo_futuro}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
 
 \appendix
 \include{chapters/99_anexos}

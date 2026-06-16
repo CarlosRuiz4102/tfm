@@ -1,8 +1,8 @@
-# Ejecucion Completa de la Fase de Datos
+﻿# Ejecucion Completa de la Fase de Datos
 
 ## Objetivo
 
-Este documento no resume la fase de datos de forma abstracta.
+Este documento no resume la fase de datos de forma general.
 La idea aqui es ver una ejecucion completa y comentada de esa parte del flujo para entender:
 
 - que entra realmente
@@ -309,7 +309,7 @@ Date,,,,,,
 2025-12-19,272.1499938964844,274.6000061035156,269.8999938964844,273.6700134277344,273.4141845703125,144632000
 ```
 
-Esto refleja bastante bien la salida tipica de yfinance:
+Esta es la estructura tipica que devuelve yfinance en este tipo de descarga:
 
 - columnas jerarquicas
 - formato ancho
@@ -557,9 +557,9 @@ Si lo bajamos a lenguaje muy directo, esta ejecucion hace esto:
 
 ## Que usa exactamente el Agente 2 al entrar
 
-Aunque `FinancialQueryInput` ya solo tiene `query`, el Agente 2 no entra “ciego”.
+Aunque `FinancialQueryInput` ya solo tiene `query`, el Agente 2 no entra sin contexto.
 
-En la implementacion actual, el nodo que llama al Agente 2 hace esto conceptualmente:
+En la implementacion actual, el nodo que llama al Agente 2 hace esto:
 
 ```python
 query_input = state.normalized_query.to_query_input()
@@ -665,7 +665,7 @@ Es decir:
 
 ### Respuesta corta y defendible
 
-Si en la defensa te preguntan “¿que le entra realmente al Agente 2?”, la forma mas precisa de responder seria:
+Si en la defensa te preguntan "¿que le entra realmente al Agente 2?", la forma mas precisa de responder seria:
 
 - le entra la consulta original del usuario;
 - le entra una version enriquecida de esa consulta con tickers, rango, intervalo, ruta al CSV normalizado y resumen minimo de los datos disponibles;
@@ -677,9 +677,9 @@ Eso es precisamente lo bueno de la separacion actual:
 - el contexto tecnico aparece donde debe aparecer
 - y el Agente 2 ya no decide que descargar, solo que analizar
 
-## Conclusión
+## Conclusion
 
-La fase de datos no solo “planea” una descarga.
+La fase de datos no solo "planea" una descarga.
 En una ejecucion completa hace cuatro cosas distintas:
 
 1. interpreta la consulta
@@ -688,3 +688,5 @@ En una ejecucion completa hace cuatro cosas distintas:
 4. demuestra que operativamente produce datos utiles
 
 Solo despues de esas cuatro comprobaciones el sistema pasa al Agente 2.
+
+

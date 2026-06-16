@@ -1,5 +1,10 @@
 # Evaluacion de bateria de 50 ejemplos
 
+> Nota: esta evaluacion corresponde a una configuracion anterior del proyecto,
+> apoyada en una bateria historica con datos locales ya preparados. Se
+> conserva como registro de trabajo, pero no describe por si sola la version
+> final del sistema ni la evaluacion definitiva de la memoria.
+
 Generado: 2026-06-07T16:02:00
 
 Catalogo: `C:\Users\usuario\Desktop\tfm\data\catalog\bateria_50_ejemplos.json`

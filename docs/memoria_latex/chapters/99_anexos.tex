@@ -2,7 +2,7 @@
 
 \section{Ejecucion del sistema}
 
-Este anexo conserva solo la informacion operativa que sigue siendo util para ejecutar y defender la version actual del proyecto. El punto de entrada principal es \texttt{run\_mvp.py}, que recibe una consulta financiera estructurada, construye el workflow multiagente y devuelve un JSON final con el estado completo de la ejecucion.
+Este anexo recoge la informacion operativa necesaria para ejecutar y defender el proyecto. El punto de entrada principal es \texttt{run\_mvp.py}, que recibe una consulta en lenguaje natural, construye el workflow multiagente y devuelve un JSON final con el estado completo de la ejecucion.
 
 \subsection{Preparacion minima}
 
@@ -11,8 +11,8 @@ Antes de lanzar una ejecucion conviene comprobar cuatro condiciones:
 \begin{enumerate}
     \item que el entorno Python tenga instaladas las dependencias del proyecto;
     \item que el fichero \texttt{.env} contenga una configuracion LLM valida;
-    \item que los CSV historicos existan en \path{data/raw};
-    \item que la consulta de entrada incluya las rutas reales a esos CSV.
+    \item que el entorno tenga conectividad suficiente para acceder tanto al endpoint LLM como a \texttt{yfinance};
+    \item que el proceso pueda escribir los artefactos generados en la carpeta \path{results}.
 \end{enumerate}
 
 Una instalacion minima puede hacerse con:
@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 \subsection{Ejecucion con ejemplos integrados}
 
-El proyecto incluye varios casos ya preparados en \path{src/examples/sample_inputs.py}. Cada uno contiene la consulta, los tickers y las rutas locales a los datos necesarios. La forma mas simple de comprobar el sistema es ejecutar uno de esos ejemplos:
+El proyecto incluye varios casos ya preparados en \path{src/examples/sample_inputs.py}. Estos ejemplos sirven para lanzar consultas representativas sin tener que redactarlas manualmente y permiten comprobar el flujo de extremo a extremo con peticiones ya definidas dentro del repositorio. La forma mas simple de probar el sistema es ejecutar uno de esos ejemplos:
 
 \begin{verbatim}
 python run_mvp.py --example growth_nvda
@@ -33,7 +33,7 @@ python run_mvp.py --example returns_qqq_spy
 python run_mvp.py --example complex_nvda_growth_report
 \end{verbatim}
 
-Esta via es la mas util para una primera validacion, porque evita errores de formato en la entrada y permite comprobar el flujo de extremo a extremo con casos ya definidos dentro del repositorio.
+Esta via es la mas util para una primera validacion, porque evita errores de formato en la entrada y permite observar como el sistema resuelve la peticion, descarga los datos necesarios y genera la respuesta final.
 
 \subsection{Ejecucion con una entrada JSON propia}
 
@@ -48,22 +48,12 @@ La estructura minima esperada es la siguiente:
 \begin{footnotesize}
 \begin{verbatim}
 {
-  "query": "Analiza los retornos de QQQ y SPY en 2024",
-  "tickers": ["QQQ", "SPY"],
-  "csv_paths": [
-    "C:/ruta/al/repositorio/data/raw/qqq_y_spy_desde_20240101_hasta_20241231.csv"
-  ],
-  "start": "2024-01-01",
-  "end": "2024-12-31",
-  "period": null,
-  "interval": "1d",
-  "needs_clarification": false,
-  "warnings": []
+  "query": "Analiza los retornos de QQQ y SPY en 2024"
 }
 \end{verbatim}
 \end{footnotesize}
 
-Los campos \texttt{query}, \texttt{tickers} y \texttt{csv\_paths} son los que definen el caso de forma mas directa. El resto de atributos ayudan a restringir el periodo, la granularidad temporal y las advertencias que se quieran conservar desde la entrada.
+La entrada minima solo necesita el campo \texttt{query}. A partir de esa peticion, el workflow resuelve los instrumentos, el rango temporal y los parametros de descarga antes de pasar a la fase analitica. La ejecucion normal del sistema no depende de proporcionar rutas de CSV locales en la entrada.
 
 \subsection{Salida y artefactos generados}
 
@@ -81,6 +71,7 @@ La ejecucion imprime por consola un JSON con el estado final del workflow. Ese e
 Ademas, el sistema conserva artefactos intermedios en dos carpetas:
 
 \begin{itemize}
+    \item \path{results/data_raw} y \path{results/data_normalized}, con los artefactos generados durante la fase de descarga y normalizacion de datos;
     \item \path{results/code}, con el codigo generado en cada ejecucion;
     \item \path{results/logs}, con el payload enviado al ejecutor y los ficheros de \texttt{stdout} y \texttt{stderr}.
 \end{itemize}
@@ -89,7 +80,7 @@ Esta conservacion resulta util tanto para depurar fallos como para defender meto
 
 \section{Configuracion LLM y API}
 
-La aplicacion utiliza un endpoint compatible con OpenAI Chat Completions. En la configuracion actual, el modelo \texttt{openai/gpt-oss-20b} se sirve a traves de vLLM, aunque el codigo acepta varias familias de variables de entorno equivalentes.
+La aplicacion utiliza un endpoint compatible con OpenAI Chat Completions. El modelo \texttt{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} se sirve a traves de vLLM, aunque el codigo acepta varias familias de variables de entorno equivalentes.
 
 \subsection{Configuracion recomendada}
 
@@ -129,8 +120,8 @@ Estos valores controlan la temperatura de generacion, el maximo de tokens de sal
 
 \subsection{Comprobaciones practicas}
 
-Si la configuracion es correcta, una ejecucion con \texttt{run\_mvp.py} debe completar el flujo sin necesidad de descargar datos externos. Si la clave no esta definida o contiene un valor de ejemplo, el sistema no intenta llamar al modelo y devuelve un error de configuracion explicito.
+Si la configuracion es correcta, una ejecucion con \texttt{run\_mvp.py} debe completar el flujo resolviendo la consulta, descargando los datos historicos necesarios y generando despues una respuesta trazable. Si la clave no esta definida o contiene un valor de ejemplo, el sistema no intenta llamar al modelo y devuelve un error de configuracion explicito.
 
 \section{Notas para reproducibilidad}
 
-De cara a la redaccion final de la memoria, este anexo sirve como referencia corta de reproduccion operativa. Para repetir un caso hacen falta el mismo codigo, los mismos CSV, una configuracion equivalente del modelo y acceso a un endpoint compatible con OpenAI. Si alguno de estos elementos cambia, el comportamiento del sistema puede variar incluso aunque la arquitectura general siga siendo la misma.
+Este anexo sirve como referencia corta de reproduccion operativa. Para repetir un caso hacen falta el mismo codigo, una configuracion equivalente del modelo, acceso a un endpoint compatible con OpenAI y disponibilidad de los datos historicos correspondientes en \texttt{yfinance}. Si alguno de estos elementos cambia, el comportamiento del sistema puede variar aunque la arquitectura general siga siendo la misma.

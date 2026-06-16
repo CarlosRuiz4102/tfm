@@ -53,7 +53,7 @@ La separacion importa mucho porque evita pedirle al mismo bloque que piense la l
 
 - El Agente 2 trabaja sobre datos ya descargados; no decide nuevas descargas.
 - El Agente 2 devuelve un contrato analitico, no una respuesta final.
-- El Agente 3 no deberia reinterpretar la consulta desde cero; deberia implementar el plan recibido.
+- El Agente 3 implementa el plan recibido; no redefine la consulta ni el analisis.
 - El script generado debe depender del payload de entrada, no de estado global oculto.
 - La salida del script debe ser JSON estructurado para poder validarse e interpretarse despues.
 - El pipeline debe tolerar pequenos fallos de formato del LLM, pero sin perder el contrato interno.
@@ -61,7 +61,7 @@ La separacion importa mucho porque evita pedirle al mismo bloque que piense la l
 
 ## Estado compartido minimo
 
-Durante esta fase conviene mantener al menos esta informacion:
+En esta fase, la implementacion mantiene al menos esta informacion:
 
 ```json
 {
@@ -94,14 +94,11 @@ Aunque aqui lo mostramos en JSON por claridad documental, internamente el
 workflow ya mantiene varios de estos bloques como objetos tipados en vez de
 diccionarios genericos.
 
-Estados recomendados en este tramo:
+Estados reales de este tramo en la implementacion:
 
 - `data_downloaded`
-- `analysis_planning`
 - `planned`
-- `code_generating`
 - `code_generated`
-- `code_rejected`
 - `error`
 
 ## Bloque 1: entrada a la fase analitica
@@ -117,12 +114,13 @@ Cuando termina bien la fase de datos, el sistema ya no trabaja con una consulta 
 - la ruta al CSV normalizado;
 - los artefactos y el resumen de descarga.
 
-Esto es importante porque el Agente 2 no deberia volver a decidir que descargar. Su trabajo empieza sobre una base ya comprobada.
+Esto es importante porque el Agente 2 no vuelve a decidir que descargar. Su
+trabajo empieza sobre una base ya comprobada.
 
 ### Nota de diseno importante
 
 Una cosa es lo que el workflow conserva internamente para trazabilidad y otra
-lo que conviene pasar al prompt del LLM.
+lo que entra realmente al prompt del LLM.
 
 En el estado interno seguimos guardando:
 
@@ -135,7 +133,7 @@ arrastrar repeticiones innecesarias al prompt.
 
 ## Distincion importante entre estado y prompt
 
-Conviene distinguir dos niveles:
+Hay que distinguir dos niveles:
 
 ### 1. Lo que existe en `WorkflowState`
 
@@ -148,43 +146,46 @@ Existe todo esto:
 - `download_artifacts`
 - `download_summary`
 
-### 2. Lo que entra hoy directamente al prompt del Agente 2
+### 2. Lo que entra hoy directamente al Agente 2
 
-En la implementacion actual, el prompt del Agente 2 recibe:
+En la implementacion actual, `build_llm_analysis(...)` recibe:
+
+- `query_input`, reconstruido desde `state.normalized_query.to_query_input()`;
+- `input_payload`, construido por `_build_phase2_input_payload(state)`.
+
+El `input_payload` tiene esta forma:
 
 ```json
 {
-  "input": {
-    "query": "Compara Nvidia y AMD en 2 anos",
-    "tickers": ["NVDA", "AMD"],
-    "temporal_context": {
-      "start": null,
-      "end": null,
-      "period": "2y",
-      "interval": "1d"
-    },
-    "csv_paths": [
-      "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_id.csv"
-    ],
-    "data_context": {
-      "row_count": 503,
-      "available_columns": [
-        "Date",
-        "Ticker",
-        "Open",
-        "High",
-        "Low",
-        "Close",
-        "Adj Close",
-        "Volume"
-      ]
-    },
-    "warnings": [],
-    "download_summary": {
-      "provider": "yfinance",
-      "tickers_requested": ["NVDA", "AMD"],
-      "tickers_found": ["NVDA", "AMD"]
-    }
+  "query": "Compara Nvidia y AMD en 2 anos",
+  "tickers": ["NVDA", "AMD"],
+  "temporal_context": {
+    "start": null,
+    "end": null,
+    "period": "2y",
+    "interval": "1d"
+  },
+  "csv_paths": [
+    "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_id.csv"
+  ],
+  "data_context": {
+    "row_count": 503,
+    "available_columns": [
+      "Date",
+      "Ticker",
+      "Open",
+      "High",
+      "Low",
+      "Close",
+      "Adj Close",
+      "Volume"
+    ]
+  },
+  "warnings": [],
+  "download_summary": {
+    "provider": "yfinance",
+    "tickers_requested": ["NVDA", "AMD"],
+    "tickers_found": ["NVDA", "AMD"]
   }
 }
 ```
@@ -219,43 +220,42 @@ Su trabajo no es:
 
 ## Que le entra
 
-Le entra la consulta original mas una version enriquecida de esa consulta, ya resuelta por la fase de datos.
+Le entra la consulta original mas el `input_payload` ya resuelto por la fase
+de datos.
 
-Entrada conceptual:
+Payload real:
 
 ```json
 {
-  "input": {
-    "query": "Compara Nvidia y AMD en 2 anos",
-    "tickers": ["NVDA", "AMD"],
-    "temporal_context": {
-      "start": null,
-      "end": null,
-      "period": "2y",
-      "interval": "1d"
-    },
-    "csv_paths": [
-      "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_id.csv"
-    ],
-    "data_context": {
-      "row_count": 503,
-      "available_columns": [
-        "Date",
-        "Ticker",
-        "Open",
-        "High",
-        "Low",
-        "Close",
-        "Adj Close",
-        "Volume"
-      ]
-    },
-    "warnings": [],
-    "download_summary": {
-      "provider": "yfinance",
-      "tickers_requested": ["NVDA", "AMD"],
-      "tickers_found": ["NVDA", "AMD"]
-    }
+  "query": "Compara Nvidia y AMD en 2 anos",
+  "tickers": ["NVDA", "AMD"],
+  "temporal_context": {
+    "start": null,
+    "end": null,
+    "period": "2y",
+    "interval": "1d"
+  },
+  "csv_paths": [
+    "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_id.csv"
+  ],
+  "data_context": {
+    "row_count": 503,
+    "available_columns": [
+      "Date",
+      "Ticker",
+      "Open",
+      "High",
+      "Low",
+      "Close",
+      "Adj Close",
+      "Volume"
+    ]
+  },
+  "warnings": [],
+  "download_summary": {
+    "provider": "yfinance",
+    "tickers_requested": ["NVDA", "AMD"],
+    "tickers_found": ["NVDA", "AMD"]
   },
   "quality_guidelines": {
     "simple_queries": "Consulta simple...",
@@ -267,9 +267,9 @@ Entrada conceptual:
 
 ## Que tiene que sacar
 
-Debe devolver exclusivamente un `AnalysisPlan JSON`.
+Debe devolver exclusivamente un `AnalysisPlan JSON` parseable.
 
-Esquema actual:
+Contrato actual:
 
 ```json
 {
@@ -291,7 +291,7 @@ Esquema actual:
 - `metrics` acota que se debe calcular, en vez de dejarlo a interpretacion libre del generador.
 - `required_columns` fuerza a explicitar que columnas necesita el script.
 - `data_requirements` recoge reglas practicas del plan sobre cobertura, comparaciones o estructura de datos.
-- `output_requirements` describe que forma deberia tener la salida del script.
+- `output_requirements` describe que forma debe tener la salida del script.
 - `presentation_preferences` permite orientar el nivel de detalle de la salida estructurada.
 - `reasoning` deja una justificacion breve y revisable del plan.
 
@@ -308,7 +308,7 @@ La idea clave es que el pipeline no deja pasar el JSON crudo del modelo al resto
 
 ## Prompt base usado por el Agente 2
 
-Version conceptual basada en `src/llm/prompts.py`:
+Version usada en `src/llm/prompts.py`:
 
 ```text
 Agente 2 - ANALISTA.
@@ -344,7 +344,7 @@ Una forma clara de explicarlo seria:
 - devuelve un plan analitico estructurado;
 - ese plan actua como contrato entre el razonamiento analitico y el generador de codigo.
 
-## Errores tipicos del Agente 2
+## Errores frecuentes del Agente 2
 
 - devolver texto fuera del JSON;
 - proponer metricas que no encajan con la consulta;
@@ -352,18 +352,19 @@ Una forma clara de explicarlo seria:
 - describir una salida demasiado ambigua para el script;
 - mezclar recomendaciones finales con el plan analitico.
 
-## Consideraciones recomendadas para el Agente 2
+## Condiciones que debe cumplir el plan del Agente 2
 
-- conviene que el plan sea suficientemente especifico para implementar, pero no tan rigido que fuerce una sola solucion tecnica;
-- conviene revisar que `required_columns` y `metrics` esten alineados;
-- conviene que `output_requirements` describa una salida estructurada, no narrativa;
-- conviene evitar planes que dependan de informacion que no esta en los CSV disponibles.
+- `required_columns` y `metrics` deben estar alineados;
+- `output_requirements` debe describir una salida estructurada, no narrativa;
+- el plan no puede depender de informacion ausente en los CSV disponibles;
+- el plan debe ser lo bastante especifico como para que el Agente 3 lo pueda implementar.
 
 ## Bloque 3: paso intermedio entre Agente 2 y Agente 3
 
 ## Funcion de esta transicion
 
-Entre ambos agentes no deberia existir una reinterpretacion libre del problema. Lo que ocurre aqui es una normalizacion tecnica:
+Entre ambos agentes no existe una reinterpretacion libre del problema. Lo que
+ocurre aqui es una normalizacion tecnica:
 
 1. el JSON del Agente 2 se parsea;
 2. se convierte a `AnalysisPlan`;
@@ -423,42 +424,39 @@ En la implementacion actual, el prompt del Agente 3 recibe tres piezas:
 2. `input`
 3. `analysis_plan`
 
-Entrada conceptual:
+Entrada real del Agente 3:
 
 ```json
 {
-  "original_user_message": "Compara Nvidia y AMD en 2 anos",
-  "input": {
-    "query": "Compara Nvidia y AMD en 2 anos",
-    "tickers": ["NVDA", "AMD"],
-    "temporal_context": {
-      "start": null,
-      "end": null,
-      "period": "2y",
-      "interval": "1d"
-    },
-    "csv_paths": [
-      "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_id.csv"
-    ],
-    "data_context": {
-      "row_count": 503,
-      "available_columns": [
-        "Date",
-        "Ticker",
-        "Open",
-        "High",
-        "Low",
-        "Close",
-        "Adj Close",
-        "Volume"
-      ]
-    },
-    "warnings": [],
-    "download_summary": {
-      "provider": "yfinance",
-      "tickers_requested": ["NVDA", "AMD"],
-      "tickers_found": ["NVDA", "AMD"]
-    }
+  "query": "Compara Nvidia y AMD en 2 anos",
+  "tickers": ["NVDA", "AMD"],
+  "temporal_context": {
+    "start": null,
+    "end": null,
+    "period": "2y",
+    "interval": "1d"
+  },
+  "csv_paths": [
+    "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_id.csv"
+  ],
+  "data_context": {
+    "row_count": 503,
+    "available_columns": [
+      "Date",
+      "Ticker",
+      "Open",
+      "High",
+      "Low",
+      "Close",
+      "Adj Close",
+      "Volume"
+    ]
+  },
+  "warnings": [],
+  "download_summary": {
+    "provider": "yfinance",
+    "tickers_requested": ["NVDA", "AMD"],
+    "tickers_found": ["NVDA", "AMD"]
   },
   "analysis_plan": {
     "analytical_goal": "Comparar rendimiento historico de NVDA y AMD",
@@ -518,7 +516,7 @@ En la implementacion real, este bloque hace estas cosas:
 
 ## Prompt base usado por el Agente 3
 
-Version conceptual basada en `src/llm/prompts.py`:
+Version usada en `src/llm/prompts.py`:
 
 ```text
 Agente 3 - GENERADOR DE CODIGO.
@@ -586,7 +584,7 @@ Una forma clara de explicarlo seria:
 - genera un script con restricciones de carga, imports y salida;
 - ese script se somete despues a una validacion independiente antes de ejecutarse.
 
-## Errores tipicos del Agente 3
+## Errores frecuentes del Agente 3
 
 - devolver texto fuera del JSON;
 - devolver un script parcial en vez de completo;
@@ -595,17 +593,18 @@ Una forma clara de explicarlo seria:
 - ignorar el `analysis_plan`;
 - producir una salida JSON que no encaja con lo que espera el sistema.
 
-## Consideraciones recomendadas para el Agente 3
+## Condiciones que debe cumplir el Agente 3
 
-- conviene que la salida del script sea estable y poco ambigua;
-- conviene que el script lea del payload todo lo necesario, en vez de asumir rutas o valores ocultos;
-- conviene que el codigo transforme los resultados a JSON seguro antes de imprimir;
-- conviene que la logica analitica este alineada con `metrics`, `required_columns` y `output_requirements`;
-- conviene recordar que la interpretacion narrativa pertenece al Agente 5, no al script.
+- la salida del script debe ser estable y no ambigua;
+- el script debe leer del payload todo lo necesario, sin asumir rutas o valores ocultos;
+- el codigo debe transformar los resultados a JSON seguro antes de imprimir;
+- la logica analitica debe estar alineada con `metrics`, `required_columns` y `output_requirements`;
+- la interpretacion narrativa pertenece al Agente 5, no al script.
 
 ## Bloque 5: relacion con la validacion posterior
 
-Aunque esta guia se centra en Agente 2 y Agente 3, conviene dejar clara la frontera con el siguiente bloque.
+Aunque esta guia se centra en Agente 2 y Agente 3, hay que dejar clara la
+frontera con el siguiente bloque.
 
 La salida del Agente 3 no se considera automaticamente valida. Despues pasa a
 la parte 3, donde se decide si el codigo puede aceptarse, corregirse o

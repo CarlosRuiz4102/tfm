@@ -1,51 +1,59 @@
 \chapter{Material de trabajo y planteamiento experimental}
 
-\section{Funcion de este capitulo}
-
-Este capitulo debe situar al lector antes de entrar en la metodologia formal y antes de describir el flujo del sistema. Su papel es explicar con que material se va a trabajar, que tipo de consultas se quieren resolver y por que ese conjunto resulta adecuado para tensionar el nuevo TFM.
+Este cap\'itulo sit\'ua el punto de partida pr\'actico del trabajo antes de entrar en la metodolog\'ia formal y antes de describir con detalle el flujo multiagente. Su 
+funci\'on es precisar con qu\'e material se construye el sistema, qu\'e clase de consultas se quiere estudiar y por qu\'e ese conjunto resulta suficiente para poner a 
+prueba la arquitectura en condiciones realistas.
 
 \section{Origen y naturaleza del material de trabajo}
 
-\textit{Completar aqui el origen de los datos, el tipo de instrumentos incluidos, la razon de su seleccion y la forma en que se obtendran o congelaran para el proyecto. Conviene mantener esta seccion breve y muy clara.}
+La fuente principal de datos hist\'oricos utilizada en el proyecto es Yahoo Finance, consumida a trav\'es de la librer\'ia \texttt{yfinance} \cite{yfinance,yahoofinancehistorical}. 
+Esta elecci\'on permite trabajar con una base amplia de instrumentos y facilita que el sistema resuelva consultas abiertas sin depender de un peque\~no cat\'alogo manual 
+preparado de antemano. La arquitectura se plantea como un flujo capaz de interpretar la consulta del usuario, convertirla en una petici\'on estructurada y comprobar 
+despu\'es si los datos hist\'oricos necesarios pueden descargarse de forma operativa.
 
-\section{Preguntas utiles para orientar este capitulo}
+Esto no significa que el sistema pueda analizar cualquier cosa sin restricciones. El alcance real depende de que el instrumento solicitado pueda identificarse con 
+suficiente claridad, de que exista hist\'orico accesible en \texttt{yfinance} y de que la petici\'on sea compatible con un an\'alisis basado en precios y volumen. 
+Dicho de otro modo, el trabajo no fija una lista cerrada de activos, pero s\'i se mueve dentro del universo de consultas que pueden resolverse de manera razonable con 
+datos hist\'oricos de mercado.
 
-\begin{enumerate}
-    \item ?Que activos o instrumentos quieres incluir en el nuevo TFM y por que esos y no otros?
-    \item ?Quieres priorizar variedad de clases de activo, realismo de las consultas o facilidad de reproducir el experimento?
-    \item ?Que papel juegan los datos historicos descargados frente a la posible descarga automatica durante el flujo?
-    \item ?Las consultas van a nacer de ejemplos cerrados, de una bateria definida o de escenarios abiertos controlados?
-    \item ?Que hace que el conjunto de casos sea suficientemente representativo para defender el trabajo?
-\end{enumerate}
+Para estudiar ese comportamiento se ha buscado una combinaci\'on de apertura y representatividad. Por un lado, la entrada del sistema sigue siendo una consulta libre en 
+lenguaje natural. Por otro, el proyecto se apoya en familias de casos que permiten tensionar la arquitectura de forma controlada. En la pr\'actica, esto incluye ejemplos
+sobre acciones, fondos cotizados, \'indices, divisas, una materia prima y un criptoactivo, con distintos horizontes temporales y con granularidad diaria e intrad\'ia. 
+Esta variedad no pretende cubrir todo el mercado financiero, pero s\'i ofrecer un conjunto lo bastante heterog\'eneo como para observar c\'omo responde el sistema ante 
+consultas simples, comparativas y m\'as exigentes.
 
-\section{Inventario del material}
-
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabularx}{\textwidth}{L{0.22\textwidth}L{0.18\textwidth}L{0.16\textwidth}Y}
-\toprule
-\textbf{Elemento} & \textbf{Tipo} & \textbf{Estado} & \textbf{Papel dentro del TFM} \\
-\midrule
-\textit{Completar} & \textit{Datos / casos / artefactos} & \textit{Disponible / por construir} & \textit{Completar} \\
-\textit{Completar} & \textit{Datos / casos / artefactos} & \textit{Disponible / por construir} & \textit{Completar} \\
-\textit{Completar} & \textit{Datos / casos / artefactos} & \textit{Disponible / por construir} & \textit{Completar} \\
-\bottomrule
-\end{tabularx}
-\caption{Inventario inicial del material de trabajo.}
-\label{tab:inventario_material_trabajo}
-\end{table}
+Otro rasgo importante es que los datos no se consideran solo una entrada pasiva, sino una parte activa del experimento. La fase de datos debe resolver el instrumento, 
+validar la petici\'on y completar una descarga real antes de que comience la parte anal\'itica. Por eso el material de trabajo no se reduce a la consulta del usuario ni 
+a la respuesta final: incluye tambi\'en los artefactos generados durante la descarga, la normalizaci\'on, la ejecuci\'on del c\'odigo y la traza completa del proceso.
 
 \section{Casos y escenario experimental de partida}
 
-\textit{Completar aqui el tipo de consultas que quieres estudiar: consultas directas, comparativas, tecnicas, con restricciones de formato, con necesidad de descarga, con validaciones o con reparacion. La idea es anticipar la forma de la evaluacion sin entrar todavia en las metricas formales.}
+Durante la construcci\'on del sistema se utilizaron varios ejemplos representativos para comprobar si cada fase iba funcionando como se esperaba. Estos ejemplos no 
+constituyen la evaluaci\'on final, pero s\'i ayudan a entender el tipo de material empleado para poner a prueba el proyecto. Entre ellos aparecen consultas de crecimiento 
+simple sobre un \'unico activo, comparaciones entre dos instrumentos, lecturas generales de corto plazo, an\'alisis de retorno y riesgo, y algunos casos con mayor carga 
+interpretativa o con restricciones de formato m\'as expl\'icitas. En este sentido, los ejemplos de desarrollo sirvieron como banco de pruebas incremental para verificar 
+que la fase de datos, la planificaci\'on anal\'itica, la generaci\'on de c\'odigo, la validaci\'on y la interpretaci\'on final manten\'ian una coherencia razonable.
 
-\section{Criterio de redaccion recomendado}
+La evaluaci\'on principal se articula, sin embargo, alrededor de una bater\'ia de 50 consultas organizada en tres niveles de complejidad. El nivel A agrupa consultas 
+directas, centradas en una o dos m\'etricas f\'aciles de identificar y con un formato de respuesta simple. El nivel B introduce comparaciones m\'as ricas, varias 
+m\'etricas relevantes o una estructura de salida algo m\'as elaborada. El nivel C re\'une los casos m\'as exigentes: informes m\'as completos, restricciones expl\'icitas 
+de presentaci\'on o peticiones donde el sistema debe mantener mejor la disciplina de salida y la prudencia interpretativa.
 
-Cuando este capitulo quede cerrado, deberia responder con claridad a tres preguntas:
+La distribuci\'on prevista de la bater\'ia no es equilibrada entre niveles, sino intencionadamente m\'as exigente: 10 casos de nivel A, 20 de nivel B y 20 de nivel C. La 
+raz\'on es sencilla. Aunque parece razonable esperar mejor rendimiento en las consultas m\'as f\'aciles, interesa comprobar qu\'e ocurre cuando aumenta la dificultad y 
+la respuesta exige una mejor coordinaci\'on entre la fase de datos, la parte anal\'itica y la interpretaci\'on final. La bater\'ia no se dise\~na solo para confirmar que 
+el sistema responde en casos sencillos, sino para identificar en qu\'e punto empieza a degradarse su comportamiento y qu\'e errores emergen cuando el escenario se vuelve 
+m\'as complejo.
 
-\begin{enumerate}
-    \item ?Con que material concreto se construye el proyecto?
-    \item ?Que tipo de casos o consultas se espera resolver?
-    \item ?Por que ese punto de partida es suficiente para justificar el estudio?
-\end{enumerate}
+Aunque la entrada del sistema siga siendo abierta, las consultas que se quieren estudiar pueden agruparse en varias familias. La primera corresponde a consultas 
+descriptivas directas, como crecimiento acumulado, rango de precios o resumen general de un activo en un periodo dado. La segunda incluye comparativas entre instrumentos, 
+por ejemplo retorno frente a riesgo, \textit{drawdown}, correlaci\'on o liderazgo relativo. La tercera se apoya en lecturas algo m\'as t\'ecnicas, como medias m\'oviles, 
+perfil de volatilidad o comportamiento por subperiodos. La cuarta incorpora restricciones expl\'icitas de formato o de estilo, por ejemplo separar m\'etricas y 
+limitaciones, redactar para un usuario no t\'ecnico o devolver estructuras concretas de salida. Por \'ultimo, algunos casos fuerzan al sistema a reconocer mejor los 
+l\'imites del propio an\'alisis hist\'orico, evitando noticias, predicciones o recomendaciones de inversi\'on.
+
+En conjunto, este planteamiento experimental resulta suficiente para justificar el estudio por tres razones. En primer lugar, el material utilizado refleja el 
+comportamiento real del sistema, que depende de consultas abiertas y de descargas efectivas de datos hist\'oricos. En segundo lugar, la variedad de activos y de tareas 
+permite observar el flujo en situaciones distintas sin convertir el trabajo en una exploraci\'on inabarcable. En tercer lugar, la bater\'ia escalonada por niveles de 
+dificultad no solo mide si el sistema acierta, sino tambi\'en c\'omo cambia su rendimiento cuando la consulta exige m\'as c\'alculo, m\'as estructura y una 
+interpretaci\'on m\'as cuidadosa.

@@ -225,7 +225,7 @@ Que hace internamente:
 4. llama a `build_llm_code(...)` con el plan ya generado por el Agente 2;
 5. guarda el script completo en `state.generated_code`.
 
-## Entrada conceptual al Agente 3
+## Entrada real al Agente 3
 
 El Agente 3 recibe:
 
@@ -280,7 +280,7 @@ Aunque el script de esta traza es intencionadamente simple, permite ver bien el 
 
 ## Estado al salir del Agente 3
 
-Conceptualmente, el estado queda asi:
+En esta traza, al salir del nodo el estado relevante queda asi:
 
 ```json
 {

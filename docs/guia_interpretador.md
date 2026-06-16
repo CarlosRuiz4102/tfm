@@ -44,7 +44,7 @@ Consulta original del usuario
 El interpretador debe actuar como un agente que observa:
 
 1. **la intencion del usuario**
-   La consulta original indica que tipo de respuesta parece esperarse.
+   La consulta original orienta el tipo de respuesta que debe redactarse.
 
 2. **los hechos ya obtenidos**
    La salida de ejecucion contiene las metricas, tablas, series y limitaciones
@@ -76,7 +76,7 @@ forma directa ni indirecta el plan analitico con el que se trabajo antes.
 
 ### Campos que no deben llegar al interpretador
 
-No deberian pasar a esta fase campos como:
+No pasan a esta fase campos como:
 
 - `analysis_plan`
 - `analysis_type`
@@ -98,7 +98,7 @@ interpretar la consulta y los resultados.
 
 ## Estado compartido minimo
 
-Durante esta parte conviene mantener al menos esta informacion:
+En esta parte, la implementacion mantiene al menos esta informacion:
 
 ```json
 {
@@ -123,7 +123,7 @@ Durante esta parte conviene mantener al menos esta informacion:
 }
 ```
 
-Estados recomendados:
+Estados reales de esta parte en la implementacion:
 
 - `executed`
 - `interpretation_preparing`
@@ -136,17 +136,17 @@ Estados recomendados:
 
 ## Que le entra
 
-La entrada conceptual del Agente 5 deberia ser un paquete limpio de
-interpretacion. No tiene por que coincidir con todo `WorkflowState`.
+La implementacion construye un `interpretation_payload` limpio de
+interpretacion. No coincide con todo `WorkflowState`.
 
-Minimo recomendable:
+Entran estos bloques:
 
 - `user_query`
 - `resolved_context`
 - `execution_output`
 - `warnings` relevantes
 
-Entrada conceptual:
+Payload real:
 
 ```json
 {
@@ -187,7 +187,7 @@ Entrada conceptual:
 
 ## Que no le entra
 
-No deberian formar parte del payload:
+No forman parte del payload:
 
 - `analysis_plan`
 - `analysis_type`
@@ -201,9 +201,9 @@ No deberian formar parte del payload:
 ## Distincion importante entre estado y payload del Agente 5
 
 El workflow puede seguir conservando internamente informacion tecnica por
-trazabilidad, pero el interpretador no deberia verla toda.
+trazabilidad, pero el interpretador no la ve completa.
 
-Conviene distinguir dos niveles:
+Hay que distinguir dos niveles:
 
 ### 1. Lo que existe en el estado interno
 
@@ -218,7 +218,7 @@ Puede existir:
 
 ### 2. Lo que entra al prompt del Agente 5
 
-Deberia entrar solo un paquete depurado, orientado a interpretar para un
+Entra solo un paquete depurado, orientado a interpretar para un
 usuario humano, no para depurar internamente el workflow.
 
 ## Bloque 2: funcion del Agente 5
@@ -263,7 +263,7 @@ fase es `final_answer`.
 
 ## Que ocurre dentro del Agente 5
 
-En la implementacion conviene pensar esta parte como una secuencia de pasos:
+En la implementacion actual, esta parte sigue esta secuencia:
 
 1. preparar un payload limpio de interpretacion;
 2. compactar listas o bloques demasiado grandes para no saturar el prompt;
@@ -285,7 +285,7 @@ despues:
 - con que contexto interpreto;
 - y como se conectaron realmente la parte 4 y la parte 5.
 
-Tambien conviene recordar que esta fase no introduce una validacion semantica
+Tambien hay que recordar que esta fase no introduce una validacion semantica
 intermedia de la respuesta del Agente 5. Los controles que hoy se mantienen son
 minimos:
 
@@ -297,7 +297,7 @@ minimos:
 
 ## La forma de salida no viene predefinida por una etiqueta
 
-El Agente 5 no deberia recibir una instruccion del tipo:
+El Agente 5 no recibe una instruccion del tipo:
 
 - "esto es nivel A"
 - "esto es una consulta compleja"
@@ -311,7 +311,7 @@ Esa decision debe tomarla leyendo:
 - si existen limitaciones relevantes;
 - si la consulta pide explicitamente una tabla, comparacion o desglose.
 
-## Regla conceptual de adaptacion
+## Regla de adaptacion
 
 La respuesta debe adaptarse a dos ejes a la vez:
 
@@ -324,10 +324,10 @@ simple.
 Si la consulta pide comparacion, explicacion o desglose y la salida ejecutada
 lo soporta, la respuesta puede ser mas desarrollada.
 
-Si la consulta parece compleja pero la salida es limitada, la respuesta debe
+Si la consulta es compleja pero la salida es limitada, la respuesta debe
 decirlo con honestidad en vez de sonar artificialmente completa.
 
-## Ejemplos orientativos de adaptacion
+## Ejemplos de adaptacion
 
 ### Consulta simple
 
@@ -381,7 +381,7 @@ Respuesta esperable:
 No interesa pasarle al Agente 5 el estado entero. Interesa pasarle un
 `interpretation_payload` construido expresamente para esta fase.
 
-Esquema conceptual recomendado:
+Contrato del `interpretation_payload`:
 
 ```json
 {
@@ -422,9 +422,9 @@ Esquema conceptual recomendado:
 - `warnings`
   ayuda a no ocultar irregularidades que convenga trasladar al usuario.
 
-## Compactacion recomendada
+## Compactacion de la implementacion
 
-Si `tables`, `series` o `diagnostics` son grandes, conviene compactarlos antes
+Si `tables`, `series` o `diagnostics` son grandes, la implementacion los compacta antes
 de construir el prompt:
 
 - truncar listas largas;
@@ -444,7 +444,7 @@ El prompt debe dejar claras tres ideas:
 2. debe inferir por si mismo el nivel de elaboracion de la respuesta;
 3. no debe recibir ni usar pistas internas del plan analitico.
 
-## Prompt base recomendado
+## Prompt base
 
 ```text
 Eres el Agente 5 del flujo de analisis financiero historico.
@@ -472,7 +472,7 @@ No debes:
 
 ## Consideraciones finas del prompt
 
-Conviene reforzar tambien reglas como estas:
+El prompt refuerza tambien estas reglas:
 
 - si la consulta es simple, responde de forma simple;
 - si la consulta pide comparacion o desglose, estructura la respuesta en consecuencia;
@@ -484,7 +484,7 @@ Conviene reforzar tambien reglas como estas:
 
 ## Que se considera una buena salida
 
-Una buena respuesta final deberia cumplir estas propiedades:
+Una buena respuesta final cumple estas propiedades:
 
 - responde a la consulta original;
 - usa solo resultados realmente presentes;
@@ -494,7 +494,7 @@ Una buena respuesta final deberia cumplir estas propiedades:
 - evita recomendaciones o predicciones;
 - no filtra detalles tecnicos irrelevantes.
 
-## Que fallos tipicos conviene vigilar
+## Fallos que vigilar
 
 - responder con JSON puro en vez de texto natural;
 - repetir mecanicamente `summary` sin adaptarlo a la consulta;
@@ -512,17 +512,17 @@ Si el modelo devuelve:
 - JSON puro;
 - o una salida tecnicamente inutilizable;
 
-conviene pedir una reformulacion textual, manteniendo el mismo principio:
+la implementacion pide una reformulacion textual, manteniendo el mismo principio:
 interpretar solo desde la consulta y los resultados.
 
 ## Bloque 7: trazabilidad de esta parte
 
-## Que conviene conservar
+## Que conserva esta parte
 
-Aunque el usuario solo vea `final_answer`, esta parte deberia dejar cierta
+Aunque el usuario solo vea `final_answer`, esta parte deja cierta
 traza interna.
 
-Minimo recomendable:
+La implementacion conserva:
 
 - payload de interpretacion usado;
 - respuesta final generada;
@@ -549,7 +549,7 @@ La ventaja de este enfoque es que no se pierde la conexion con la parte 4:
 en la misma carpeta quedan tanto la salida validada del ejecutor como la
 interpretacion final generada a partir de ella.
 
-## Artefactos opcionales
+## Artefactos adicionales posibles
 
 Si en una iteracion futura hiciera falta una inspeccion aun mas granular,
 podrian persistirse tambien:
@@ -564,8 +564,8 @@ quede bien trazada.
 
 ## Cuando la ejecucion no fue valida
 
-Si la ejecucion no termino correctamente, esta parte no deberia fingir una
-interpretacion normal. En esos casos conviene devolver una salida controlada de
+Si la ejecucion no termino correctamente, esta parte no intenta producir una
+interpretacion normal. En esos casos devuelve una salida controlada de
 error o bloqueo.
 
 ## Cuando la salida es valida pero pobre

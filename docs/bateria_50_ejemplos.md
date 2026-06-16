@@ -1,12 +1,18 @@
 # Bateria de 50 ejemplos para evaluacion del MVP
 
+> Nota: este documento describe una bateria antigua, construida sobre CSV
+> locales congelados. Se conserva solo como referencia historica para
+> entender la evolucion del proyecto y el tipo de casos que se consideraron.
+> No debe tomarse como la bateria final ni como la forma actual de operar del
+> sistema.
+
 Este documento resume la bateria definida en `data/catalog/bateria_50_ejemplos.json`.
 
 - Total de casos: 50
 - Nivel A: 10 consultas directas
 - Nivel B: 20 consultas intermedias
 - Nivel C: 20 consultas profesionales o de estres
-- Datos usados: CSV locales congelados en `data/raw/`
+- Datos usados en esta version historica: CSV locales congelados en `data/raw/`
 
 La bateria esta pensada para revisar primero las consultas y despues ejecutarlas con el workflow LLM + codegen + validacion + ejecucion + interpretacion.
 

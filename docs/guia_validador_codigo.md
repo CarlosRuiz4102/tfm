@@ -42,7 +42,7 @@ Fase de datos completada
 
 ## Idea central de esta parte
 
-Aqui conviene separar tres responsabilidades:
+Aqui hay tres responsabilidades separadas:
 
 1. **Agente 2**
    Decide que hay que calcular.
@@ -70,7 +70,7 @@ con el contrato del sistema y si merece pasar a la siguiente fase.
 
 ## Estado compartido minimo
 
-Durante esta parte conviene mantener al menos esta informacion:
+En esta parte, la implementacion mantiene al menos esta informacion:
 
 ```json
 {
@@ -92,14 +92,14 @@ Durante esta parte conviene mantener al menos esta informacion:
 }
 ```
 
-Estados recomendados en esta parte:
+Estados reales de esta parte en la implementacion:
 
 - `code_generated`
 - `code_validating`
 - `code_repairing`
 - `code_validated`
 - `code_rejected`
-- `ready_for_execution`
+- `error`
 
 ## Bloque 1: que entra a la parte 3
 
@@ -232,7 +232,7 @@ Le entra un bloque como este:
 
 Debe devolver exclusivamente un JSON estructurado con una decision clara.
 
-Esquema conceptual:
+Contrato de salida:
 
 ```json
 {
@@ -249,7 +249,7 @@ Esquema conceptual:
 - `decision` fija el estado de trabajo de esta fase.
 - `errors` recoge fallos concretos detectados por el Agente 4.
 - `warnings` conserva observaciones no bloqueantes.
-- `required_fixes` acota que deberia corregir el subagente.
+- `required_fixes` acota que debe corregir el subagente.
 - `reasoning` deja una justificacion breve y revisable de la decision.
 
 ### Nota de robustez importante
@@ -265,7 +265,7 @@ La regla actual es esta:
 - si no lo devuelve, el pipeline construye un razonamiento minimo a partir de
   `errors`, `required_fixes` o, en ultimo termino, de la propia `decision`.
 
-Esto no cambia el contrato conceptual de la parte 3, pero evita que toda la
+Esto no cambia el contrato de la parte 3, pero evita que toda la
 ejecucion se rompa por una omision menor de formato en una respuesta que por lo
 demas ya resultaba util.
 
@@ -276,7 +276,7 @@ del script, no solo una impresion general.
 
 ### 1. Coherencia con el `AnalysisPlan`
 
-Conviene comprobar que el codigo:
+El Agente 4 debe comprobar que el codigo:
 
 - responde al objetivo analitico pedido;
 - calcula metricas alineadas con `metrics`;
@@ -285,7 +285,7 @@ Conviene comprobar que el codigo:
 
 ### 2. Coherencia con el contexto de datos
 
-Conviene fijarse en que el script:
+El Agente 4 debe comprobar que el script:
 
 - use el payload que recibe;
 - trabaje sobre los CSV ya resueltos;
@@ -310,7 +310,7 @@ La salida del script debe seguir siendo estructurada.
 No interesa aceptar un codigo que responda con texto libre o con un formato que
 el resto del flujo no pueda interpretar.
 
-Como minimo, conviene que el Agente 4 compruebe si la salida esperada mantiene:
+Como minimo, el Agente 4 debe comprobar si la salida esperada mantiene:
 
 - `metrics`
 - `summary`
@@ -318,17 +318,17 @@ Como minimo, conviene que el Agente 4 compruebe si la salida esperada mantiene:
 
 ### 5. Riesgo de implementacion
 
-Tambien interesa revisar si el codigo introduce decisiones poco controladas,
-por ejemplo:
+Tambien debe revisar si el codigo introduce decisiones poco controladas, por
+ejemplo:
 
 - cambios no justificados respecto al plan;
 - pasos que mezclan calculo con interpretacion narrativa;
 - dependencia de supuestos no presentes en la entrada;
-- soluciones que no parecen estables dentro del workflow.
+- soluciones que no resultan estables dentro del workflow.
 
 ## Como trabaja el Agente 4
 
-La secuencia conceptual de esta fase es:
+La secuencia real de esta fase es:
 
 1. leer el script y el contexto heredado;
 2. emitir una decision `valid`, `repairable` o `blocked`;
@@ -336,7 +336,7 @@ La secuencia conceptual de esta fase es:
 4. si es `repairable`, activar el Subagente 3;
 5. si es `blocked`, detener la fase en esta ejecucion.
 
-Pseudocodigo orientativo:
+Recorrido del nodo:
 
 ```text
 script generado
@@ -355,7 +355,7 @@ Y el numero de correcciones intentadas se registra en:
 
 - `state.code_repair_attempts`
 
-## Prompt base recomendado para Agente 4
+## Prompt base del Agente 4
 
 ```text
 Eres el Agente 4 del flujo de analisis financiero.
@@ -379,7 +379,7 @@ Considera al menos:
 - si el codigo implementa el plan recibido;
 - si respeta el contrato de entrada y salida;
 - si mantiene una salida estructurada;
-- si el fallo puede corregirse de forma razonable o si debe bloquearse.
+- si el fallo debe pasar a `repairable` o a `blocked`.
 ```
 
 ## Salidas posibles de esta validacion
@@ -391,14 +391,14 @@ El codigo puede pasar a ejecucion.
 Esto significa:
 
 - el script encaja con el plan;
-- el contrato parece suficiente para la siguiente fase;
+- el contrato es suficiente para la siguiente fase;
 - no hace falta correccion previa.
 
 ### Caso `repairable`
 
-El codigo no deberia ejecutarse todavia, pero el fallo parece corregible.
+El codigo no pasa todavia a ejecucion, pero el fallo entra en `repairable`.
 
-Ejemplos tipicos:
+Errores que suelen caer en `repairable`:
 
 - la salida no esta bien alineada con el formato esperado;
 - el script interpreta mal una parte concreta del plan;
@@ -439,7 +439,7 @@ Su funcion no es:
 
 ### Que le entra
 
-Conceptualmente le entra algo como esto:
+En la implementacion, el subagente recibe:
 
 ```json
 {
@@ -464,7 +464,7 @@ Conceptualmente le entra algo como esto:
     "required_fixes": [
       "Alinear la salida con metrics, summary y limitations."
     ],
-    "reasoning": "El script parece recuperable, pero la implementacion actual no sigue bien el contrato."
+    "reasoning": "El script es corregible, pero la implementacion actual no sigue bien el contrato."
   }
 }
 ```
@@ -474,7 +474,7 @@ Conceptualmente le entra algo como esto:
 Debe devolver exclusivamente un JSON con un unico campo `code` cuyo valor sea
 el script Python completo corregido.
 
-## Prompt base recomendado para Subagente 3
+## Prompt base del Subagente 3
 
 ```text
 Eres el Subagente 3 del flujo de analisis financiero.
@@ -498,7 +498,7 @@ No debes:
 
 ## Revalidacion y bucle de correccion
 
-La ruta general en esta parte deberia entenderse asi:
+La ruta general en esta parte es esta:
 
 ```text
 Codigo generado
@@ -528,13 +528,13 @@ La salida final deseada de esta parte es un script que:
 - ha pasado, si hacia falta, por el Subagente 3;
 - queda aceptado para la fase de ejecucion.
 
-### Que deberia recibir el ejecutor
+### Que recibe el ejecutor
 
-Minimo recomendable:
+El ejecutor recibe:
 
-- el script ya validado;
-- el payload completo de ejecucion;
-- los avisos que convenga conservar.
+- `state.generated_code`, ya aceptado por el Agente 4;
+- el payload de ejecucion construido por `_build_phase2_input_payload(state)`;
+- los `warnings` acumulados en el estado.
 
 ## Resumen operativo final
 

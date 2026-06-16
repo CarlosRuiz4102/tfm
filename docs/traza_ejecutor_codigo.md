@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento no resume la parte 4 de forma abstracta.
+Este documento no resume la parte 4 de forma general.
 La idea aqui es seguir una ejecucion comentada de esta fase para entender:
 
 - como se conecta la parte 3 con la parte 4;
@@ -156,7 +156,7 @@ execution = run_generated_code(state.generated_code, execution_payload)
 
 En esta traza, el primer script falla a proposito con un `KeyError`.
 
-Salida conceptual del runner:
+Salida observada del runner en este primer intento:
 
 ```json
 {
@@ -205,7 +205,7 @@ Como el proceso fallo con `returncode != 0`, la decision es:
 Interpretacion:
 
 - la parte 4 no puede continuar;
-- pero el caso todavia parece recuperable;
+- pero la decision sigue dentro de la rama `repairable`;
 - por tanto entra el Subagente 4.
 
 ## Paso 4. Construccion del feedback para el Subagente 4
@@ -294,7 +294,7 @@ En esta traza, el segundo script ya produce una salida correcta:
 }
 ```
 
-Salida conceptual del runner:
+Salida observada del runner en este segundo intento:
 
 ```json
 {
@@ -335,7 +335,7 @@ La decision resultante es:
 
 ## Estado final de la parte 4
 
-El estado del workflow queda conceptualmente asi:
+Al terminar esta traza, el estado relevante del workflow queda asi:
 
 ```json
 {
@@ -374,7 +374,7 @@ Esta traza demuestra varias cosas importantes sobre la conexion entre parte 3 y 
 1. La parte 3 y la parte 4 no hacen lo mismo.
 2. Un script aceptado estaticamente todavia puede fallar en runtime.
 3. La parte 4 no necesita `analysis_plan` dentro del payload de ejecucion.
-4. El Subagente 4 trabaja con evidencia real, no con una intuicion abstracta.
+4. El Subagente 4 trabaja con evidencia real de ejecucion, no con una evaluacion separada del workflow.
 5. La unica confirmacion fuerte de una reparacion es volver a ejecutar.
 
 ## Resumen operativo final

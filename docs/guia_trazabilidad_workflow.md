@@ -142,7 +142,7 @@ los resultados reales, no desde pistas de `analysis_plan` en su payload.
 
 ## Como usar esta traza al depurar ejemplos
 
-Orden recomendado:
+Orden de uso:
 
 1. abrir `manifest.json` para identificar `status` final y artefactos clave;
 2. revisar `events.jsonl` para localizar el nodo donde cambio el estado;
@@ -169,16 +169,16 @@ Con esta carpeta por ejecucion ganamos:
 
 La traza actual esta pensada para depuracion operativa y funcional.
 
-Todavia se podria reforzar mas con:
+Todavia puede reforzarse mas con:
 
 - un resumen agregado por bateria de ejecuciones;
 - clasificacion automatica de errores por fase;
 - persistencia separada de prompts y respuestas LLM;
 - utilidades para comparar dos `run_id` entre si.
 
-## Recomendacion para la siguiente iteracion
+## Siguiente iteracion
 
-Antes de montar metricas de rendimiento, conviene apoyar esta traza con una
+Antes de montar metricas de rendimiento, la siguiente mejora util es apoyar esta traza con una
 herramienta de lectura o resumen automatico por `run_id`.
 
 Eso permitiria procesar lotes de ejemplos sin depender de abrir manualmente cada
