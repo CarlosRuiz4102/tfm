@@ -24,10 +24,19 @@ NodeFn = Callable[[WorkflowState], WorkflowState]
 
 
 def _now_iso() -> str:
+    """Normaliza las marcas temporales de la traza a un formato estable."""
     return datetime.now().isoformat(timespec="seconds")
 
 
 class SimpleFinancialWorkflow:
+    """
+    Orquesta el flujo lineal principal y los cierres terminales del workflow.
+
+    El pipeline recorre siempre las mismas fases de negocio. Si alguna de ellas
+    deja el estado en un valor terminal, se deriva a un nodo final que convierte
+    ese bloqueo o error en una salida trazable para el usuario.
+    """
+
     def __init__(self) -> None:
         # El pipeline refleja el orden del flujo nuevo: primero resolvemos datos,
         # luego analizamos, generamos codigo, validamos, ejecutamos e interpretamos.
@@ -54,6 +63,13 @@ class SimpleFinancialWorkflow:
         }
 
     def invoke(self, query_input: FinancialQueryInput) -> WorkflowState:
+        """
+        Ejecuta una consulta completa y persiste su traza nodo a nodo.
+
+        Cada iteracion actualiza el estado compartido, registra eventos de
+        workflow y guarda snapshots para poder reconstruir despues que ocurrio
+        en una ejecucion concreta.
+        """
         # invoke recorre el pipeline y, ademas, deja una traza estructurada
         # completa para poder depurar ejecuciones reales ejemplo a ejemplo.
         state = WorkflowState.from_input(query_input)
@@ -91,4 +107,5 @@ class SimpleFinancialWorkflow:
 
 
 def build_workflow() -> SimpleFinancialWorkflow:
+    """Punto unico de construccion del workflow usado por la aplicacion."""
     return SimpleFinancialWorkflow()

@@ -11,6 +11,7 @@
 \usepackage{tabularx}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{listings}
 \usepackage{csquotes}
 \usepackage[numbers,sort&compress]{natbib}
 
@@ -19,6 +20,19 @@
 
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\lstdefinestyle{traceblock}{
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,
+    breakatwhitespace=false,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    frame=single,
+    framesep=4pt,
+    xleftmargin=0pt,
+    xrightmargin=0pt
+}
 
 \newcommand{\University}{Universidad Polit\'ecnica de Madrid}
 \newcommand{\UNIVERSITY}{UNIVERSIDAD POLIT\'ECNICA DE MADRID}

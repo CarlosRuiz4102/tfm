@@ -23,10 +23,15 @@ from src.schemas.input import FinancialQueryInput
 from src.schemas.workflow import WorkflowState
 
 
+# Limites de reintento por fase. Mantenerlos aqui ayuda a localizar de un
+# vistazo cuantas oportunidades de reparacion tiene cada parte del flujo.
 MAX_STRUCTURAL_REPAIR_ATTEMPTS = 2
 MAX_OPERATIONAL_REPAIR_ATTEMPTS = 2
 MAX_CODE_REPAIR_ATTEMPTS = 2
 MAX_EXECUTION_ATTEMPTS = 3
+# Estas claves representan pistas internas que no deben contaminar al
+# interpretador final. La respuesta debe apoyarse en resultados reales, no en
+# etiquetas del flujo o en metadatos de planificacion.
 INTERPRETATION_HINT_KEYS = {
     "analysis_plan",
     "analysis_type",
@@ -261,6 +266,8 @@ def data_request_structural_validation_node(state: WorkflowState) -> WorkflowSta
     request = state.financial_data_request
     decision = validate_financial_data_request_structure(request)
 
+    # Si el request es reparable, el subagente reescribe la peticion y se
+    # vuelve a validar sobre la nueva version, no sobre la original.
     while decision.status == "repairable" and state.structural_repair_attempts < MAX_STRUCTURAL_REPAIR_ATTEMPTS:
         try:
             repaired_request, warnings = repair_llm_data_request(query_input, request, decision.errors, stage="structural")
@@ -305,6 +312,8 @@ def data_download_node(state: WorkflowState) -> WorkflowState:
     query_input = state.normalized_query.to_query_input()
     request = state.financial_data_request
 
+    # Este bucle solo termina cuando la descarga se valida, se bloquea de forma
+    # definitiva o se agotan los reintentos operativos permitidos.
     while True:
         try:
             downloaded = download_market_data(request)
@@ -419,6 +428,9 @@ def code_validation_node(state: WorkflowState) -> WorkflowState:
     phase2_input_payload = _build_phase2_input_payload(state)
     state.status = "code_validating"
 
+    # El Agente 4 puede aceptar, bloquear o pedir una reparacion. Si la salida
+    # es reparable, el mismo bucle reenvia el codigo corregido para una nueva
+    # decision antes de permitir la ejecucion.
     while True:
         try:
             decision, warnings = build_llm_code_validation(
@@ -493,6 +505,8 @@ def code_execution_node(state: WorkflowState) -> WorkflowState:
     execution_payload = phase2_input_payload.to_dict()
     query_input = state.normalized_query.to_query_input()
 
+    # Cada intento persiste su propia evidencia de runtime. Eso permite separar
+    # despues errores de codigo, errores de entorno y salidas mal formadas.
     while state.execution_attempts < MAX_EXECUTION_ATTEMPTS:
         state.status = "executing"
         execution = run_generated_code(state.generated_code, execution_payload)

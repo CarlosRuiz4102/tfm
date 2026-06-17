@@ -1,242 +1,610 @@
 \chapter{Flujo multiagente del sistema}
 
-\section{Funcion de este capitulo}
+En este cap\'itulo se describe el funcionamiento interno del sistema multiagente propuesto. El objetivo es explicar c\'omo una consulta en lenguaje
+natural se transforma progresivamente en una respuesta final apoyada en datos hist\'oricos, artefactos intermedios y mecanismos de validaci\'on. Para ello,
+primero se presenta una visi\'on general del flujo completo y, a continuaci\'on, se detalla el recorrido de una ejecuci\'on de extremo a extremo.
 
-Este capitulo es uno de los nucleos del trabajo. Aqui no basta con decir que el sistema usa varios agentes: hace falta explicar con detalle como circula la informacion, que hace cada bloque, que controles existen y por que esa organizacion mejora la trazabilidad y la explicabilidad del analisis.
+\section{Visi\'on general del sistema}
 
-La idea central que conviene sostener en todo el capitulo es la siguiente: el valor del sistema no esta solo en producir una respuesta final, sino en hacerlo mediante un flujo auditable, con artefactos observables y con decisiones tecnicas que permitan entender que ha ocurrido en cada etapa.
-
-\section{Preguntas que debe responder el capitulo}
+La Figura~\ref{fig:flujo_multiagente_final} resume la arquitectura general del
+sistema. Esa figura se corresponde con la implementaci\'on efectiva del \texttt{SimpleFinancialWorkflow}, cuyo pipeline recorre nueve nodos
+principales en este orden:
 
 \begin{enumerate}
-    \item ?Que recibe exactamente el sistema y como se transforma esa entrada a lo largo del flujo?
-    \item ?Que hace cada bloque principal y por que ese bloque es necesario?
-    \item ?Que diferencia hay entre el flujo principal y los mecanismos de correccion?
-    \item ?Que papel tienen los prompts como contrato operativo de los agentes?
-    \item ?Que evidencias deja el sistema para poder reconstruir una ejecucion completa?
-    \item ?Por que este flujo es mas explicable y controlable que una respuesta directa del LLM?
-    \item ?Que decisiones de diseno ayudan a justificar luego la metodologia y la evaluacion?
+    \item validaci\'on inicial de la consulta (\texttt{ingest\_node});
+    \item planificaci\'on de la petici\'on de datos (Agente 1);
+    \item validaci\'on estructural del \texttt{FinancialDataRequest};
+    \item descarga real y validaci\'on operativa de datos;
+    \item planificaci\'on anal\'itica (Agente 2);
+    \item generaci\'on de c\'odigo (Agente 3);
+    \item validaci\'on del c\'odigo (Agente 4);
+    \item ejecuci\'on controlada y validaci\'on de runtime;
+    \item interpretaci\'on final (Agente 5).
 \end{enumerate}
-
-\section{Vision general del flujo}
-
-La Figura~\ref{fig:flujo_multiagente_final} se toma como referencia de alto nivel para describir el sistema. En ella se representa el recorrido completo desde la solicitud inicial del usuario hasta la respuesta final, incluyendo los agentes principales, los subagentes de correccion y los puntos de validacion mas relevantes.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[page=1,width=\textwidth]{../FlujoNuevo4.drawio.pdf}
-\caption{Flujo multiagente de referencia para el desarrollo del sistema de analisis financiero.}
+\caption{Flujo multiagente de referencia para el desarrollo del sistema de an\'alisis financiero.}
 \label{fig:flujo_multiagente_final}
 \end{figure}
 
-El flujo parte de una consulta escrita en lenguaje natural y la transforma de manera progresiva en una respuesta final sustentada por datos descargados, decisiones intermedias trazables y una ejecucion controlada. La primera fase se concentra en resolver el problema de datos: el Agente 1 convierte la peticion del usuario en un \texttt{FinancialDataRequest} estructurado, este contrato se valida a nivel formal y, despues, se comprueba operativamente mediante una descarga real en \texttt{yfinance}. Solo cuando ambas comprobaciones se superan se considera que el sistema dispone de una base suficientemente fiable para pasar al analisis.
+La l\'ogica representada en la figura puede entenderse en cuatro bloques principales. El primero corresponde a la resoluci\'on del problema de datos. A
+partir de la consulta original, el sistema comprueba que la entrada sea utilizable, transforma esa petici\'on en un \texttt{FinancialDataRequest},
+verifica su coherencia estructural y, finalmente, intenta la descarga real de los datos hist\'oricos necesarios. En esta parte, el objetivo no es todav\'ia
+producir una interpretaci\'on financiera, sino asegurar que el resto del flujo trabajar\'a sobre una base de datos efectivamente descargada y validada.
 
-La fase central del flujo comienza entonces con el Agente 2, que recibe los datos ya descargados y los convierte en un JSON analitico que acota que calculos deben realizarse. A partir de ese plan, el Agente 3 genera el script Python encargado de materializar el analisis. Ese script no se ejecuta directamente: primero pasa por el Agente 4, que valida su estructura y sus restricciones, y solo despues se lanza en el ejecutor. Finalmente, el Agente 5 interpreta la salida correcta y la convierte en una respuesta legible para el usuario.
+El segundo bloque abarca la planificaci\'on anal\'itica y la generaci\'on de c\'odigo. Una vez que la fase de datos ha dejado un contexto operativo estable,
+el Agente 2 define qu\'e debe calcularse y con qu\'e requisitos de salida, mientras que el Agente 3 traduce ese plan a un script Python ejecutable. Esta
+separaci\'on entre planificaci\'on e implementaci\'on es una de las decisiones centrales de la arquitectura, porque permite distinguir entre el razonamiento
+anal\'itico y la materializaci\'on t\'ecnica de ese razonamiento.
 
-La arquitectura incorpora ademas cuatro puntos de correccion, uno por cada familia de fallos relevantes: errores estructurales en la peticion de datos, errores operativos de descarga, errores estaticos del codigo generado y errores observados durante la ejecucion. Esta separacion de responsabilidades no solo ordena el sistema, sino que mejora su explicabilidad. Cada bloque tiene una entrada definida, una salida esperada y un criterio claro de exito o bloqueo, lo que facilita defender por que el flujo avanza, por que se repara o por que se detiene en un caso concreto.
+El tercer bloque est\'a dedicado al control del c\'odigo generado. Antes de que el script se ejecute, el Agente 4 comprueba si el resultado es aceptable, si
+requiere reparaci\'on o si debe bloquearse. Superada esa puerta, el sistema lanza la ejecuci\'on real y valida la evidencia observada en runtime, tanto en
+t\'erminos de terminaci\'on correcta del proceso como de adecuaci\'on de la salida estructurada obtenida. De este modo, la arquitectura no se limita a
+comprobar si el c\'odigo parece razonable, sino que exige tambi\'en que produzca una salida reutilizable por la fase final.
 
-\section{Entrada y estado compartido}
+El cuarto y \'ultimo bloque corresponde a la interpretaci\'on. Cuando la ejecuci\'on ya ha dejado una salida considerada v\'alida, el Agente 5 la
+transforma en una respuesta final legible para el usuario. Esta fase no recalcula m\'etricas ni reabre el problema anal\'itico, sino que redacta la
+respuesta a partir de los resultados efectivamente obtenidos y del contexto resuelto durante el flujo.
 
-\subsection{Entrada del sistema}
+La figura tambi\'en muestra que el sistema no se apoya \'unicamente en una ruta ideal. Existen mecanismos de correcci\'on asociados a distintas familias de
+fallo: problemas estructurales en la petici\'on de datos, problemas operativos de descarga, defectos detectados en la validaci\'on del c\'odigo y errores
+observados durante la ejecuci\'on real. Esta organizaci\'on permite que la reparaci\'on se produzca sobre el artefacto afectado, sin rehacer
+innecesariamente todo el recorrido.
 
-El sistema arranca a partir de una estructura de entrada ligera, representada internamente como \texttt{FinancialQueryInput}. El unico campo estrictamente obligatorio en ese punto es la consulta original del usuario, es decir, la peticion en lenguaje natural sobre la que debe trabajar el flujo. Junto a ella pueden aparecer, si ya se conocen, algunos elementos de contexto como tickers sugeridos, un rango temporal, un periodo, un intervalo o rutas de CSV previamente disponibles. Sin embargo, estos campos auxiliares no sustituyen a la consulta principal ni se consideran conocimiento plenamente validado hasta que la fase de datos los revisa.
+De forma resumida, los subagentes solo entran en acci\'on cuando una fase deja un artefacto reparable, pero todav\'ia no bloqueado. Si el
+\texttt{FinancialDataRequest} falla por razones estructurales, act\'ua el Subagente 1 y puede corregirlo hasta dos veces. Si el request es formalmente
+v\'alido, pero la descarga real no produce datos utilizables, interviene el Subagente 2, tambi\'en con un m\'aximo de dos reparaciones. Cuando el problema
+est\'a en el script generado antes de ejecutarse, entra el Subagente 3 y se permiten hasta dos correcciones de c\'odigo. Por \'ultimo, si el fallo aparece
+ya en runtime, el Subagente 4 repara el script a partir de la evidencia real de ejecuci\'on, dentro de un l\'imite de tres intentos totales de ejecuci\'on.
 
-Esta decision de diseno es importante porque evita que el sistema parta de supuestos opacos. Ni el Agente 1 ni los agentes posteriores deben asumir libremente que un ticker es correcto, que un periodo esta bien resuelto o que existe ya un fichero util si esa informacion no ha quedado consolidada dentro del flujo. La consulta del usuario es la fuente primaria de intencion; el resto del contexto solo se convierte en contrato operativo despues de la validacion correspondiente.
+En conjunto, la visi\'on global que ofrece la Figura~\ref{fig:flujo_multiagente_final} permite entender el rasgo principal del sistema: la respuesta final no surge
+de una llamada monol\'itica al modelo, sino de una cadena de fases con contratos diferenciados, validaciones expl\'icitas y artefactos observables. A partir de esta
+visi\'on de conjunto, el siguiente apartado describe el recorrido completo de una ejecuci\'on real dentro de la arquitectura.
 
-Tambien conviene subrayar que la entrada no incluye una etiqueta externa que indique de antemano la profundidad analitica esperada. El sistema no recibe una clasificacion previa del tipo ``consulta simple'' o ``consulta avanzada''. Esa graduacion debe inferirse a partir del contenido de la peticion, de sus restricciones y del formato de salida que se desprenda de ella. Este detalle es metodologicamente relevante porque muestra que el comportamiento de los agentes se apoya en el significado de la consulta y no en una senal manual anadida fuera del flujo.
+\section{Recorrido completo de una ejecuci\'on}
 
-Desde el punto de vista de la calidad, una entrada bien delimitada reduce varios riesgos tempranos: ambiguedades sobre el instrumento, incoherencias temporales, peticiones imposibles de descargar y errores derivados de trasladar al analisis hipotesis que aun no han sido comprobadas. Por eso la memoria puede defender que el sistema no empieza ``analizando'', sino primero asegurando que la peticion de partida tiene una forma utilizable y auditable.
+Para que este cap\'itulo no se quede en una descripci\'on te\'orica del flujo, en este apartado se sigue una ejecuci\'on real de principio a fin. La consulta
+elegida fue: \emph{``Analiza AAPL en 3 meses y explica qu\'e se puede concluir solo con estos datos hist\'oricos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender''}. 
 
-\subsection{Estado compartido}
+\subsection{Fase 1. Resoluci\'on y validaci\'on de datos}
 
-La ejecucion se articula alrededor de un estado compartido tipado, \texttt{WorkflowState}, que actua como memoria operativa del flujo. Su funcion no es solo transportar datos entre nodos, sino conservar artefactos y decisiones intermedias para que la respuesta final pueda reconstruirse despues. Gracias a este estado comun, cada fase trabaja sobre resultados ya consolidados de la fase anterior y deja, a su vez, una salida observable para las siguientes.
+La primera fase arranca con una entrada m\'inima. En este punto el sistema todav\'ia no conoce el ticker final, ni el periodo, ni la ruta del CSV que
+terminar\'a usando m\'as adelante. Lo primero que hace es construir el estado inicial de la ejecuci\'on:
 
-Un primer bloque del estado recoge la intencion original y su normalizacion progresiva. Aqui se guardan la consulta del usuario y un contexto resuelto que va acumulando tickers, fechas, periodo, intervalo y rutas de CSV conforme la fase de datos los valida. Este grupo de campos permite distinguir entre lo que el usuario pidio inicialmente y lo que el sistema ha conseguido concretar de forma operativa.
+\begin{lstlisting}[style=traceblock]
+{
+  "user_query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+  "normalized_query": {
+    "query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+    "tickers": [],
+    "start": null,
+    "end": null,
+    "period": null,
+    "interval": null,
+    "needs_clarification": false,
+    "csv_paths": [],
+    "warnings": []
+  },
+  "csv_paths": [],
+  "status": "created"
+}
+\end{lstlisting}
 
-Un segundo bloque conserva los artefactos de la fase de datos: el \texttt{FinancialDataRequest} validado, el resumen de descarga y las rutas de los ficheros persistidos. Esta informacion es la que hace posible enlazar la fase 1 con la fase 2 de manera explicita. El analista y el generador de codigo no reciben una consulta vaga, sino un contexto derivado de estos artefactos, resumido en un payload compacto pero respaldado por el estado completo.
+Aqu\'i se ve bien el papel de \texttt{WorkflowState}: al principio conserva la
+consulta original y poco m\'as. A partir de ese punto, la fase de datos hace
+dos comprobaciones sucesivas. Primero se valida que la consulta exista y no
+llegue vac\'ia. Despu\'es, cuando el Agente 1 propone una petici\'on de datos,
+se comprueba localmente que esa petici\'on tenga sentido antes de intentar
+ninguna descarga.
 
-El tercer bloque corresponde al nucleo de esta parte del flujo: \texttt{analysis\_plan} y \texttt{generated\_code}. El primero recoge el contrato analitico decidido por el Agente 2; el segundo almacena el script Python producido por el Agente 3. Ambos campos son esenciales para la trazabilidad interna, porque permiten separar que se quiso calcular de como se implemento tecnicamente.
+La salida del Agente 1, en este ejemplo, queda as\'i:
 
-Por ultimo, el estado incorpora la salida de ejecucion, la respuesta final y los mecanismos de control. Aqui se incluyen \texttt{execution\_stdout}, \texttt{execution\_stderr}, \texttt{execution\_output}, los artefactos de ejecucion, la respuesta final en lenguaje natural, la lista de avisos acumulados, el mensaje de error si lo hubiera y el estado textual del workflow. Este conjunto permite reconstruir no solo los casos exitosos, sino tambien en que punto se bloqueo el flujo y con que motivo.
+\begin{lstlisting}[style=traceblock]
+{
+  "user_query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+  "provider": "yfinance",
+  "instruments": [
+    {
+      "ticker": "AAPL"
+    }
+  ],
+  "interval": "1d",
+  "start": null,
+  "end": null,
+  "period": "3mo",
+  "required_fields": [
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Adj Close",
+    "Volume"
+  ],
+  "needs_clarification": false,
+  "clarification_reason": null
+}
+\end{lstlisting}
 
-En consecuencia, el valor del estado compartido no reside unicamente en ``pasar variables'' entre nodos. Su papel principal es convertir una secuencia de llamadas a agentes y validadores en un proceso auditable, donde cada transicion deja una evidencia concreta y donde la respuesta final puede justificarse a partir de artefactos observables.
+En esta parte todav\'ia no se est\'a comprobando si la descarga real funciona. Lo que se valida es que el request mantenga la consulta, use un proveedor
+soportado, incluya al menos un ticker, fije un intervalo permitido, no mezcle \texttt{period} con \texttt{start/end} y no quede bloqueado por una necesidad
+de aclaraci\'on. Solo cuando todo eso encaja se pasa a la descarga.
 
-\section{Flujo principal del sistema}
+Despu\'es llega la normalizaci\'on. Este paso es importante porque la salida del proveedor no se deja tal cual, sino que se transforma a una tabla can\'onica
+con columnas expl\'icitas como \texttt{Date}, \texttt{Ticker}, \texttt{Open}, \texttt{High}, \texttt{Low}, \texttt{Close}, \texttt{Adj Close} y \texttt{Volume}. 
+La raz\'on es sencilla: el resto del pipeline necesita trabajar sobre un formato estable, sin depender de detalles propios del proveedor o de c\'omo vengan 
+organizados los datos en origen.
 
-\textit{Este bloque debe contar el recorrido principal del sistema de forma limpia, sin detenerse aun en todos los bucles de correccion. La idea es explicar que hace cada fase, que recibe, que produce y por que es necesaria dentro del flujo completo.}
+Una vez descargados y normalizados, se realiza una validaci\'on operativa. En esta comprobaci\'on el sistema se fija, sobre todo, en cuatro cosas: que el
+dataset no est\'e vac\'io, que aparezcan las columnas esenciales, que el ticker pedido est\'e realmente presente y que la serie de precios sea utilizable.
 
-\subsection{Parte de datos}
+Cuando esa fase termina bien, lo que le llega al Agente 2 no es el estado interno completo, sino un handoff expl\'icito como este:
 
-La parte de datos cubre el tramo que va desde la consulta inicial del usuario hasta la obtencion de una descarga valida lista para el Agente 2. Su funcion no es producir aun el analisis financiero, sino delimitar con precision sobre que informacion va a poder trabajar el sistema. Esta distincion es importante: antes de hablar de metricas, comparaciones o interpretaciones, el flujo debe demostrar que ha entendido que datos necesita, que puede pedirlos de forma coherente y que la fuente externa responde con una descarga util.
+\begin{lstlisting}[style=traceblock]
+{
+  "query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+  "tickers": [
+    "AAPL"
+  ],
+  "temporal_context": {
+    "start": null,
+    "end": null,
+    "period": "3mo",
+    "interval": "1d"
+  },
+  "csv_paths": [
+    "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_20260614_192501_769901.csv"
+  ],
+  "data_context": {
+    "row_count": 64,
+    "available_columns": [
+      "Date",
+      "Ticker",
+      "Open",
+      "High",
+      "Low",
+      "Close",
+      "Adj Close",
+      "Volume"
+    ]
+  },
+  "warnings": [],
+  "download_summary": {
+    "provider": "yfinance",
+    "tickers_requested": [
+      "AAPL"
+    ],
+    "tickers_found": [
+      "AAPL"
+    ],
+    "interval": "1d",
+    "period": "3mo",
+    "start": null,
+    "end": null,
+    "row_count": 64,
+    "columns": [
+      "Date",
+      "Ticker",
+      "Open",
+      "High",
+      "Low",
+      "Close",
+      "Adj Close",
+      "Volume"
+    ]
+  }
+}
+\end{lstlisting}
 
-El primer paso de esta fase corresponde al Agente 1, que actua como planificador de datos. A partir de la consulta en lenguaje natural, este agente genera un \texttt{FinancialDataRequest} en formato JSON. Ese contrato debe recoger, al menos, los instrumentos o tickers detectados, la granularidad temporal, el rango o periodo solicitado y la indicacion de si la peticion esta lo bastante clara como para continuar. El objetivo aqui no es inferir conclusiones financieras, sino traducir la intencion del usuario a una peticion de datos concreta, utilizable por el resto del sistema y suficientemente explicita como para ser revisada.
+Este bloque resume bastante bien lo que deja la primera fase: la consulta ya est\'a resuelta a un ticker concreto, el contexto temporal ya ha quedado fijado
+y el resto del sistema puede trabajar sobre una base de datos que ya ha sido descargada y validada.
 
-Una vez generado ese request, el flujo no pasa de inmediato a la descarga. Primero se realiza una validacion estructural. En esta comprobacion se revisa que el JSON exista realmente, que sus campos obligatorios esten presentes, que los tipos sean correctos y que no haya incoherencias obvias entre fechas, periodos, intervalos o lista de instrumentos. Tambien se comprueba que la peticion no este apoyada en supuestos demasiado debiles. Si el request contiene errores corregibles, se activa el Subagente 1, cuya tarea consiste en reescribirlo de forma controlada y devolver una nueva version para validacion. Si el problema no es corregible con fiabilidad, o si se agotan los intentos permitidos, el flujo se bloquea y no avanza a etapas posteriores.
+\subsection{Fase 2. Planificaci\'on anal\'itica y generaci\'on de c\'odigo}
 
-Superada la validacion estructural, la fase de datos entra en su segunda comprobacion: la validacion operativa de descarga. Aqui se intenta la descarga real en \texttt{yfinance} con los parametros ya validados. Esta decision es metodologicamente relevante, porque no basta con que la peticion sea correcta en teoria. Tambien debe demostrarse que produce un resultado util en la practica. En esta etapa se verifica que la llamada no devuelve un conjunto vacio, que los instrumentos esperados aparecen efectivamente y que la respuesta permite persistir artefactos de datos reutilizables por el sistema. Si esta descarga falla de forma reparable, interviene el Subagente 2, especializado en ajustar la peticion desde un punto de vista operativo; si no existe una correccion razonable, la ejecucion vuelve a detenerse.
+Con ese payload, el Agente 2 ya no razona sobre una consulta ambigua, sino sobre un contexto de datos que llega resuelto. Su salida en este ejemplo es la
+siguiente:
 
-El resultado final de esta fase es, por tanto, mas fuerte que un simple ``request valido''. Lo que se entrega al Agente 2 es una descarga ya realizada, respaldada por un \texttt{FinancialDataRequest} previamente comprobado y acompanada de los artefactos necesarios para reconstruir el proceso. Desde el punto de vista de la explicabilidad, esta organizacion permite defender que el sistema no empieza a analizar ni a generar codigo sobre una interpretacion vaga de la consulta, sino sobre datos cuya necesidad, forma de obtencion y viabilidad han quedado justificadas antes de continuar.
+\begin{lstlisting}[style=traceblock]
+{
+  "analytical_goal": "Analizar el comportamiento historico de AAPL durante los ultimos 3 meses y extraer conclusiones basadas unicamente en los datos descargados.",
+  "analysis_type": "historical_overview",
+  "metrics": [
+    "average_close",
+    "max_close",
+    "min_close",
+    "return_3mo",
+    "volatility_3mo",
+    "drawdown_3mo"
+  ],
+  "required_columns": [
+    "Date",
+    "Ticker",
+    "Close",
+    "Adj Close",
+    "Volume"
+  ],
+  "output_requirements": [
+    "metrics: JSON object containing keys average_close, max_close, min_close, return_3mo, volatility_3mo, drawdown_3mo.",
+    "summary: plain text explanation of the main observations and conclusions that can be drawn from the data.",
+    "limitations: list of limitations of the analysis."
+  ],
+  "reasoning": "La peticion solicita un analisis historico de AAPL en los ultimos 3 meses sin usar noticias ni hacer predicciones."
+}
+\end{lstlisting}
 
-\subsection{Analista y generador de codigo}
+Lo importante aqu\'i es que el Agente 2 no calcula todav\'ia ninguna cifra. Su papel es fijar qu\'e se quiere medir, con qu\'e columnas y con qu\'e forma de
+salida. Esa salida pasa despu\'es al Agente 3 junto con el mismo payload de la fase anterior.
 
-Una vez superada la fase de datos, el flujo entra en un segundo bloque conceptual: convertir una peticion ya respaldada por datos descargados en un procedimiento analitico ejecutable. Esta transformacion se divide en dos agentes consecutivos para separar con claridad dos responsabilidades distintas. El Agente 2 decide que debe calcularse; el Agente 3 decide como materializarlo en Python. Esta division no es ornamental, sino una medida de control. Evita pedir al mismo bloque que razone el analisis, improvise la implementacion y produzca a la vez una conclusion final.
+El Agente 3 genera entonces el script Python que materializa ese plan. No hace falta copiar aqu\'i el fichero completo, pero s\'i conviene ense\~nar un
+fragmento representativo:
 
-El Agente 2 actua como analista. Su entrada no es la consulta bruta, sino un traspaso compacto construido a partir del estado de la fase 1. Ese payload contiene la consulta original, los tickers resueltos, el contexto temporal, las rutas de los CSV normalizados y un resumen minimo de los datos reales disponibles, incluyendo numero de filas y columnas observadas. Sobre esa base, el agente genera un \texttt{AnalysisPlan} estructurado. Este plan fija el objetivo analitico, el tipo de analisis, las metricas que deben calcularse, las columnas requeridas, las restricciones de datos, las exigencias de salida y una justificacion breve de por que ese contrato responde a la consulta. El resultado no es una respuesta financiera, sino una especificacion intermedia revisable.
+\begin{lstlisting}[style=traceblock]
+payload = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+tickers = payload.get('tickers', [])
+csv_paths = payload.get('csv_paths', [])
 
-La transicion entre el Agente 2 y el Agente 3 se mantiene deliberadamente directa. El plan se parsea, se tipa y se guarda en el estado compartido como contrato analitico de la siguiente fase, pero no se inserta entre ambos agentes una puerta local de validacion semantica separada del flujo visible. Esta decision busca que la arquitectura se mantenga fiel a la figura general del sistema: el Agente 2 planifica, el Agente 3 implementa y la aceptacion o bloqueo del codigo pertenece al bloque posterior de validacion, no a una compuerta intermedia oculta dentro de la parte analitica.
+close = load_close_prices(csv_paths, tickers)
+data = load_market_data(csv_paths, tickers)
 
-Con ese plan ya tipado interviene el Agente 3, encargado de generar el script Python. Su entrada combina tres piezas: la consulta original, el mismo payload compacto que vio el analista y el \texttt{AnalysisPlan} ya generado por el Agente 2. El generador no debe reinterpretar la consulta desde cero ni decidir nuevas metricas, sino implementar el contrato recibido. Para ello se le impone un prompt con restricciones tecnicas explicitas: el script debe leerse desde \texttt{argv[1]}, cargar el payload mediante \texttt{Path(...).read\_text(...)}, usar los cargadores permitidos del proyecto para acceder a los CSV, evitar accesos libres como \texttt{open()} o \texttt{pd.read\_csv()} y producir un unico JSON por \texttt{stdout}. Ademas, el prompt delimita imports permitidos, claves esperadas en la salida y reglas de comportamiento cuando falten datos.
+avg_close = close_series.mean()
+max_close = close_series.max()
+min_close = close_series.min()
+ret_3mo = (close_series.iloc[-1] - close_series.iloc[0]) / close_series.iloc[0]
+vol_3mo = close_series.pct_change().std()
 
-Esta relacion entre plan y script es uno de los puntos mas defendibles de la arquitectura. El \texttt{AnalysisPlan} actua como contrato entre razonamiento e implementacion: reduce la ambiguedad, facilita revisar si el codigo calcula lo que se pidio y permite aislar errores de planificacion de errores de programacion. La salida del Agente 3 se guarda primero en memoria compartida como \texttt{generated\_code}; despues, cuando la parte de ejecucion toma el relevo, ese mismo contenido se persiste como fichero en \path{results/code/generated_<run_id>.py}. De esta manera, la fase no entrega una conclusion opaca, sino dos artefactos trazables: un plan analitico y un script verificable.
+output = {
+    "metrics": metrics,
+    "summary": summary,
+    "limitations": limitations
+}
+\end{lstlisting}
 
-Los riesgos principales de esta traduccion aparecen precisamente en la frontera entre ambos agentes: planes demasiado vagos, columnas pedidas que no existen realmente, scripts que ignoran el contrato analitico o implementaciones que incumplen las reglas de carga y salida. Por eso esta parte del flujo no termina en la generacion del codigo, sino en la preparacion de un artefacto que debe someterse a la validacion de la parte 3 y, despues, a la validacion de ejecucion. En terminos metodologicos, esto permite defender que el sistema no pide al LLM una recomendacion financiera directa, sino una secuencia controlada de contratos y evidencias intermedias.
+Este fragmento deja ver bien qu\'e hace realmente el Agente 3. El script lee el payload desde disco, carga los datos con los helpers del proyecto, calcula las
+m\'etricas que hab\'ia fijado el Agente 2 y devuelve una salida estructurada. Dicho de otra forma, aqu\'i ya no se est\'a describiendo el an\'alisis: se est\'a
+convirtiendo en c\'odigo ejecutable.
 
-\subsection{Validacion del codigo}
+\subsection{Fase 3. Validaci\'on y ejecuci\'on}
 
-La siguiente etapa del flujo corresponde al Agente 4, encargado de validar el codigo generado antes de permitir su ejecucion. Esta validacion se formula tambien como una tarea LLM con salida estructurada. El agente no genera un script nuevo ni ejecuta el codigo para comprobarlo empiricamente. Su trabajo consiste en leer la consulta original, el contexto operativo heredado de la fase de datos, el \texttt{AnalysisPlan} producido por el Agente 2 y el script generado por el Agente 3, y decidir si ese codigo puede aceptarse, si necesita una correccion o si debe bloquearse.
+La tercera fase empieza con la validaci\'on del c\'odigo. En este ejemplo, el resultado que devuelve el Agente 4 es directamente v\'alido:
 
-La salida del Agente 4 se expresa mediante una decision tipada con tres estados posibles: \texttt{valid}, \texttt{repairable} y \texttt{blocked}. Junto a esa etiqueta, el agente devuelve errores observados, avisos no bloqueantes, correcciones requeridas y un razonamiento breve. Esta forma de salida es importante porque evita respuestas vagas del tipo ``el codigo parece bien'' y obliga a dejar una justificacion reutilizable por el resto del workflow. El estado compartido conserva ademas esta decision como artefacto intermedio, lo que mejora la trazabilidad de la parte 3.
+\begin{lstlisting}[style=traceblock]
+{
+  "decision": "valid",
+  "errors": [],
+  "warnings": [],
+  "required_fixes": [],
+  "reasoning": "El script implementa correctamente el plan de analisis y produce la salida esperada."
+}
+\end{lstlisting}
 
-La validacion se centra en varias preguntas. En primer lugar, si el script implementa realmente el plan recibido y no otro problema distinto. En segundo lugar, si respeta el contexto de entrada ya resuelto y no introduce supuestos ocultos ajenos al payload del sistema. En tercer lugar, si mantiene un contrato de salida estructurada, de modo que la ejecucion posterior y el interprete final puedan trabajar sobre un JSON coherente con el workflow. Por ultimo, el agente debe valorar si los defectos observados siguen siendo corregibles o si la desviacion respecto al plan es demasiado grande como para seguir reintentando.
+Por tanto, en este caso no fue necesario pasar por el Subagente 3. El script se acept\'o a la primera y el workflow pudo continuar sin reparaciones en la parte
+de validaci\'on est\'atica.
 
-Esta etapa da lugar al Subagente 3 cuando el caso es \texttt{repairable}. El subagente no recibe una orden difusa de ``arreglar el codigo'', sino el detalle de la decision anterior: errores, fixes requeridos y razonamiento del Agente 4. Sobre esa base devuelve un script completo nuevo, que vuelve a pasar por el Agente 4 para una segunda validacion. Si la nueva version se acepta, el flujo continua; si no converge tras el numero maximo de intentos o si el propio Agente 4 concluye que no existe una correccion razonable, el caso pasa a \texttt{blocked} y no llega al ejecutor.
+El ejecutor recibe entonces dos cosas: el script generado y el mismo payload operativo que ya se ha mostrado antes. A partir de ah\'i, la comprobaci\'on ya
+no es te\'orica. El sistema lanza el proceso de verdad y revisa despu\'es si la ejecuci\'on ha terminado bien, si \texttt{stdout} contiene un JSON parseable y si
+ese JSON conserva las claves obligatorias del workflow.
 
-Desde el punto de vista del diseno, este bloque permite sostener una idea importante del trabajo: generar codigo no es suficiente. Hace falta una etapa intermedia que valore si ese codigo encaja con el contrato del sistema antes de ejecutarlo. Al expresar esa valoracion como una decision estructurada de un agente especializado, la arquitectura mantiene la coherencia con el resto del flujo multiagente y evita esconder esta responsabilidad dentro de validadores locales opacos o compuertas no representadas en la figura principal.
+La salida obtenida en este ejemplo fue la siguiente:
 
-\subsection{Validacion de ejecucion}
+\begin{lstlisting}[style=traceblock]
+{
+  "metrics": {
+    "average_close": 278.00171875953674,
+    "max_close": 315.20001220703125,
+    "min_close": 246.6300048828125,
+    "return_3mo": 0.16396134082127573,
+    "volatility_3mo": 0.014529417415722213,
+    "drawdown_3mo": -0.07820438914790316
+  },
+  "summary": "El analisis de los ultimos 3 meses de AAPL muestra que el precio de cierre promedio fue 278.00, con un maximo de 315.20 y un minimo de 246.63. El retorno total durante el periodo fue 16.40%. La volatilidad diaria se estima en 1.45%. El mayor drawdown observado fue -7.82%.",
+  "limitations": [
+    "Los datos son de precios de cierre diarios sin considerar eventos corporativos, dividendos o splits.",
+    "No se incluyen factores externos ni noticias que puedan haber influido en el precio."
+  ]
+}
+\end{lstlisting}
 
-Una vez que el codigo ha sido aceptado por el Agente 4, el flujo entra en una fase distinta de las anteriores: ya no se trata de decidir si el script parece razonable en abstracto, sino de comprobar si realmente puede ejecutarse dentro del sistema y si la salida resultante sirve para las etapas posteriores. Esta distincion es importante porque un script puede haber superado la validacion estatica y, aun asi, fallar al cargar los datos, exceder el tiempo esperado, producir una excepcion en tiempo de ejecucion o devolver una salida que no encaje con el contrato del workflow.
+Aqu\'i tampoco hizo falta activar al Subagente 4, porque la ejecuci\'on termin\'o bien en el primer intento y dej\'o una salida v\'alida para la siguiente fase.
+Este punto es importante: la tercera fase no se limita a revisar si el c\'odigo ``parece razonable'', sino que comprueba si realmente funciona y si produce una
+salida reutilizable.
 
-La parte 4 comienza construyendo un payload operativo compacto a partir del estado compartido. Ese payload incluye la consulta original, los tickers resueltos, el contexto temporal, las rutas de los CSV normalizados y un resumen minimo de los datos disponibles. Su funcion no es volver a explicar que analisis habia que hacer, sino proporcionar al script el contexto practico necesario para ejecutarse sobre datos locales. En coherencia con esta responsabilidad, la fase de ejecucion no recibe \texttt{analysis\_plan} dentro del payload lanzado al proceso: el contrato analitico ya se resolvio antes y la pregunta que ahora interesa es puramente operativa, esto es, si el codigo corre bien y deja una salida utilizable.
+\subsection{Fase 4. Interpretaci\'on final}
 
-El ejecutor persiste primero el script y el payload efectivo en disco, normalmente en rutas como \path{results/code/generated_<run_id>.py} y \path{results/logs/payload_<run_id>.json}. A continuacion lanza el proceso Python con un tiempo maximo acotado, captura \texttt{stdout} y \texttt{stderr}, registra el codigo de retorno y guarda esas evidencias como artefactos observables. Esta persistencia es metodologicamente relevante porque permite reconstruir despues no solo el script final, sino tambien el contexto exacto con el que se ejecuto y los mensajes que produjo el intento real.
+La \'ultima fase toma la salida ejecutada y la prepara para el Agente 5. Lo que entra en el interpretador no es todo el estado interno, sino un payload m\'as
+limpio, centrado en la consulta, el contexto resuelto y los resultados ya obtenidos:
 
-La validacion de esta fase se organiza alrededor de dos preguntas principales. La primera es si el script se ha ejecutado correctamente como proceso. Aqui se observa si el lanzador pudo iniciarlo, si la ejecucion termino dentro del tiempo permitido y si el \texttt{returncode} refleja un final correcto o un fallo explicito. La segunda pregunta es si la salida generada queda en una forma apropiada para que la siguiente fase pueda trabajar con ella. En este punto no basta con que el proceso haya terminado: hace falta ademas que \texttt{stdout} sea JSON parseable, que mantenga las claves estructurales esperadas ---\texttt{metrics}, \texttt{summary} y \texttt{limitations}--- y que no mezcle salida libre, trazas accidentales o formatos ambiguos.
+\begin{lstlisting}[style=traceblock]
+{
+  "user_query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+  "resolved_context": {
+    "tickers": [
+      "AAPL"
+    ],
+    "temporal_context": {
+      "start": null,
+      "end": null,
+      "period": "3mo",
+      "interval": "1d"
+    }
+  },
+  "execution_output": {
+    "metrics": {
+      "average_close": 278.00171875953674,
+      "max_close": 315.20001220703125,
+      "min_close": 246.6300048828125,
+      "return_3mo": 0.16396134082127573,
+      "volatility_3mo": 0.014529417415722213,
+      "drawdown_3mo": -0.07820438914790316
+    },
+    "summary": "El analisis de los ultimos 3 meses de AAPL muestra que el precio de cierre promedio fue 278.00, con un maximo de 315.20 y un minimo de 246.63. El retorno total durante el periodo fue 16.40%. La volatilidad diaria se estima en 1.45%. El mayor drawdown observado fue -7.82%.",
+    "limitations": [
+      "Los datos son de precios de cierre diarios sin considerar eventos corporativos, dividendos o splits.",
+      "No se incluyen factores externos ni noticias que puedan haber influido en el precio."
+    ]
+  },
+  "warnings": []
+}
+\end{lstlisting}
 
-Desde esta perspectiva, ejecutar no equivale automaticamente a validar. Un \texttt{returncode = 0} con un \texttt{stdout} vacio o con un JSON incompleto sigue siendo insuficiente para el workflow. Del mismo modo, una salida aparentemente bien formada puede seguir siendo inutil si no conserva las claves minimas sobre las que debe apoyarse el interprete final. Por eso la arquitectura introduce aqui una decision propia, tambien tipada en tres estados: \texttt{valid}, \texttt{repairable} y \texttt{blocked}. El caso es \texttt{valid} cuando el proceso termina correctamente y deja una salida estructurada reutilizable; es \texttt{repairable} cuando el fallo observado parece corregible mediante un nuevo script; y pasa a \texttt{blocked} cuando ya no existe una correccion razonable o se agotan los intentos permitidos.
+Aqu\'i se aprecia bien la idea de esta fase: el Agente 5 no vuelve a descargar datos, no rehace el an\'alisis ni corrige el c\'odigo. Lo que hace es tomar una
+salida ya ejecutada y convertirla en una respuesta final legible.
 
-Esta etapa da lugar al Subagente 4 cuando la ejecucion falla de forma reparable. A diferencia del Subagente 3, que corrige problemas detectados antes de ejecutar, este nuevo subagente trabaja sobre evidencia real de runtime: recibe el script previo, el contexto operativo y un resumen compacto del error observado, incluyendo \texttt{returncode}, \texttt{stderr} y, si procede, la informacion sobre una salida mal formada. Sobre esa base devuelve un script completo corregido, que vuelve directamente al ejecutor para un nuevo intento. La logica de control aqui es especialmente defendible: el Subagente 4 no certifica por si mismo que el codigo ya este bien; solo propone una reparacion. La unica confirmacion fuerte de esa reparacion es que el propio ejecutor consiga lanzar la nueva version y obtenga de ella una salida \texttt{valid}.
+La respuesta final generada en esta traza queda as\'i:
 
-En consecuencia, la parte 4 refuerza una idea central del trabajo: el codigo generado no se acepta por mera plausibilidad ni por una unica comprobacion previa, sino por el hecho de dejar una evidencia tecnica satisfactoria cuando se enfrenta al contexto real del sistema. Esto mejora la explicabilidad interna del flujo, porque permite distinguir entre errores de planificacion, errores de implementacion y errores observados solo al ejecutar. Tambien mejora la trazabilidad metodologica, ya que cada intento deja un script persistido, un payload concreto, una salida observable y una decision clara sobre si el caso puede continuar, debe repararse o ya debe bloquearse.
+\begin{lstlisting}[style=traceblock]
+**Analisis de AAPL (ultimos 3 meses)**
 
-\subsection{Interpretacion y respuesta final}
+- **Precio de cierre promedio**: 278.00
+- **Maximo**: 315.20
+- **Minimo**: 246.63
+- **Retorno total**: 16.40 %
+- **Volatilidad diaria**: 1.45 %
+- **Drawdown maximo**: -7.82 %
 
-La ultima etapa del flujo corresponde al Agente 5, encargado de transformar una
-salida de ejecucion ya validada en una respuesta final comprensible para el
-usuario. Esta fase no recalcula metricas, no reabre la planificacion analitica
-y no vuelve a cuestionar la descarga realizada. Su funcion es distinta: tomar
-los resultados ya obtenidos, leerlos a la luz de la consulta original y
-redactar una respuesta fiel, prudente y ajustada a lo que realmente se ha
-conseguido producir.
+**Conclusiones basadas unicamente en los datos historicos**
+- El precio de AAPL ha mostrado una tendencia alcista, con un retorno positivo de mas del 16 % en los ultimos tres meses.
+- La volatilidad diaria de alrededor del 1.45 % indica que los precios se movian moderadamente dentro de ese rango.
+- El drawdown maximo de -7.82 % sugiere que la mayor caida desde un pico a un fondo fue relativamente contenida durante el periodo analizado.
 
-La entrada del interpretador no coincide con todo el estado compartido. Antes
-de llamar al Agente 5, el workflow construye un \texttt{interpretation\_payload}
-limpio. Ese paquete incluye la consulta original, el contexto resuelto minimo
----por ejemplo, tickers y marco temporal---, la \texttt{execution\_output} ya
-confirmada como valida y los avisos relevantes acumulados durante el flujo.
-Esta eleccion de diseno es importante porque protege al interpretador frente a
-ruido interno innecesario y, al mismo tiempo, mantiene la conexion explicita
-entre la parte 4 y la respuesta final.
+**Limitaciones**
+- Los datos corresponden unicamente a precios de cierre diarios y no incluyen eventos corporativos, dividendos ni splits.
+- No se han considerado factores externos ni noticias que pudieran haber influido en el comportamiento del precio.
+\end{lstlisting}
 
-En coherencia con la filosofia adoptada para esta fase, el payload del Agente 5
-no debe incluir \texttt{analysis\_plan} ni pistas equivalentes sobre el nivel de
-analisis esperado. Tampoco deberian llegarle etiquetas como \texttt{A},
-\texttt{B} o \texttt{C}, preferencias internas de presentacion ni artefactos
-tecnicos como rutas de scripts, \texttt{stdout} completo o mensajes largos de
-infraestructura. La razon metodologica es clara: se quiere observar la capacidad
-del interpretador para decidir por si mismo cuanta elaboracion necesita la
-respuesta a partir de dos fuentes legitimas de informacion, la intencion
-expresada en la consulta y la riqueza real de los resultados ejecutados.
+Con este \'ultimo bloque se ve con bastante claridad el sentido del flujo completo. La respuesta final no aparece de forma inmediata tras la consulta del
+usuario, sino despu\'es de pasar por cuatro fases distintas: primero se resuelven y validan los datos, despu\'es se fija el plan anal\'itico, luego se
+genera y ejecuta el c\'odigo y, solo al final, se redacta la interpretaci\'on. Eso es precisamente lo que hace que el sistema sea m\'as trazable y m\'as
+defendible que una respuesta generada de una sola vez.
 
-Esta separacion permite defender que el Agente 5 no actua como un mero
-reformateador ciego del \texttt{summary} producido por el script. Su tarea es
-mas sutil. Debe decidir si la respuesta conviene ser breve o desarrollada, si
-debe enfatizar una comparacion entre activos, si tiene sentido presentar
-bloques visibles o si basta una lectura sintetica. Esa decision no viene
-impuesta por una etiqueta externa, sino por la combinacion entre la consulta del
-usuario y el contenido factual de \texttt{execution\_output}. Si la consulta es
-simple y la salida tambien lo es, la respuesta debe ser simple. Si la consulta
-pide comparacion, desglose o una lectura mas estructurada, el interpretador
-puede extenderse, pero sin fingir resultados adicionales ni sonar mas concluyente
-de lo que permiten los datos.
+\section{Mecanismos de correcci\'on y criterios de parada}
 
-Desde el punto de vista del control del flujo, esta etapa se apoya en una
-condicion previa fuerte: solo se alcanza cuando la parte 4 ya ha dejado una
-\texttt{execution\_output} valida para el workflow. Eso significa que el
-interpretador no trabaja sobre un \texttt{returncode} dudoso ni sobre una salida
-rota. El sistema evita asi una degradacion frecuente en arquitecturas
-generativas mas simples, donde el modelo final acaba improvisando una respuesta
-``razonable'' incluso cuando las etapas anteriores no han dejado una evidencia
-tecnica suficientemente solida. En este diseno, la interpretacion solo se
-produce cuando existe una base estructurada utilizable.
+Una de las caracter\'isticas m\'as relevantes del sistema es que cada familia de fallo se gestiona con un mecanismo de correcci\'on espec\'ifico, en lugar de
+reintentar de forma indiferenciada toda la cadena. La Tabla~\ref{tab:rutas_reparacion} resume estas rutas.
 
-La salida principal de esta fase es \texttt{final\_answer}, es decir, el texto
-final que vera el usuario. Sin embargo, la arquitectura conserva ademas una
-evidencia interna muy util: el propio \texttt{interpretation\_payload} que vio
-el Agente 5. Esta decision mejora la trazabilidad de la ultima fase, porque
-permite reconstruir despues que hechos exactos se entregaron al interpretador y
-como se conectaron la validacion de ejecucion y la formulacion final de la
-respuesta. En la practica, esa informacion queda recogida dentro de la traza
-global del workflow y puede inspeccionarse en los snapshots finales de cada
-\texttt{run\_id}.
-
-Este bloque es tambien el mejor lugar para destacar la explicabilidad externa
-del sistema. No basta con que el flujo sea auditable por dentro; la respuesta
-final debe ser comprensible para un lector humano y debe distinguir con claridad
-entre hechos observados, lectura interpretativa y limitaciones relevantes.
-Cuando esta parte funciona bien, el sistema no solo ``ha calculado algo'', sino
-que consigue cerrar el recorrido multiagente con una comunicacion clara,
-honesta y alineada con la peticion original del usuario.
-
-\section{Subagentes de correccion y recuperacion}
-
-\textit{Completar aqui el papel de los subagentes o mecanismos de reparacion. Conviene separarlos del flujo principal para que primero se entienda el recorrido base y despues se vea como reacciona el sistema cuando algo falla.}
-
-\textit{En este apartado deberias poder explicar cuando se activa cada correccion, que informacion recibe el subagente, que tipo de error intenta reparar y que criterio decide si el flujo continua o termina en error. Tambien interesa comentar si las reparaciones afectan al plan, al codigo, a la ejecucion o solo a una parte concreta del proceso.}
-
-\textit{Metodologicamente, esta seccion es importante porque muestra que el sistema no solo tiene una ruta ideal, sino tambien una estrategia controlada para gestionar fallos.}
-
-\section{Diseno de prompts y contratos de los agentes}
-
-\textit{Este es el lugar adecuado para incluir los prompts dentro de la memoria principal. No conviene tratarlos como un anexo aislado, sino como parte del diseno operativo del sistema.}
-
-\textit{Completar aqui que objetivo tiene cada prompt, que entrada recibe cada agente, que salida se le exige y que restricciones guian su comportamiento. Puedes apoyarte en una tabla resumen y despues desarrollar los agentes mas importantes de forma narrativa.}
-
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
-\begin{tabularx}{\textwidth}{L{0.17\textwidth}L{0.20\textwidth}L{0.20\textwidth}Y}
+\begin{tabularx}{\textwidth}{L{0.15\textwidth}L{0.25\textwidth}L{0.24\textwidth}Y}
 \toprule
-\textbf{Agente} & \textbf{Entrada principal} & \textbf{Salida esperada} & \textbf{Aspectos del prompt que conviene explicar} \\
+\textbf{Ruta} & \textbf{Se activa cuando} & \textbf{Artefacto corregido} & \textbf{L\'imite aplicado} \\
 \midrule
-Agente de analisis & Consulta original mas payload compacto con tickers, contexto temporal, CSV normalizado y columnas disponibles & \texttt{AnalysisPlan} en JSON tipado & Objetivo analitico, catalogo de tipos de analisis, columnas disponibles, metricas requeridas y contrato de salida estructurada. \\
-Agente de codigo & Consulta original, payload compacto y \texttt{AnalysisPlan} generado por el analista & JSON con un unico campo \texttt{code} que contiene el script completo & Contrato tecnico de lectura del payload, cargadores permitidos, imports autorizados, salida JSON unica y restricciones de implementacion. \\
-Agente de interpretacion & Consulta original, contexto resuelto minimo, \texttt{execution\_output} valida y avisos relevantes & Texto final para el usuario en \texttt{final\_answer} & Uso exclusivo de resultados ejecutados, eliminacion de pistas internas, adaptacion de profundidad segun la query y prudencia frente a limitaciones reales. \\
-Subagentes de correccion & \textit{Completar} & \textit{Completar} & \textit{Tipo de error que reciben, alcance de la reparacion y limites de actuacion.} \\
+Subagente 1 & La validaci\'on estructural detecta un request reparable & request de datos & 2 reparaciones estructurales \\
+Subagente 2 & La descarga real falla de forma operativamente recuperable & request de datos & 2 reparaciones operativas \\
+Subagente 3 & El Agente 4 marca el c\'odigo como \texttt{repairable} & script Python generado & 2 reparaciones de c\'odigo \\
+Subagente 4 & La ejecuci\'on real no deja una salida v\'alida, pero el fallo parece recuperable & script Python generado & 3 intentos totales de ejecuci\'on \\
 \bottomrule
 \end{tabularx}
-\caption{Guia para documentar los prompts y contratos de los agentes.}
-\label{tab:prompts_contratos_agentes}
+\caption{Rutas de reparaci\'on incorporadas en el workflow.}
+\label{tab:rutas_reparacion}
 \end{table}
 
-\textit{En este bloque debes poder defender no solo que existen prompts distintos, sino por que estan separados y que gana el sistema con esa especializacion. Si incluyes fragmentos textuales, conviene que sean los que mejor revelan el contrato de cada agente y no necesariamente el prompt completo sin explicacion.}
+Lo primero que conviene fijar es que estas rutas no responden a una l\'ogica binaria de acierto o error. En las validaciones de datos, en la validaci\'on de
+c\'odigo y en la validaci\'on de ejecuci\'on aparece la misma sem\'antica: \texttt{valid}, \texttt{repairable} y \texttt{blocked}. \texttt{valid}
+permite continuar; \texttt{repairable} abre una correcci\'on autom\'atica; y \texttt{blocked} indica que, en esa ejecuci\'on concreta, el flujo deja de
+seguir corrigiendo y se detiene.
 
-\section{Trazabilidad y artefactos generados}
+Esta sem\'antica permite distinguir familias de fallo que, vistas desde fuera, podr\'ian parecer similares. En la fase de datos, el Subagente 1 corrige forma y
+coherencia del \texttt{FinancialDataRequest}, mientras que el Subagente 2 act\'ua cuando el request ya era formalmente v\'alido, pero la descarga real no ha
+producido una base utilizable. En la parte de c\'odigo ocurre algo parecido: el Subagente 3 corrige scripts marcados como \texttt{repairable} por el Agente 4
+antes de pasar a runtime, y el Subagente 4 corrige fallos observados ya durante la ejecuci\'on real.
 
-Uno de los rasgos mas importantes del sistema es que cada ejecucion deja una cadena de artefactos que permite reconstruir el flujo completo. Esta trazabilidad no depende de logs narrativos genericos, sino de objetos y ficheros con una funcion concreta dentro de la arquitectura. Por eso puede afirmarse que la respuesta final no aparece como un resultado opaco, sino como la ultima pieza de una secuencia de evidencias observables.
+La reparaci\'on, por tanto, es localizada. Cada subagente modifica solo el artefacto afectado y lo devuelve a su compuerta correspondiente: el request
+corregido vuelve a validarse o a descargarse, y el script corregido vuelve al Agente 4 o a una nueva ejecuci\'on. Esta decisi\'on mejora el control y la
+trazabilidad, porque evita rehacer toda la cadena cuando el problema est\'a acotado a una fase concreta.
 
-En la transicion entre la fase de datos y la parte analitica, la primera evidencia relevante es el contexto resuelto que queda en \texttt{WorkflowState}. A partir de ese estado se construye el payload compacto que conecta la fase 1 con los agentes 2 y 3. Aunque ese payload no persiste inicialmente como fichero independiente, su contenido puede reconstruirse porque procede de campos tipados del estado, del resumen de descarga y de las rutas de los CSV normalizados.
+Los l\'imites de correcci\'on tambi\'en forman parte del dise\~no. En datos se permiten hasta dos reparaciones estructurales y dos operativas; en la parte de
+c\'odigo, hasta dos reparaciones previas a la ejecuci\'on; y en runtime, hasta tres intentos totales de ejecuci\'on. Conviene distinguir estos l\'imites de los
+reintentos internos usados para forzar formato en una llamada LLM, que pueden llegar a tres dentro del mismo prompt. No es lo mismo que el modelo devuelva un
+JSON mal formado que descubrir, tras parsearlo bien, que la descarga no sirve o que el script falla al ejecutarse. Cada caso deja evidencias distintas y activa
+una respuesta distinta del workflow.
 
-El siguiente artefacto clave es el \texttt{AnalysisPlan}. Este objeto no se trata como una simple respuesta textual del LLM, sino como un contrato analitico formal que se parsea, se tipa y se conserva antes de pasar al codegen. Gracias a ello, el sistema mantiene una evidencia explicita de que calculos se querian realizar, con que columnas y con que formato de salida esperado. Desde el punto de vista metodologico, este punto es central: permite discutir por separado si el plan era adecuado y si el codigo lo implemento correctamente.
+\section{Prompts como contratos operativos}
 
-La segunda evidencia principal es el script generado por el Agente 3. Durante la parte 2 este codigo vive en memoria compartida como \texttt{generated\_code}. Cuando la parte de ejecucion toma el relevo, el sistema lo persiste en \path{results/code/generated_<run_id>.py}. Junto a el se guarda tambien el payload efectivo de ejecucion en \path{results/logs/payload_<run_id>.json}, lo que permite revisar exactamente con que contexto operativo se lanzo el script.
+En este apartado se presentan los prompts que utilizan los agentes y subagentes del sistema. La idea es ver qu\'e papel asume cada uno dentro del
+workflow, qu\'e tipo de salida se le exige y qu\'e l\'imites se le imponen para que su funci\'on quede bien acotada.
 
-Tras la ejecucion aparecen otros artefactos igualmente relevantes: \texttt{stdout}, \texttt{stderr}, el codigo de retorno y la salida parseada del script. Estos elementos se persisten en rutas como \path{results/logs/stdout_<run_id>.json} y \path{results/logs/stderr_<run_id>.log}, y se reflejan ademas en el estado compartido. Gracias a ello puede saberse no solo si el script produjo un resultado, sino tambien si fallo, por que fallo y si la salida respetaba o no el contrato esperado.
+\subsection{Prompts de sistema compartidos}
 
-Finalmente, la lista de avisos, el mensaje de error y la respuesta final completan la trazabilidad funcional del sistema. Los avisos permiten registrar irregularidades no bloqueantes; el mensaje de error localiza la causa principal cuando el flujo se interrumpe; y la respuesta final muestra como se ha traducido la salida estructurada a lenguaje natural. En conjunto, estos artefactos permiten defender los resultados del trabajo con evidencias inspeccionables y no solo con una impresion subjetiva de que ``el sistema parece responder bien''.
+El primer nivel de contrato no depende del agente concreto, sino del bloque al que pertenece. La fase de datos comparte un prompt de sistema propio y el resto
+de la arquitectura comparte otro distinto, centrado ya en an\'alisis hist\'orico. Sus textos base son los siguientes:
 
-\section{Decisiones de diseno}
+\begin{lstlisting}[style=traceblock]
+Eres un componente de planificacion y correccion de peticiones de datos financieros historicos.
+Tu objetivo es producir JSON valido, trazable y utilizable por codigo.
+No calculas metricas financieras, no interpretas resultados y no redactas respuestas finales.
+\end{lstlisting}
 
-\textit{Completar aqui por que se elige este flujo y no otro. Este apartado debe servir para justificar las principales elecciones de arquitectura: separacion de responsabilidades, uso de varios agentes, validacion previa a la ejecucion, reparacion controlada, anclaje a datos locales y conservacion de artefactos.}
+\begin{lstlisting}[style=traceblock]
+Eres un componente profesional de analisis financiero historico asistido por LLM.
+Trabajas exclusivamente con datos historicos ya descargados y con el contrato JSON indicado.
+No realizas predicciones, asesoramiento de inversion, recomendaciones de compra/venta,
+analisis fundamental externo ni incorporas informacion que no este en la entrada.
+\end{lstlisting}
 
-\textit{No se trata de repetir la metodologia, sino de defender las decisiones tecnicas que hacen posible luego una evaluacion seria del sistema. En otras palabras, aqui explicas por que la arquitectura esta pensada para producir un analisis mas controlable, mas explicable y mas revisable que una respuesta directa generada de una sola vez por el modelo.}
+Esta separaci\'on ya anticipa una idea importante del dise\~no: el sistema no trata igual la resoluci\'on de datos que la parte anal\'itica. La primera se
+enfoca a producir requests trazables y descargables; la segunda se restringe a trabajar con datos ya resueltos.
+
+\subsection{Prompts de la fase de datos}
+
+En la fase de datos aparecen tres mensajes base: el del Agente 1 y los dos de reparaci\'on asociados a Subagente 1 y Subagente 2. En los tres casos, el
+contrato insiste en devolver solo JSON y en no convertir esta fase en un an\'alisis financiero prematuro.
+
+El texto base del Agente 1 es este:
+
+\begin{lstlisting}[style=traceblock]
+Agente 1 - PLANIFICADOR DE DATOS.
+Convierte la consulta del usuario en un FinancialDataRequest JSON valido.
+Devuelve exclusivamente JSON, sin markdown ni texto adicional.
+Tu trabajo es decidir que datos hay que pedir, no hacer el analisis financiero.
+Debes:
+1. Identificar instrumentos o tickers.
+2. Inferir intervalo temporal y usar period o start/end segun corresponda.
+3. Mantener provider='yfinance'.
+4. Incluir required_fields con Open, High, Low, Close, Adj Close y Volume.
+5. Marcar needs_clarification=true si la consulta no permite una descarga fiable.
+No debes calcular metricas, razonar sobre rentabilidad ni proponer respuesta final.
+\end{lstlisting}
+
+Aqu\'i el contrato es muy estricto: el agente puede decidir qu\'e datos hacen falta, pero no puede empezar a analizar ni a contestar la consulta. Su \'unica
+salida aceptable es un \texttt{FinancialDataRequest}.
+
+El Subagente 1 reutiliza el mismo prompt de sistema, pero cambia el texto base para centrarse solo en la correcci\'on estructural:
+
+\begin{lstlisting}[style=traceblock]
+Subagente 1 - CORRECCION ESTRUCTURAL.
+Devuelve exclusivamente un FinancialDataRequest JSON valido.
+Corrige problemas de estructura, contrato, fechas, intervalos o instrumentos vacios.
+Si no puedes corregir el problema de forma fiable, marca needs_clarification=true
+y explica brevemente el motivo en clarification_reason.
+\end{lstlisting}
+
+Su alcance es deliberadamente estrecho. No intenta adivinar si la descarga real funcionar\'a; solo corrige forma y coherencia del request.
+
+El Subagente 2 comparte constructor con el anterior, pero cambia la directriz central para situarse en la validaci\'on operativa:
+
+\begin{lstlisting}[style=traceblock]
+Subagente 2 - CORRECCION OPERATIVA.
+Devuelve exclusivamente un FinancialDataRequest JSON valido.
+Corrige el request para que la descarga real en yfinance sea util sin cambiar libremente la intencion del usuario.
+Si no puedes corregir el problema de forma fiable, marca needs_clarification=true
+y explica brevemente el motivo en clarification_reason.
+\end{lstlisting}
+
+La diferencia entre ambos subagentes queda muy clara si se leen en paralelo: uno corrige estructura y contrato; el otro corrige viabilidad real de descarga,
+pero sin reescribir arbitrariamente la intenci\'on del usuario.
+
+\subsection{Prompts de planificaci\'on, generaci\'on, validaci\'on y reparaci\'on}
+
+Una vez resuelta la parte de datos, el sistema pasa a la cadena anal\'itica. Aqu\'i no existe un \'unico prompt gen\'erico, sino varios contratos que separan
+con cuidado razonamiento anal\'itico, implementaci\'on, validaci\'on y reparaci\'on.
+
+El texto base del Agente 2 es el siguiente:
+
+\begin{lstlisting}[style=traceblock]
+Agente 2 - ANALISTA.
+Devuelve exclusivamente un objeto JSON valido con el esquema indicado. No incluyas markdown.
+Tu tarea es convertir la peticion del usuario y los datos ya descargados en un plan verificable para un script Python posterior.
+No calcules cifras y no redactes la respuesta final.
+Debes apoyarte solo en el contexto de entrada ya resuelto por la fase de datos.
+required_columns debe referirse a columnas de los datos disponibles.
+output_requirements y presentation_preferences no pueden quedar vacios: deben reflejar de forma explicita
+que salida estructurada devolvera el script y como debe presentarse el resultado.
+En output_requirements debes describir siempre el contrato minimo del workflow:
+metrics debe ser un objeto JSON, summary debe ser un texto plano y limitations debe ser una lista.
+Si la consulta pide tabla, serie, ranking, drawdown u otros bloques estructurados, describelos como claves
+opcionales adicionales, pero sin sustituir metrics, summary ni limitations.
+No dejes output_requirements ni presentation_preferences en blanco ni con frases genericas vacias.
+\end{lstlisting}
+
+Este prompt deja muy bien delimitado que el Agente 2 no calcula nada ni redacta la respuesta final. Su trabajo es dejar un \texttt{AnalysisPlan} lo bastante
+espec\'ifico como para que el Agente 3 no tenga que reinterpretar la consulta. 
+El Agente 3 recibe ese plan y lo convierte en un script. Su texto base es este:
+
+\begin{lstlisting}[style=traceblock]
+Agente 3 - GENERADOR DE CODIGO.
+Devuelve exclusivamente un objeto JSON valido con un unico campo code. No incluyas markdown.
+El valor code debe ser un script Python completo, autocontenido y ejecutable.
+Debes implementar el AnalysisPlan recibido, no reinterpretar la consulta desde cero.
+La prioridad es cumplir el contrato minimo del workflow con un script robusto y simple.
+No conviertas summary en un objeto, no uses metrics como lista y no sustituyas la salida minima por tablas o series.
+\end{lstlisting}
+
+Aqu\'i se aprecia bien la filosof\'ia de esta parte del sistema: el c\'odigo no se genera como una soluci\'on abierta, sino bajo un contrato muy expl\'icito de
+entrada, carga de datos, imports permitidos y forma de salida.
+
+Antes de ejecutar, el Agente 4 revisa el script generado con el siguiente texto base:
+
+\begin{lstlisting}[style=traceblock]
+Agente 4 - VALIDADOR DE CODIGO.
+Tu tarea es revisar el script generado y decidir si puede pasar a ejecucion, si necesita correccion o si debe bloquearse.
+Devuelve exclusivamente JSON valido con los campos decision, errors, warnings, required_fixes y reasoning. No incluyas markdown.
+No ejecutes el codigo. No reescribas el script. No cambies el AnalysisPlan.
+Debes evaluar si el codigo implementa el plan recibido, si respeta el contexto de entrada y si mantiene una salida estructurada coherente con el workflow.
+No confundas el esquema JSON de tu propia respuesta como validador con el JSON que debe imprimir el script.
+El script debe imprimir metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.
+Considera validos, por contrato del workflow, los helpers importados desde src.execution.market_data cuando el script use solo load_close_prices, load_market_data, ticker_summary y make_json_safe.
+No bloquees un script solo por mejoras opcionales si el contrato minimo y la logica principal estan bien.
+\end{lstlisting}
+
+Esta redacci\'on tambi\'en es reveladora: el Agente 4 no propone c\'odigo ni ejecuta nada, sino que separa expl\'icitamente tres salidas posibles:
+\texttt{valid}, \texttt{repairable} o \texttt{blocked}. Adem\'as, el prompt insiste en no confundir el JSON que devuelve el validador con el JSON que debe
+imprimir el script, una distinci\'on importante en la implementaci\'on actual.
+
+Cuando el Agente 4 marca el caso como \texttt{repairable}, entra el Subagente 3 con este texto base:
+
+\begin{lstlisting}[style=traceblock]
+Subagente 3 - REPARACION DE CODIGO.
+El codigo anterior fallo o fue rechazado. Devuelve exclusivamente JSON valido con un unico campo code.
+El script corregido debe ser completo, no un parche parcial.
+No cambies el contrato de entrada ni el contrato de salida del workflow.
+El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.
+Asegura especificamente que metrics sea un objeto, summary sea un texto y limitations sea una lista.
+Si la consulta pedia tablas o series, mantenlas como claves opcionales, pero no sustituyas el contrato minimo.
+Prefiere corregir con cambios pequenos y codigo simple antes que rehacer el script con mas complejidad.
+\end{lstlisting}
+
+El Subagente 3 sigue trabajando con \texttt{analysis\_plan} y con el feedback
+del validador, de modo que corrige el script antes de que llegue a runtime. El
+Subagente 4, en cambio, recibe un contrato distinto:
+
+\begin{lstlisting}[style=traceblock]
+Subagente 4 - REPARADOR DE ERRORES DE EJECUCION.
+Tu tarea es corregir un script Python que ya fue aceptado por la validacion estatica,
+pero que fallo durante la ejecucion real.
+Devuelve exclusivamente JSON valido con un unico campo code.
+El script corregido debe ser completo, no un parche parcial.
+No uses analysis_plan y no cambies el contrato de entrada ni el contrato de salida del workflow.
+El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.
+Asegura especificamente que metrics sea un objeto, summary sea un texto y limitations sea una lista.
+Si el problema observado es de forma de salida, repara solo el contrato sin complicar innecesariamente la logica analitica.
+Si stdout ya estaba cerca de ser util, prioriza conservar el contenido analitico y corregir la estructura.
+\end{lstlisting}
+
+La diferencia clave es que el Subagente 4 ya no recibe
+\texttt{analysis\_plan}; trabaja con el error real de ejecuci\'on y con la
+evidencia de runtime. As\'i queda separada la reparaci\'on previa a la
+ejecuci\'on de la reparaci\'on posterior a un fallo observado.
+
+\subsection{Prompt del interpretador}
+
+El Agente 5 cierra el flujo con un contrato tambi\'en deliberadamente acotado. Su texto base es este:
+
+\begin{lstlisting}[style=traceblock]
+Agente 5 - INTERPRETE.
+Redacta la respuesta final para el usuario usando solo la consulta original,
+el contexto resuelto minimo, execution_output y los warnings relevantes.
+No recalcules, no completes cifras ausentes y no incorpores datos externos.
+Debes inferir por ti mismo cuanta elaboracion necesita la respuesta segun la query
+y segun la riqueza real de los resultados obtenidos.
+Si la consulta es simple, responde de forma simple y evita convertir la salida
+en un informe recargado. Si la consulta pide comparacion, desglose o estructura,
+adapta el formato en consecuencia.
+Si execution_output incluye limitations vacias, no fuerces una seccion artificial
+de limitaciones. Si existen limitaciones relevantes, integralas con naturalidad.
+\end{lstlisting}
+
+Este \'ultimo prompt resulta especialmente interesante porque muestra una decisi\'on de dise\~no importante del proyecto. A diferencia de los agentes
+anteriores, el interpretador no recibe \texttt{analysis\_plan} ni otras pistas internas de la parte anal\'itica. Solo recibe la consulta original, el contexto
+resuelto m\'inimo y la salida realmente ejecutada. Con ello, la interpretaci\'on final queda m\'as anclada a los resultados observados y menos contaminada por
+metadatos internos del workflow.

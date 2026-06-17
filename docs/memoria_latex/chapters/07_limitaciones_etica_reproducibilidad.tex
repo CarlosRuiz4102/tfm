@@ -1,30 +1,65 @@
-\chapter{Limitaciones, aspectos eticos y reproducibilidad}
+\chapter{Limitaciones, aspectos \'eticos y reproducibilidad}
 
-\section{Funcion de este capitulo}
-
-Este capitulo reune tres elementos que no son el centro del trabajo, pero si condicionan su interpretacion final: las limitaciones del estudio, el uso responsable del sistema y las condiciones para repetir el trabajo.
-
-Algunas de estas restricciones ya se adelantan de forma breve en la metodologia
-porque afectan a la interpretacion de la evaluacion. Aqui se recogen de forma
-m\'as amplia como limites del sistema y del propio trabajo.
+Este cap\'itulo recoge tres cuestiones que ayudan a situar correctamente el trabajo una vez vistos el flujo y la evaluaci\'on: qu\'e l\'imites tiene realmente el sistema,
+qu\'e uso puede considerarse razonable dentro del alcance planteado y qu\'e hace falta para repetir una ejecuci\'on con un grado suficiente de control. No se trata
+de a\~nadir un cierre formal, sino de dejar claro hasta d\'onde llegan las conclusiones que pueden extraerse del proyecto y en qu\'e condiciones conviene leerlas.
 
 \section{Limitaciones del estudio}
 
-\textit{Completar aqui limites de datos, dependencia del modelo, cobertura de casos, sensibilidad a prompts, dificultad de generalizacion y cualquier restriccion importante del sistema. Este es el lugar principal para reunir las limitaciones globales del trabajo y ampliar las restricciones que en metodologia solo se introducen para acotar la lectura de la evaluacion.}
+La primera limitaci\'on es de alcance. El sistema se ha dise\~nado para resolver consultas de an\'alisis hist\'orico y descriptivo a partir de series de mercado. Por tanto,
+las conclusiones que puede ofrecer quedan acotadas a ese marco y no deben interpretarse como una valoraci\'on completa de un activo, sino como una lectura trazable de los
+datos que han entrado en una ejecuci\'on concreta.
 
-\section{Aspectos eticos y uso responsable}
+La segunda limitaci\'on tiene que ver con la configuraci\'on experimental. La evaluaci\'on se ha realizado sobre una \'unica arquitectura y una \'unica configuraci\'on principal
+de modelo, lo que favorece la coherencia interna del estudio, pero reduce el alcance de la generalizaci\'on. Aunque el flujo est\'a separado por fases y dispone de
+subagentes de reparaci\'on, el comportamiento final sigue dependiendo en parte de la capacidad del modelo utilizado para interpretar la consulta, construir el plan anal\'itico,
+generar c\'odigo v\'alido y redactar la interpretaci\'on final. Por ello, no puede asumirse sin m\'as que los mismos resultados se mantendr\'ian con otros modelos o proveedores.
 
-\textit{Completar aqui finalidad prevista, usos excluidos, supervision humana, limites del analisis historico y riesgos de ejecutar codigo generado o de sobrerinterpretar resultados financieros.}
+La tercera limitaci\'on procede del propio material de evaluaci\'on. La bater\'ia de cincuenta consultas permite observar casos simples, comparativos y m\'as exigentes, pero
+sigue siendo un conjunto acotado y construido para este trabajo. Sirve para estudiar la viabilidad del sistema en escenarios representativos del proyecto, aunque no para
+demostrar un comportamiento universal frente a cualquier petici\'on financiera posible.
+
+Tambi\'en hay una limitaci\'on asociada a los datos. El flujo trabaja con descargas hist\'oricas obtenidas mediante \texttt{yfinance}, de modo que la disponibilidad, estabilidad
+y cobertura efectiva del proveedor condicionan el resultado. Adem\'as, las descargas relativas por periodo, como \texttt{3mo} o \texttt{5y}, dependen del momento en que se
+genera el CSV. Esto significa que, si no se fija un rango temporal cerrado o no se conserva el fichero ya descargado, una misma consulta puede apoyarse en ventanas de datos
+ligeramente distintas en ejecuciones realizadas en fechas diferentes.
+
+Por \'ultimo, conviene recordar que el sistema reduce errores, pero no los elimina por completo. El flujo valida el contrato de datos, comprueba la salida del an\'alisis,
+somete el script a validaci\'on antes de ejecutarlo y conserva la evidencia de cada intento. Aun as\'i, pueden aparecer fallos de interpretaci\'on, tratamientos insuficientes
+de las limitaciones del caso o dependencias no previstas del comportamiento del modelo. En consecuencia, el trabajo permite defender la utilidad de una arquitectura m\'as
+controlada y trazable que una respuesta generativa directa, pero no extraer de ello una garant\'ia plena de correcci\'on en todos los escenarios.
+
+\section{Aspectos \'eticos y uso responsable}
+
+El sentido de este proyecto no es sustituir el juicio financiero humano, sino explorar si un flujo multiagente puede transformar una consulta libre en un an\'alisis hist\'orico
+trazable, con c\'alculo ejecutado y una salida final m\'as controlada. Desde ese punto de vista, el uso responsable del sistema pasa por respetar el alcance con el que ha sido
+planteado y por no leer sus respuestas como si constituyeran asesoramiento financiero.
+
+Esta restricci\'on no queda solo en el plano declarativo, sino que aparece incorporada en el propio dise\~no del sistema. Los prompts base del an\'alisis delimitan que el
+modelo debe trabajar exclusivamente con datos hist\'oricos ya descargados y, adem\'as, la evaluaci\'on incorpora un criterio de prudencia que penaliza respuestas que exceden
+ese marco.
+
+Otro aspecto relevante es el riesgo asociado a ejecutar c\'odigo generado por el modelo. En este trabajo el script no se ejecuta como una salida fiable por s\'i misma, sino
+dentro de un flujo que intenta acotar el problema: el c\'odigo parte de un plan previo, se contrasta antes de ejecutarse, su salida debe respetar un contrato JSON m\'inimo y
+cada intento deja artefactos verificables. Estas medidas reducen el riesgo operativo y mejoran la inspecci\'on posterior, pero no convierten la ejecuci\'on en un proceso exento
+de riesgo. Por eso el sistema debe entenderse como una herramienta experimental y supervisada, adecuada para un entorno controlado y no como un mecanismo aut\'onomo de toma
+de decisiones financieras.
+
+En t\'erminos pr\'acticos, la lectura responsable de una respuesta final pasa por no sobredimensionar lo que el sistema puede afirmar. Si una conclusi\'on se apoya solo en precios
+hist\'oricos, entonces debe leerse exactamente en ese nivel: como una descripci\'on de comportamiento pasado calculada de forma trazable, no como una garant\'ia sobre lo que
+ocurrir\'a despu\'es ni como una recomendaci\'on de actuaci\'on.
 
 \section{Reproducibilidad}
 
-\textit{Completar aqui lo necesario para repetir el trabajo: entorno, dependencias, datos, artefactos conservados, variables de entorno, pasos minimos de ejecucion y factores que pueden hacer variar el resultado.}
+La reproducibilidad del trabajo descansa en dos planos complementarios. El primero es el entorno de ejecuci\'on: para repetir un caso hacen falta el mismo c\'odigo del proyecto,
+una configuraci\'on equivalente del modelo, acceso a un endpoint compatible con OpenAI y disponibilidad de los datos hist\'oricos necesarios. Si alguno de estos elementos cambia,
+el comportamiento puede variar aunque la arquitectura general siga siendo la misma.
 
-\section{Preguntas de control}
+El segundo plano es la trazabilidad que deja cada ejecuci\'on. El workflow genera un \texttt{run\_id} propio y conserva una carpeta de resultados con un \texttt{manifest},
+un registro de eventos y snapshots sucesivos del estado. A ello se a\~naden los artefactos de la parte ejecutable, como el script generado, el payload de entrada, la salida
+est\'andar y el registro de error. Gracias a ello, no solo es posible repetir una consulta, sino tambi\'en reconstruir qu\'e ocurri\'o exactamente en cada fase cuando se quiere
+comparar dos ejecuciones o depurar un caso concreto.
 
-\begin{enumerate}
-    \item ?Que no deberia concluir un lector a partir del sistema?
-    \item ?Que necesita exactamente otra persona para repetir un caso?
-    \item ?Que parte del resultado depende del flujo y que parte depende del modelo concreto?
-    \item ?Que riesgos siguen abiertos aunque el sistema funcione?
-\end{enumerate}
+Aun as\'i, la reproducibilidad no debe entenderse como identidad garantizada de todas las salidas textuales. La arquitectura y los artefactos pueden repetirse con bastante
+fidelidad, pero la respuesta final sigue dependiendo de un componente generativo y del contexto de datos disponible en ese momento. Por eso, en este trabajo la reproducibilidad
+se entiende sobre todo como la capacidad de rehacer el flujo, inspeccionar sus pasos y justificar de qu\'e entradas y de qu\'e evidencias ha salido cada resultado.
