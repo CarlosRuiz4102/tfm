@@ -1,48 +1,376 @@
-\chapter{Resultados y evaluacion}
+\chapter{Resultados y evaluaci\'on}
 
-\section{Funcion de este capitulo}
+Este cap\'itulo presenta los resultados obtenidos al ejecutar la bater\'ia de evaluaci\'on definida en la metodolog\'ia y 
+explica c\'omo deben leerse esos resultados dentro del alcance del trabajo. El inter\'es principal no es solo cuantificar 
+cu\'antos casos se completan, sino observar con qu\'e calidad se resuelven las consultas que llegan a producir una respuesta 
+final utilizable y en qu\'e puntos se concentran los bloqueos cuando el flujo no consigue terminar correctamente. Junto a 
+la lectura cuantitativa, el cap\'itulo incorpora una revisi\'on humana de las respuestas completadas, ya que varios de los 
+criterios relevantes ---adecuaci\'on a la consulta, claridad comunicativa o prudencia interpretativa--- no pueden reducirse 
+de forma fiable a una comprobaci\'on autom\'atica \'unica.
 
-Este capitulo debe mostrar que ha ocurrido al ejecutar el sistema y como deben interpretarse esos resultados. Su objetivo no es solo presentar metricas, sino explicar que ensena la evaluacion sobre la robustez del flujo y sobre el valor real del trabajo.
+\section{Bater\'ia de evaluaci\'on y marco de an\'alisis}
 
-\section{Enfoque recomendado}
+La evaluaci\'on se apoya en una bater\'ia de 50 consultas financieras organizada en tres niveles de complejidad. El nivel A 
+agrupa consultas relativamente directas, con una o dos m\'etricas sencillas y un formato de salida breve. El nivel B 
+introduce comparaciones m\'as ricas, varias m\'etricas relevantes o estructuras de respuesta algo m\'as elaboradas. El nivel 
+C re\'une los casos m\'as exigentes, en los que la consulta incorpora m\'as restricciones de presentaci\'on, una carga 
+interpretativa mayor o una necesidad m\'as expl\'icita de prudencia y disciplina de salida.
 
-Conviene dejar este capitulo planteado, no cerrado. Cuando llegue el momento, la redaccion final deberia combinar:
+Como ya se justific\'o en el planteamiento experimental, la distribuci\'on de la bater\'ia no es equilibrada, sino 
+deliberadamente exigente: 10 casos de nivel A, 20 de nivel B y 20 de nivel C. Esta asimetr\'ia busca observar en qu\'e 
+medida el comportamiento del sistema se degrada cuando aumentan tanto la complejidad anal\'itica de la consulta como las 
+restricciones formales que deben respetarse en la respuesta final.
 
-\begin{enumerate}
-    \item una lectura global del rendimiento;
-    \item un analisis por tipo de caso o por grado de exigencia de la consulta;
-    \item una lectura por etapas del flujo;
-    \item una discusion de fallos, reparaciones y limites.
-\end{enumerate}
+La Tabla~\ref{tab:bateria-completa} recoge la bater\'ia completa empleada en esta fase de evaluaci\'on. Se incluye de forma 
+\'integra porque constituye la base efectiva sobre la que se apoyan tanto el resumen global de ejecuci\'on como la posterior 
+revisi\'on cualitativa de los casos completados.
 
-\section{Preguntas que convendra responder mas adelante}
+\footnotesize
+\begin{longtable}{L{1.2cm}L{0.9cm}L{12.0cm}}
+\caption{Bater\'ia completa de 50 consultas utilizada en la evaluaci\'on\label{tab:bateria-completa}}\\
+\toprule
+ID & Nivel & Consulta \\
+\midrule
+\endfirsthead
+\multicolumn{3}{l}{\small\itshape Continuaci\'on de la Tabla~\ref{tab:bateria-completa}.}\\
+\toprule
+ID & Nivel & Consulta \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+A01 & A & Cuanto ha crecido MSFT en el ultimo ano \\
+A02 & A & Resume la volatilidad historica de TSLA en 6 meses y dime cual fue el peor dia \\
+A03 & A & Cuanto rindio SPY durante 2025 \\
+A04 & A & Cuanto ha cambiado BTC-USD en el ultimo ano \\
+A05 & A & Cuanto cambio EURUSD=X en los ultimos 10 dias con datos de 1 hora \\
+A06 & A & Dime el rango maximo y minimo de GC=F en el ultimo mes con datos de 1 hora \\
+A07 & A & Dame una vision general de GOOGL en 6 meses \\
+A08 & A & Compara QQQ e IWM en el ultimo ano y dime cual crecio mas \\
+A09 & A & Cuanto cambio ETH-USD durante 2025 \\
+A10 & A & Resume cuanto ha crecido \texttt{\string^GSPC} desde 2023 \\
+B01 & B & Compara NVDA y AMD en el ultimo ano con rentabilidad total, volatilidad anualizada y maximo drawdown \\
+B02 & B & Compara MSFT y AAPL en 2 anos con una serie normalizada base 100 y una tabla resumen \\
+B03 & B & Agrupa META por meses en el ultimo ano y muestra mejor mes, peor mes y tabla resumen \\
+B04 & B & Haz un analisis tecnico de AMZN en 6 meses con medias moviles de 20 y 50 sesiones y compara el ultimo cierre con ambas \\
+B05 & B & Analiza JPM en 2 anos con retorno anualizado, volatilidad anualizada, maximo drawdown, mejor dia y peor dia \\
+B06 & B & Para QQQ y SPY durante 2025, calcula retornos mensuales y dime que activo gano cada mes \\
+B07 & B & Calcula la correlacion de retornos diarios entre IWM y DIA en 2 anos y compara su volatilidad \\
+B08 & B & Compara XLK y XLE en el ultimo ano con rentabilidad, drawdown y una lectura clara de cambios de liderazgo \\
+B09 & B & Analiza BTC-USD durante 2025 con rentabilidad, volatilidad, maximo drawdown y datos para una serie de evolucion \\
+B10 & B & Compara ETH-USD y BTC-USD en el ultimo ano por rentabilidad, volatilidad y correlacion \\
+B11 & B & Compara GLD y \texttt{\string^GSPC} en 2 anos por retorno, volatilidad y maximo drawdown \\
+B12 & B & Resume TLT desde 2024-01-01 con serie base 100 y tabla de rentabilidad por ano \\
+B13 & B & Resume EURUSD=X en el ultimo mes con datos de 1 hora, incluyendo cambio total, rango medio horario y volatilidad \\
+B14 & B & Analiza GBPUSD=X en los ultimos 10 dias con datos de 1 hora, relacionando rango diario y volatilidad horaria \\
+B15 & B & Analiza USDJPY=X en el ultimo mes con datos de 1 hora e identifica las mejores y peores sesiones \\
+B16 & B & Analiza GC=F en los ultimos 10 dias con datos de 1 hora, incluyendo cambio total, rango y tabla de mejores y peores horas \\
+B17 & B & Resume CL=F en el ultimo mes con datos de 1 hora con variacion total, volatilidad horaria y extremos del periodo \\
+B18 & B & Compara \texttt{\string^IXIC} y \texttt{\string^GSPC} durante 2025 con tabla de rentabilidad, volatilidad y drawdown \\
+B19 & B & Compara XOM y CVX en 2 anos con una tabla de rentabilidad, volatilidad y maximo drawdown \\
+B20 & B & Compara MSFT y NVDA en el ultimo ano con serie normalizada y ranking mensual de liderazgo \\
+C01 & C & Haz un informe profesional de NVDA en 2 anos con resumen ejecutivo, tabla de metricas, serie base 100, drawdown y limitaciones \\
+C02 & C & Compara MSFT, AAPL y GOOGL en el ultimo ano como informe para un cliente no tecnico. Muestra exactamente cuatro bloques: resumen ejecutivo, tabla de metricas, ranking mensual y limitaciones \\
+C03 & C & Compara SPY, QQQ e IWM durante 2025 con retorno, volatilidad, drawdown, ranking mensual y una conclusion prudente para usuario no tecnico \\
+C04 & C & Prepara un informe comparativo de BTC-USD y ETH-USD en 2025 con tabla resumen, serie relativa, drawdown y conclusion prudente \\
+C05 & C & Analiza GLD y \texttt{\string^GSPC} en 2 anos como un caso de diversificacion historica: incluye retorno, volatilidad, correlacion, drawdown y limitaciones de interpretacion \\
+C06 & C & Haz un informe tecnico de TSLA en 6 meses con medias moviles de 20 y 50 sesiones, drawdown, volumen, tabla de metricas y cierre prudente \\
+C07 & C & Prepara un informe intradia de EURUSD=X en el ultimo mes con datos de 1 hora que incluya tabla diaria, volatilidad horaria, serie de evolucion y limitaciones sin usar macro externa \\
+C08 & C & Analiza GC=F en los ultimos 10 dias con datos de 1 hora e incluye una nota explicita de que la serie no equivale a un precio universal del oro fisico \\
+C09 & C & Compara XLK, XLE y TLT en el ultimo ano con ranking multicriterio por retorno, riesgo y drawdown, separando metricas, datos estructurados y limitaciones \\
+C10 & C & Compara JPM y XLF en 2 anos destacando periodos de convergencia y divergencia, con tabla de metricas, serie relativa y limitaciones \\
+C11 & C & Estudia \texttt{\string^GSPC} desde 2023 como una sucesion de episodios de drawdown. Identifica las tres mayores caidas no solapadas, con fecha de maximo previo, minimo, profundidad y tiempo hasta recuperar el nivel anterior \\
+C12 & C & Analiza META en el ultimo ano y devuelve el resultado en cuatro secciones: metrics, table\_data, chart\_data y limitations \\
+C13 & C & Redacta un informe para cliente no tecnico comparando AMZN y MSFT en 2 anos con resumen ejecutivo, tabla de metricas, riesgos historicos y cierre prudente \\
+C14 & C & Analiza BTC-USD en el ultimo ano con VaR historico, expected shortfall, peores dias y maximo drawdown \\
+C15 & C & Compara EURUSD=X y GBPUSD=X en el ultimo mes con datos de 1 hora sobre fechas comunes y explica las limitaciones de alineacion temporal \\
+C16 & C & Analiza CL=F en el ultimo mes con datos de 1 hora sin equiparar la serie con el precio minorista de la gasolina; incluye metricas, volatilidad, rango y limitaciones \\
+C17 & C & Estudia GOOGL en 2 anos separando el comportamiento por trimestres naturales, con mejor trimestre, peor trimestre, retorno acumulado y limitaciones \\
+C18 & C & Compara XOM, CVX y GLD en 2 anos con retorno, volatilidad, drawdown, ranking final y una explicacion prudente de las diferencias entre energia y refugio \\
+C19 & C & Analiza SPY en 5 anos y explica que se puede concluir solo con estos precios historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender \\
+C20 & C & Compara NVDA, AMD e INTC en el ultimo ano con exactamente tres bloques: tabla de metricas, ranking por retorno y drawdown, y conclusion prudente para usuario no tecnico \\
+\end{longtable}
+\normalsize
 
-\begin{enumerate}
-    \item ?Que significa exactamente que el sistema haya completado bien un caso?
-    \item ?Donde se concentran los errores: datos, planificacion, generacion, validacion, ejecucion o interpretacion?
-    \item ?Que gana el sistema con los subagentes de correccion?
-    \item ?Que tipos de consulta tensan mas la arquitectura?
-    \item ?Que parte de los resultados respalda de verdad la tesis del trabajo?
-\end{enumerate}
+\section{Resultados globales de ejecuci\'on}
 
-\section{Plantilla de estructura futura}
+Los 50 casos de la bater\'ia se ejecutaron con la misma configuraci\'on general del sistema. En total, 27 consultas 
+produjeron una respuesta final utilizable y 23 quedaron como casos no completados. En t\'erminos agregados, la tasa global 
+de completitud fue, por tanto, del 54,0\,\%.
 
-\subsection{Resultado global}
+El tiempo total observado para la bater\'ia fue de 7989,50 segundos, con un tiempo medio de 159,79 segundos por caso. Si se 
+separan ambos grupos, los casos completados presentaron un tiempo medio de 149,64 segundos, mientras que los no completados 
+alcanzaron una media de 171,71 segundos. Esta diferencia no debe interpretarse como una medida de calidad por s\'i misma, 
+pero s\'i sugiere que una parte relevante de los fallos aparece tras varios intentos de reparaci\'on o validaci\'on antes de 
+que el sistema termine bloque\'andose.
 
-\textit{Completar aqui el resumen global de la evaluacion cuando el sistema este implementado y probado.}
+La Tabla~\ref{tab:resumen-global-niveles} resume el comportamiento general por niveles de complejidad.
 
-\subsection{Lectura por grupos de casos}
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+Nivel & Casos & Completados & No completados & Tasa de completitud & Tiempo medio (s) \\
+\midrule
+A & 10 & 8 & 2 & 80,0\,\% & 190,34 \\
+B & 20 & 12 & 8 & 60,0\,\% & 130,25 \\
+C & 20 & 7 & 13 & 35,0\,\% & 174,06 \\
+Total & 50 & 27 & 23 & 54,0\,\% & 159,79 \\
+\bottomrule
+\end{tabular}
+\caption{Resumen global de ejecuci\'on por niveles}
+\label{tab:resumen-global-niveles}
+\end{table}
 
-\textit{Completar aqui la segmentacion de consultas que resulte mas util: por tipologia, por numero de restricciones, por formato de salida exigido o por etapa tensionada del flujo.}
+La tendencia m\'as clara es que la tasa de completitud cae conforme aumenta la dificultad de la bater\'ia. El nivel A 
+mantiene un comportamiento mayoritariamente estable, el nivel B reduce ya de forma visible la proporci\'on de respuestas 
+completadas y el nivel C concentra la mayor parte de los bloqueos. Esta evoluci\'on era esperable desde el propio dise\~no 
+experimental, ya que las consultas m\'as exigentes fuerzan al sistema a coordinar mejor la fase de datos, el an\'alisis 
+intermedio, la generaci\'on de c\'odigo y la interpretaci\'on final.
 
-\subsection{Analisis por etapas}
+\section{Evaluaci\'on de los casos completados}
 
-\textit{Completar aqui el rendimiento observado en cada bloque del flujo.}
+Solo los casos que consiguen producir una respuesta final utilizable pasan a la evaluaci\'on cualitativa definida en la 
+metodolog\'ia. En estos casos, la revisi\'on humana se aplica exclusivamente sobre la respuesta final visible para el 
+usuario y no sobre artefactos internos del flujo. Cada criterio de la r\'ubrica se punt\'ua con valores discretos de 0, 1 o 
+2, de manera que la puntuaci\'on total m\'axima es 10. Conforme al umbral fijado en el Cap\'itulo~4, se considera 
+satisfactorio todo caso completado que alcance al menos 8 puntos.
 
-\subsection{Casos representativos}
+\subsection{Casos completados de nivel A}
 
-\textit{Completar aqui varios ejemplos que ilustren un caso sencillo, uno intermedio, uno complejo resuelto y un fallo informativo.}
+\subsubsection{Resultados agregados del nivel A}
 
-\subsection{Discusion critica}
+En el nivel A se completaron 8 de los 10 casos. De ellos, 7 alcanzaron la categor\'ia de resultado satisfactorio y 1 
+qued\'o en el tramo de calidad baja. No hubo ning\'un caso completado de nivel A clasificado como calidad insuficiente.
 
-\textit{Completar aqui que se ha demostrado, que no se ha demostrado y que mejoras quedarian priorizadas para una siguiente iteracion.}
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Criterio & Media \\
+\midrule
+Adecuacion a la consulta & 1,38 \\
+Cobertura analitica & 2,00 \\
+Coherencia y solidez aparente & 1,75 \\
+Claridad y utilidad comunicativa & 1,62 \\
+Prudencia y tratamiento de limitaciones & 1,75 \\
+Total / 10 & 8,50 \\
+\bottomrule
+\end{tabular}
+\caption{Media de la r\'ubrica en los casos completados de nivel A}
+\label{tab:media-a}
+\end{table}
+
+La lectura de conjunto muestra que el nivel A funciona razonablemente bien cuando la consulta es directa y la salida pedida 
+no exige una estructura muy sofisticada. La media perfecta en cobertura anal\'itica indica que, en general, el sistema 
+incluye los elementos principales que la consulta reclama. Donde aparecen m\'as variaciones es en la adecuaci\'on fina a la 
+consulta y en la claridad de la salida, especialmente cuando la respuesta incorpora trazas internas del proceso o 
+expresiones demasiado gen\'ericas para un caso sencillo.
+
+\subsubsection{Ejemplo representativo del nivel A y proceso de evaluaci\'on}
+
+Como ejemplo representativo del nivel A puede tomarse el caso \texttt{A01}, cuya consulta es ``Cuanto ha crecido MSFT en el 
+ultimo ano''. La respuesta final devuelve de forma directa el porcentaje de variaci\'on y, adem\'as, acompa\~na ese dato con 
+el valor inicial y final del periodo. Aunque el verbo de la consulta sugiere un crecimiento positivo, la salida resuelve 
+correctamente la situaci\'on indicando que, en realidad, el activo ha ca\'ido en ese intervalo.
+
+La aplicaci\'on de la r\'ubrica sobre este ejemplo es inmediata. En adecuaci\'on a la consulta obtiene la puntuaci\'on 
+m\'axima porque responde exactamente a lo pedido y no introduce elementos ajenos. En cobertura anal\'itica tambi\'en 
+alcanza la m\'axima puntuaci\'on porque, para una consulta de este nivel, basta con ofrecer el cambio observado con el 
+contexto m\'inimo necesario. La coherencia y la claridad se consideran altas porque las cifras encajan entre s\'i y la 
+respuesta se entiende sin esfuerzo. Finalmente, no aparece ninguna recomendaci\'on de compra o venta ni ninguna 
+extrapolaci\'on impropia, de modo que la prudencia tambi\'en resulta adecuada. Por ello, el caso alcanza 10/10 y puede 
+tomarse como una muestra de respuesta sencilla bien resuelta.
+
+\subsection{Casos completados de nivel B}
+
+\subsubsection{Resultados agregados del nivel B}
+
+En el nivel B se completaron 12 de los 20 casos. Entre ellos, 10 alcanzaron la categor\'ia de satisfactorio y 2 quedaron 
+como casos completados con calidad insuficiente. No aparecieron respuestas completadas de nivel B con calidad baja.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Criterio & Media \\
+\midrule
+Adecuacion a la consulta & 1,08 \\
+Cobertura analitica & 1,92 \\
+Coherencia y solidez aparente & 1,83 \\
+Claridad y utilidad comunicativa & 1,83 \\
+Prudencia y tratamiento de limitaciones & 2,00 \\
+Total / 10 & 8,67 \\
+\bottomrule
+\end{tabular}
+\caption{Media de la r\'ubrica en los casos completados de nivel B}
+\label{tab:media-b}
+\end{table}
+
+El nivel B mantiene una calidad media ligeramente superior a la del nivel A entre los casos completados, aunque lo hace 
+sobre una tasa de completitud claramente menor. Esta combinaci\'on sugiere que el sistema tiende a completar menos casos 
+cuando aumenta la exigencia, pero que una parte importante de los que s\'i logra cerrar alcanzan un nivel de calidad 
+aceptable o alto. La prudencia interpretativa presenta aqu\'i el mejor comportamiento medio, mientras que la adecuaci\'on a 
+la consulta vuelve a ser la dimensi\'on donde aparecen m\'as penalizaciones, normalmente por omisiones parciales, formatos 
+inc\'omodos o salidas excesivamente largas.
+
+\subsubsection{Ejemplo representativo del nivel B y proceso de evaluaci\'on}
+
+Como caso representativo del nivel B puede emplearse \texttt{B11}, en el que se pide comparar \texttt{GLD} y 
+\texttt{\string^GSPC} en dos a\~nos por retorno, volatilidad y m\'aximo \textit{drawdown}. La respuesta final ofrece 
+precisamente esas tres m\'etricas para ambos instrumentos y termina con un resumen breve que interpreta correctamente las 
+diferencias observadas.
+
+La evaluaci\'on manual de este ejemplo sigue la misma l\'ogica que en el nivel A, aunque aqu\'i se exigen m\'as componentes. La adecuaci\'on a la consulta es alta porque se respetan los dos activos, el periodo y las tres m\'etricas pedidas. La cobertura tambi\'en es suficiente porque no falta ning\'un elemento esencial del an\'alisis. En coherencia y claridad, la salida funciona bien: los datos tabulados son consistentes con el resumen posterior y la respuesta evita complicaciones innecesarias. En prudencia, la respuesta no emite recomendaciones ni predicciones, sino que se limita a interpretar lo que muestran los datos hist\'oricos. Por esa combinaci\'on de completitud, claridad y disciplina de salida, el caso alcanza 10/10.
+
+\subsection{Casos completados de nivel C}
+
+\subsubsection{Resultados agregados del nivel C}
+
+En el nivel C se completaron 7 de los 20 casos. De ellos, 6 fueron clasificados como satisfactorios y 1 qued\'o como 
+completado con calidad insuficiente. No se registraron respuestas completadas de nivel C con calidad baja.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+Criterio & Media \\
+\midrule
+Adecuacion a la consulta & 1,14 \\
+Cobertura analitica & 2,00 \\
+Coherencia y solidez aparente & 1,86 \\
+Claridad y utilidad comunicativa & 2,00 \\
+Prudencia y tratamiento de limitaciones & 1,43 \\
+Total / 10 & 8,43 \\
+\bottomrule
+\end{tabular}
+\caption{Media de la r\'ubrica en los casos completados de nivel C}
+\label{tab:media-c}
+\end{table}
+
+El nivel C es el m\'as exigente de la bater\'ia y tambi\'en el que presenta la tasa de completitud m\'as baja. Sin embargo, 
+cuando el sistema logra completar este tipo de consultas, la calidad media final sigue siendo satisfactoria. La cobertura 
+anal\'itica y la claridad comunicativa alcanzan aqu\'i la m\'axima media, lo que indica que varias respuestas consiguen 
+reunir bastantes elementos complejos sin resultar opacas. La principal debilidad aparece en prudencia y tratamiento de 
+limitaciones, donde algunas salidas se vuelven m\'as concluyentes de lo deseable o introducen recomendaciones impl\'icitas 
+que van m\'as all\'a del alcance hist\'orico del sistema.
+
+\subsubsection{Ejemplo representativo del nivel C y proceso de evaluaci\'on}
+
+Como ejemplo representativo del nivel C resulta especialmente \'util el caso \texttt{C17}, dedicado al estudio de 
+\texttt{GOOGL} en dos a\~nos separando el comportamiento por trimestres naturales, con identificaci\'on del mejor 
+trimestre, el peor trimestre, el retorno acumulado y las limitaciones. La respuesta devuelve una tabla por trimestres, 
+resume el rendimiento agregado del periodo y explicita varias limitaciones sobre la naturaleza de los datos utilizados.
+
+Este ejemplo ilustra bien el proceso de evaluaci\'on porque combina exigencia estructural y una cierta carga interpretativa. La cobertura anal\'itica se valora con la puntuaci\'on m\'axima porque la respuesta incluye todos los bloques principales que la consulta ped\'ia. Tambi\'en obtiene una valoraci\'on alta en coherencia, claridad y prudencia, ya que la informaci\'on est\'a bien organizada, las conclusiones se apoyan en la tabla y las limitaciones se exponen con suficiente claridad. La \'unica penalizaci\'on relevante aparece en adecuaci\'on a la consulta, debido a ciertas imprecisiones en la delimitaci\'on temporal del ejemplo. Aun as\'i, el balance global sigue siendo s\'olido y el caso alcanza 9/10, por lo que puede tomarse como una muestra representativa de respuesta compleja bien resuelta.
+
+\section{An\'alisis de los casos no completados}
+
+Los casos no completados se estudian por separado, ya que no llegan a producir una respuesta final utilizable y, por ello, 
+no pasan a la r\'ubrica cualitativa. Siguiendo el marco establecido en la metodolog\'ia, cada caso se clasifica en una de 
+estas familias: fallo en resoluci\'on o descarga de datos, fallo en generaci\'on o validaci\'on del an\'alisis, fallo de 
+ejecuci\'on o fallo en la obtenci\'on de una salida final utilizable.
+
+\paragraph{No completados de nivel A.}
+El nivel A presenta 2 casos no completados. \texttt{A03} se clasifica como fallo en resoluci\'on o descarga de datos, ya que 
+el sistema interpreta incorrectamente 2025 como si fuera un periodo futuro y no llega a resolver el dato hist\'orico 
+solicitado. \texttt{A07} se clasifica como fallo de ejecuci\'on porque el flujo genera un \textit{script} con un 
+\textit{SyntaxError} y termina agotando los intentos de reparaci\'on.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{L{1.2cm}L{4.8cm}Y}
+\toprule
+Caso & Familia de fallo & Observaci\'on breve \\
+\midrule
+A03 & Resoluci\'on o descarga de datos & El periodo solicitado se trata como futuro y no se recupera el dato hist\'orico correcto. \\
+A07 & Fallo de ejecuci\'on & El c\'odigo generado llega a ejecutarse, pero termina con \textit{SyntaxError} y el flujo no se recupera. \\
+\bottomrule
+\end{tabularx}
+\caption{Clasificaci\'on de los no completados de nivel A}
+\label{tab:no-completados-a}
+\end{table}
+
+\paragraph{No completados de nivel B.}
+El nivel B concentra 8 casos no completados. De ellos, 6 se sit\'uan en la familia de resoluci\'on o descarga de datos y 2 
+en la de generaci\'on o validaci\'on del an\'alisis. En este grupo aparecen tanto errores de interpretaci\'on temporal 
+---por ejemplo, tratar 2025 como si no fuese un periodo hist\'orico disponible--- como bloqueos en la construcci\'on del 
+\texttt{FinancialDataRequest} o fallos durante la validaci\'on previa del c\'odigo generado.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{L{1.2cm}L{4.8cm}Y}
+\toprule
+Caso & Familia de fallo & Observaci\'on breve \\
+\midrule
+B03 & Generaci\'on o validaci\'on del an\'alisis & El c\'odigo es bloqueado por un error de sintaxis antes de producir una salida final. \\
+B06 & Generaci\'on o validaci\'on del an\'alisis & La validaci\'on del c\'odigo con LLM falla y el flujo no logra continuar. \\
+B09 & Resoluci\'on o descarga de datos & El sistema vuelve a interpretar 2025 como periodo futuro. \\
+B13 & Resoluci\'on o descarga de datos & La consulta no llega a interpretarse por un \textit{Connection error} del componente LLM. \\
+B14 & Resoluci\'on o descarga de datos & No se consigue construir el \texttt{FinancialDataRequest}. \\
+B15 & Resoluci\'on o descarga de datos & No se consigue construir el \texttt{FinancialDataRequest}. \\
+B16 & Resoluci\'on o descarga de datos & No se consigue construir el \texttt{FinancialDataRequest}. \\
+B18 & Resoluci\'on o descarga de datos & El periodo solicitado se trata de nuevo como futuro y el dato no se resuelve correctamente. \\
+\bottomrule
+\end{tabularx}
+\caption{Clasificaci\'on de los no completados de nivel B}
+\label{tab:no-completados-b}
+\end{table}
+
+\paragraph{No completados de nivel C.}
+El nivel C acumula 13 casos no completados, lo que confirma que esta familia es la m\'as tensionada de toda la bater\'ia. 
+En ella aparecen 7 casos de resoluci\'on o descarga de datos, 5 de generaci\'on o validaci\'on del an\'alisis y 1 caso 
+clasificado como fallo en la obtenci\'on de una salida final utilizable. El patr\'on dominante sigue estando en la parte 
+previa a la ejecuci\'on completa del an\'alisis, ya sea por imposibilidad de construir correctamente la petici\'on de datos, 
+por errores de contrato o por fallos persistentes en la reparaci\'on del c\'odigo.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{L{1.2cm}L{4.8cm}Y}
+\toprule
+Caso & Familia de fallo & Observaci\'on breve \\
+\midrule
+C01 & Generaci\'on o validaci\'on del an\'alisis & El c\'odigo queda bloqueado por errores de sintaxis y referencias inconsistentes. \\
+C02 & Generaci\'on o validaci\'on del an\'alisis & La reparaci\'on del c\'odigo falla tras un error de ejecuci\'on. \\
+C04 & Resoluci\'on o descarga de datos & El sistema no acepta 2025 como periodo hist\'orico disponible. \\
+C05 & Generaci\'on o validaci\'on del an\'alisis & La salida se bloquea por incumplir el contrato esperado por el flujo. \\
+C06 & Generaci\'on o validaci\'on del an\'alisis & La reparaci\'on del c\'odigo con LLM no consigue recuperar el caso. \\
+C07 & Resoluci\'on o descarga de datos & La disponibilidad del dato intrad\'ia no se resuelve correctamente. \\
+C10 & Obtenci\'on de salida final utilizable & El flujo no logra obtener la interpretaci\'on final pese a haber avanzado en etapas previas. \\
+C11 & Resoluci\'on o descarga de datos & No se consigue construir el \texttt{FinancialDataRequest}. \\
+C12 & Resoluci\'on o descarga de datos & No se consigue construir el \texttt{FinancialDataRequest}. \\
+C13 & Resoluci\'on o descarga de datos & No se consigue construir el \texttt{FinancialDataRequest}. \\
+C14 & Resoluci\'on o descarga de datos & No se consigue construir el \texttt{FinancialDataRequest}. \\
+C15 & Resoluci\'on o descarga de datos & El flujo no resuelve adecuadamente la disponibilidad y alineaci\'on del dato intrad\'ia. \\
+C19 & Generaci\'on o validaci\'on del an\'alisis & El c\'odigo es bloqueado por un error de sintaxis antes de producir una respuesta final. \\
+\bottomrule
+\end{tabularx}
+\caption{Clasificaci\'on de los no completados de nivel C}
+\label{tab:no-completados-c}
+\end{table}
+
+\section{Discusi\'on de patrones observados}
+
+La primera pauta clara es la degradaci\'on progresiva de la tasa de completitud conforme aumenta la dificultad de la 
+bater\'ia. El paso de un 80,0\,\% de completitud en el nivel A a un 35,0\,\% en el nivel C sugiere que la arquitectura se 
+comporta de forma razonable cuando la consulta es directa, pero sigue siendo sensible a las tareas donde se acumulan 
+restricciones de formato, mayor carga interpretativa o m\'as dependencia de una resoluci\'on fina del dato.
+
+La segunda pauta es que la calidad media de las respuestas completadas se mantiene en niveles satisfactorios en los tres 
+grupos. Esto significa que el sistema no solo es capaz de producir salidas finales aceptables en casos sencillos, sino que 
+tambi\'en puede alcanzar respuestas de calidad razonable en consultas comparativas y en algunos informes m\'as exigentes. 
+Sin embargo, esta lectura debe matizarse con la tasa de completitud: el hecho de que la calidad media final sea suficiente 
+no implica que el flujo sea igualmente robusto en todos los niveles.
+
+En tercer lugar, el principal foco de bloqueo se concentra en la resoluci\'on o descarga de datos, especialmente en los 
+niveles B y C. En varios casos el sistema interpreta incorrectamente el periodo solicitado o no llega a construir de forma 
+correcta la petici\'on intermedia de datos. El segundo gran grupo corresponde a la generaci\'on o validaci\'on del 
+an\'alisis, donde aparecen errores de sintaxis, salidas incompatibles con el contrato esperado o fallos en la reparaci\'on 
+del c\'odigo generado.
+
+Por \'ultimo, la revisi\'on manual tambi\'en revela un patr\'on menos t\'ecnico, pero relevante para la calidad percibida: 
+algunas respuestas completadas arrastran trazas del proceso interno, como avisos sobre reparaciones de c\'odigo o notas 
+metodol\'ogicas poco \'utiles para el usuario final. Estos elementos no siempre invalidan el resultado, pero s\'i pueden 
+rebajar la puntuaci\'on en claridad y utilidad comunicativa. De forma parecida, ciertas respuestas del nivel C muestran una 
+tendencia a sobreinterpretar los datos hist\'oricos o a introducir recomendaciones impl\'icitas que conviene vigilar, ya 
+que afectan de manera directa al criterio de prudencia definido en la metodolog\'ia.
