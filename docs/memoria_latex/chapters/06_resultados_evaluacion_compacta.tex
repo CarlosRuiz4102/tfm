@@ -104,13 +104,17 @@ alcanzaron una media de 171,71 segundos. Esta diferencia no debe interpretarse c
 pero s\'i sugiere que una parte relevante de los fallos aparece tras varios intentos de reparaci\'on o validaci\'on antes de 
 que el sistema termine bloque\'andose.
 
+\pagebreak
+
 La Tabla~\ref{tab:resumen-global-niveles} resume el comportamiento general por niveles de complejidad.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
+\small
+\setlength{\tabcolsep}{8pt}
 \begin{tabular}{lrrrrr}
 \toprule
-Nivel & Casos & Completados & No completados & Tasa de completitud & Tiempo medio (s) \\
+Nivel & Casos & Completados & No completados & Tasa completitud & Tiempo medio (s) \\
 \midrule
 A & 10 & 8 & 2 & 80,0\,\% & 190,34 \\
 B & 20 & 12 & 8 & 60,0\,\% & 130,25 \\
@@ -133,7 +137,7 @@ intermedio, la generaci\'on de c\'odigo y la interpretaci\'on final.
 Solo los casos que consiguen producir una respuesta final utilizable pasan a la evaluaci\'on cualitativa definida en la 
 metodolog\'ia. En estos casos, la revisi\'on humana se aplica exclusivamente sobre la respuesta final visible para el 
 usuario y no sobre artefactos internos del flujo. Cada criterio de la r\'ubrica se punt\'ua con valores discretos de 0, 1 o 
-2, de manera que la puntuaci\'on total m\'axima es 10. Conforme al umbral fijado en el Cap\'itulo~4, se considera 
+2, de manera que la puntuaci\'on total m\'axima es 10. Conforme al umbral fijado en la metodolog\'ia, se considera 
 satisfactorio todo caso completado que alcance al menos 8 puntos.
 
 \subsection{Casos completados de nivel A}
@@ -161,11 +165,19 @@ Total / 10 & 8,50 \\
 \label{tab:media-a}
 \end{table}
 
-La lectura de conjunto muestra que el nivel A funciona razonablemente bien cuando la consulta es directa y la salida pedida 
-no exige una estructura muy sofisticada. La media perfecta en cobertura anal\'itica indica que, en general, el sistema 
-incluye los elementos principales que la consulta reclama. Donde aparecen m\'as variaciones es en la adecuaci\'on fina a la 
-consulta y en la claridad de la salida, especialmente cuando la respuesta incorpora trazas internas del proceso o 
-expresiones demasiado gen\'ericas para un caso sencillo.
+La lectura conjunta del nivel A deja una impresi\'on bastante consistente: cuando la consulta es directa, el sistema suele 
+llegar al n\'ucleo de lo que se le pide. Esto se ve con claridad en \texttt{A01} y \texttt{A09}, que alcanzan 10/10 y 
+responden sin rodeos a la variaci\'on solicitada. La cobertura anal\'itica perfecta del grupo tambi\'en encaja con el resto 
+de casos completados: incluso cuando hay pegas, la m\'etrica principal casi siempre aparece.
+
+Las penalizaciones llegan m\'as por c\'omo se presenta la respuesta que por ausencia de c\'alculo. En varios casos 
+(\texttt{A04}, \texttt{A06}, \texttt{A08} y \texttt{A10}) la revisi\'on humana repite la misma duda: se responde al 
+``\'ultimo a\~no'' o al ``\'ultimo mes'', pero no siempre queda claro cu\'al es exactamente la fecha de referencia. A eso se 
+suma otra fricci\'on menos t\'ecnica pero bastante visible, presente por ejemplo en \texttt{A05} y \texttt{A08}: algunas 
+salidas filtran notas internas como ``Se repar\'o c\'odigo generado tras un error previo'', algo que no invalida el 
+resultado, pero s\'i empeora la sensaci\'on de respuesta final limpia. El caso \texttt{A02} recuerda adem\'as que completar 
+no basta por s\'i solo: entrega los dos elementos pedidos, pero la volatilidad y el peor d\'ia con valor 0.0 hacen que la 
+respuesta resulte poco convincente.
 
 \subsubsection{Ejemplo representativo del nivel A y proceso de evaluaci\'on}
 
@@ -174,13 +186,14 @@ ultimo ano''. La respuesta final devuelve de forma directa el porcentaje de vari
 el valor inicial y final del periodo. Aunque el verbo de la consulta sugiere un crecimiento positivo, la salida resuelve 
 correctamente la situaci\'on indicando que, en realidad, el activo ha ca\'ido en ese intervalo.
 
-La aplicaci\'on de la r\'ubrica sobre este ejemplo es inmediata. En adecuaci\'on a la consulta obtiene la puntuaci\'on 
-m\'axima porque responde exactamente a lo pedido y no introduce elementos ajenos. En cobertura anal\'itica tambi\'en 
-alcanza la m\'axima puntuaci\'on porque, para una consulta de este nivel, basta con ofrecer el cambio observado con el 
-contexto m\'inimo necesario. La coherencia y la claridad se consideran altas porque las cifras encajan entre s\'i y la 
-respuesta se entiende sin esfuerzo. Finalmente, no aparece ninguna recomendaci\'on de compra o venta ni ninguna 
-extrapolaci\'on impropia, de modo que la prudencia tambi\'en resulta adecuada. Por ello, el caso alcanza 10/10 y puede 
-tomarse como una muestra de respuesta sencilla bien resuelta.
+\paragraph{Respuesta final del proyecto.}
+\begin{quote}
+MSFT ha ca\'ido 19.23\,\% en el \'ultimo a\~no, pasando de 478.04 a 386.12.
+\end{quote}
+
+La evaluaci\'on manual es aqu\'i muy directa: la respuesta dice exactamente lo que se pide, las cifras son coherentes y no 
+introduce ni ruido ni interpretaciones impropias. Por eso el caso alcanza 10/10 y sirve bien como ejemplo de respuesta 
+sencilla bien resuelta.
 
 \subsection{Casos completados de nivel B}
 
@@ -189,9 +202,9 @@ tomarse como una muestra de respuesta sencilla bien resuelta.
 En el nivel B se completaron 12 de los 20 casos. Entre ellos, 10 alcanzaron la categor\'ia de satisfactorio y 2 quedaron 
 como casos completados con calidad insuficiente. No aparecieron respuestas completadas de nivel B con calidad baja.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
-\begin{tabular}{lr}
+\begin{tabularx}{0.78\textwidth}{Y>{\raggedleft\arraybackslash}p{1.8cm}}
 \toprule
 Criterio & Media \\
 \midrule
@@ -202,17 +215,22 @@ Claridad y utilidad comunicativa & 1,83 \\
 Prudencia y tratamiento de limitaciones & 2,00 \\
 Total / 10 & 8,67 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Media de la r\'ubrica en los casos completados de nivel B}
 \label{tab:media-b}
 \end{table}
 
-El nivel B mantiene una calidad media ligeramente superior a la del nivel A entre los casos completados, aunque lo hace 
-sobre una tasa de completitud claramente menor. Esta combinaci\'on sugiere que el sistema tiende a completar menos casos 
-cuando aumenta la exigencia, pero que una parte importante de los que s\'i logra cerrar alcanzan un nivel de calidad 
-aceptable o alto. La prudencia interpretativa presenta aqu\'i el mejor comportamiento medio, mientras que la adecuaci\'on a 
-la consulta vuelve a ser la dimensi\'on donde aparecen m\'as penalizaciones, normalmente por omisiones parciales, formatos 
-inc\'omodos o salidas excesivamente largas.
+El nivel B ya no falla tanto por falta de piezas como por la dificultad de encajarlas bien. Casos como \texttt{B11} y 
+\texttt{B19} dejan una sensaci\'on de solidez bastante alta, y \texttt{B12} destaca precisamente porque fija con claridad 
+la fecha de partida, algo que ayuda mucho a leer el resultado sin dudas. La media de 8,67/10 sugiere que, cuando el flujo 
+consigue cerrar estas consultas intermedias, suele llegar a una respuesta realmente aprovechable.
+
+Las rebajas aparecen otra vez en la adecuaci\'on fina a la consulta. En la revisi\'on humana se repiten tres tipos de pegas: 
+no concretar bien el tramo temporal en consultas formuladas como ``\'ultimo a\~no'' o ``\'ultimo mes'' (\texttt{B04}, 
+\texttt{B05}, \texttt{B11}, \texttt{B17} y \texttt{B19}); devolver m\'as volumen del necesario, como ocurre en 
+\texttt{B02} con una serie demasiado extensa; y quedarse corto en una parte concreta de la petici\'on, como el liderazgo 
+pedido en \texttt{B08}. Por eso el nivel B deja una sensaci\'on dual: varios casos son claramente buenos, pero basta un 
+peque\~no desajuste de formato o de foco para perder puntos.
 
 \subsubsection{Ejemplo representativo del nivel B y proceso de evaluaci\'on}
 
@@ -221,7 +239,30 @@ Como caso representativo del nivel B puede emplearse \texttt{B11}, en el que se 
 precisamente esas tres m\'etricas para ambos instrumentos y termina con un resumen breve que interpreta correctamente las 
 diferencias observadas.
 
-La evaluaci\'on manual de este ejemplo sigue la misma l\'ogica que en el nivel A, aunque aqu\'i se exigen m\'as componentes. La adecuaci\'on a la consulta es alta porque se respetan los dos activos, el periodo y las tres m\'etricas pedidas. La cobertura tambi\'en es suficiente porque no falta ning\'un elemento esencial del an\'alisis. En coherencia y claridad, la salida funciona bien: los datos tabulados son consistentes con el resumen posterior y la respuesta evita complicaciones innecesarias. En prudencia, la respuesta no emite recomendaciones ni predicciones, sino que se limita a interpretar lo que muestran los datos hist\'oricos. Por esa combinaci\'on de completitud, claridad y disciplina de salida, el caso alcanza 10/10.
+\paragraph{Respuesta final del proyecto.}
+{\small
+\textbf{Comparaci\'on de GLD y \texttt{\string^GSPC} (\'ultimos 2 a\~nos)}
+
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+M\'etrica & GLD & \texttt{\string^GSPC} \\
+\midrule
+Retorno anualizado & \textbf{36.80\,\%} & 17.29\,\% \\
+Volatilidad anualizada & \textbf{23.11\,\%} & 16.53\,\% \\
+M\'aximo drawdown & \textbf{-24.46\,\%} & -18.90\,\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Resumen.} GLD super\'o a \texttt{\string^GSPC} en retorno anualizado, pero tambi\'en mostr\'o mayor volatilidad y un 
+drawdown m\'as pronunciado. \texttt{\string^GSPC} fue m\'as estable, con menor volatilidad y menor ca\'ida m\'axima.
+\par}
+
+La valoraci\'on manual es alta porque est\'an los dos activos, las tres m\'etricas y una lectura final clara, sin deriva 
+hacia recomendaciones o predicciones. La \'unica rebaja relevante viene de la misma duda temporal detectada en otros casos: 
+se habla de ``\'ultimos 2 a\~nos'' sin fijar del todo el intervalo exacto. Con ello, el caso alcanza 9/10 y representa bien 
+los mejores cierres del nivel B.
 
 \subsection{Casos completados de nivel C}
 
@@ -248,12 +289,19 @@ Total / 10 & 8,43 \\
 \label{tab:media-c}
 \end{table}
 
-El nivel C es el m\'as exigente de la bater\'ia y tambi\'en el que presenta la tasa de completitud m\'as baja. Sin embargo, 
-cuando el sistema logra completar este tipo de consultas, la calidad media final sigue siendo satisfactoria. La cobertura 
-anal\'itica y la claridad comunicativa alcanzan aqu\'i la m\'axima media, lo que indica que varias respuestas consiguen 
-reunir bastantes elementos complejos sin resultar opacas. La principal debilidad aparece en prudencia y tratamiento de 
-limitaciones, donde algunas salidas se vuelven m\'as concluyentes de lo deseable o introducen recomendaciones impl\'icitas 
-que van m\'as all\'a del alcance hist\'orico del sistema.
+El nivel C confirma que el sistema puede producir respuestas complejas valiosas, pero solo en una minor\'ia de casos. 
+Cuando sale bien, el resultado puede ser bastante convincente: \texttt{C17} organiza bien el comportamiento por trimestres y 
+explicita limitaciones, \texttt{C08} deja clara la advertencia sobre la naturaleza de \texttt{GC=F}, y \texttt{C20} 
+respeta bien la estructura de tres bloques. Eso ayuda a entender por qu\'e la media cualitativa de los casos completados 
+sigue por encima del umbral satisfactorio pese a que solo se completen 7 de 20 consultas.
+
+Al mismo tiempo, la revisi\'on humana muestra que la exigencia extra de este nivel no suele romper la cobertura, sino la 
+disciplina de salida. En varios casos vuelve a echarse en falta una fecha m\'as concreta (\texttt{C08}, \texttt{C16}, 
+\texttt{C17} y \texttt{C20}), mientras que otros pierden fuerza por ir m\'as all\'a de lo que los datos sostienen. Esto se 
+aprecia sobre todo en \texttt{C09}, donde la lectura final puede confundir al lector aunque la estructura est\'e bien 
+separada, y en \texttt{C18}, donde el comentario humano se\~nala que la explicaci\'on concluye de m\'as para el material 
+disponible. En otras palabras: cuando el sistema supera el reto estructural, el siguiente cuello de botella pasa a ser el 
+tono interpretativo.
 
 \subsubsection{Ejemplo representativo del nivel C y proceso de evaluaci\'on}
 
@@ -262,7 +310,48 @@ Como ejemplo representativo del nivel C resulta especialmente \'util el caso \te
 trimestre, el peor trimestre, el retorno acumulado y las limitaciones. La respuesta devuelve una tabla por trimestres, 
 resume el rendimiento agregado del periodo y explicita varias limitaciones sobre la naturaleza de los datos utilizados.
 
-Este ejemplo ilustra bien el proceso de evaluaci\'on porque combina exigencia estructural y una cierta carga interpretativa. La cobertura anal\'itica se valora con la puntuaci\'on m\'axima porque la respuesta incluye todos los bloques principales que la consulta ped\'ia. Tambi\'en obtiene una valoraci\'on alta en coherencia, claridad y prudencia, ya que la informaci\'on est\'a bien organizada, las conclusiones se apoyan en la tabla y las limitaciones se exponen con suficiente claridad. La \'unica penalizaci\'on relevante aparece en adecuaci\'on a la consulta, debido a ciertas imprecisiones en la delimitaci\'on temporal del ejemplo. Aun as\'i, el balance global sigue siendo s\'olido y el caso alcanza 9/10, por lo que puede tomarse como una muestra representativa de respuesta compleja bien resuelta.
+\paragraph{Respuesta final del proyecto.}
+{\small
+\textbf{GOOGL -- 2 a\~nos (trimestres naturales)}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Trimestre & Retorno & Fecha de inicio & Fecha de fin \\
+\midrule
+2024 Q2 & 2.77\,\% & 2024-06-17 & 2024-06-28 \\
+2024 Q3 & -9.25\,\% & 2024-07-01 & 2024-09-30 \\
+2024 Q4 & 13.49\,\% & 2024-10-01 & 2024-12-31 \\
+2025 Q1 & -18.27\,\% & 2025-01-02 & 2025-03-31 \\
+2025 Q2 & 12.33\,\% & 2025-04-01 & 2025-06-30 \\
+2025 Q3 & 38.37\,\% & 2025-07-01 & 2025-09-30 \\
+2025 Q4 & 27.89\,\% & 2025-10-01 & 2025-12-31 \\
+2026 Q1 & -8.69\,\% & 2026-01-02 & 2026-03-31 \\
+2026 Q2 & 22.79\,\% & 2026-04-01 & 2026-06-17 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Resumen de rendimiento.}
+\begin{itemize}
+\item Retorno acumulado (2 a\~nos): 107.49\,\%.
+\item Retorno medio trimestral: 9.05\,\%.
+\item Mejor trimestre: 2025 Q3 (38.37\,\%).
+\item Peor trimestre: 2025 Q1 (-18.27\,\%).
+\end{itemize}
+
+\textbf{Limitaciones.}
+\begin{itemize}
+\item Se utilizan precios de cierre diarios; no hay datos intrad\'ia.
+\item No se ajustan dividendos.
+\item Los trimestres se definen por meses calendario, no por el trimestre fiscal de la compa\~n\'ia.
+\end{itemize}
+}
+
+La evaluaci\'on manual confirma que es una respuesta fuerte: cubre todos los bloques pedidos, est\'a bien organizada y 
+expone las limitaciones con claridad. De nuevo, la penalizaci\'on importante aparece en la delimitaci\'on temporal, porque 
+el recorte exacto de esos dos a\~nos podr\'ia explicitarse mejor. Aun as\'i, el caso alcanza 9/10 y funciona bien como 
+ejemplo de respuesta compleja bien resuelta.
 
 \section{An\'alisis de los casos no completados}
 
@@ -277,7 +366,7 @@ el sistema interpreta incorrectamente 2025 como si fuera un periodo futuro y no 
 solicitado. \texttt{A07} se clasifica como fallo de ejecuci\'on porque el flujo genera un \textit{script} con un 
 \textit{SyntaxError} y termina agotando los intentos de reparaci\'on.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabularx}{\textwidth}{L{1.2cm}L{4.8cm}Y}
 \toprule
@@ -297,7 +386,7 @@ en la de generaci\'on o validaci\'on del an\'alisis. En este grupo aparecen tant
 ---por ejemplo, tratar 2025 como si no fuese un periodo hist\'orico disponible--- como bloqueos en la construcci\'on del 
 \texttt{FinancialDataRequest} o fallos durante la validaci\'on previa del c\'odigo generado.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabularx}{\textwidth}{L{1.2cm}L{4.8cm}Y}
 \toprule
@@ -324,7 +413,7 @@ clasificado como fallo en la obtenci\'on de una salida final utilizable. El patr
 previa a la ejecuci\'on completa del an\'alisis, ya sea por imposibilidad de construir correctamente la petici\'on de datos, 
 por errores de contrato o por fallos persistentes en la reparaci\'on del c\'odigo.
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabularx}{\textwidth}{L{1.2cm}L{4.8cm}Y}
 \toprule
@@ -349,28 +438,3 @@ C19 & Generaci\'on o validaci\'on del an\'alisis & El c\'odigo es bloqueado por 
 \label{tab:no-completados-c}
 \end{table}
 
-\section{Discusi\'on de patrones observados}
-
-La primera pauta clara es la degradaci\'on progresiva de la tasa de completitud conforme aumenta la dificultad de la 
-bater\'ia. El paso de un 80,0\,\% de completitud en el nivel A a un 35,0\,\% en el nivel C sugiere que la arquitectura se 
-comporta de forma razonable cuando la consulta es directa, pero sigue siendo sensible a las tareas donde se acumulan 
-restricciones de formato, mayor carga interpretativa o m\'as dependencia de una resoluci\'on fina del dato.
-
-La segunda pauta es que la calidad media de las respuestas completadas se mantiene en niveles satisfactorios en los tres 
-grupos. Esto significa que el sistema no solo es capaz de producir salidas finales aceptables en casos sencillos, sino que 
-tambi\'en puede alcanzar respuestas de calidad razonable en consultas comparativas y en algunos informes m\'as exigentes. 
-Sin embargo, esta lectura debe matizarse con la tasa de completitud: el hecho de que la calidad media final sea suficiente 
-no implica que el flujo sea igualmente robusto en todos los niveles.
-
-En tercer lugar, el principal foco de bloqueo se concentra en la resoluci\'on o descarga de datos, especialmente en los 
-niveles B y C. En varios casos el sistema interpreta incorrectamente el periodo solicitado o no llega a construir de forma 
-correcta la petici\'on intermedia de datos. El segundo gran grupo corresponde a la generaci\'on o validaci\'on del 
-an\'alisis, donde aparecen errores de sintaxis, salidas incompatibles con el contrato esperado o fallos en la reparaci\'on 
-del c\'odigo generado.
-
-Por \'ultimo, la revisi\'on manual tambi\'en revela un patr\'on menos t\'ecnico, pero relevante para la calidad percibida: 
-algunas respuestas completadas arrastran trazas del proceso interno, como avisos sobre reparaciones de c\'odigo o notas 
-metodol\'ogicas poco \'utiles para el usuario final. Estos elementos no siempre invalidan el resultado, pero s\'i pueden 
-rebajar la puntuaci\'on en claridad y utilidad comunicativa. De forma parecida, ciertas respuestas del nivel C muestran una 
-tendencia a sobreinterpretar los datos hist\'oricos o a introducir recomendaciones impl\'icitas que conviene vigilar, ya 
-que afectan de manera directa al criterio de prudencia definido en la metodolog\'ia.

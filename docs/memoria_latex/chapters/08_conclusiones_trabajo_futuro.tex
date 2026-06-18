@@ -1,20 +1,55 @@
 \chapter{Conclusiones y trabajo futuro}
 
-\section{Funcion de este capitulo}
+\section{Conclusiones}
 
-La conclusion final debe recoger la aportacion principal del trabajo con una formulacion clara y defendible. No conviene que sea una repeticion de capitulos anteriores ni una lista dispersa de ideas futuras.
+La idea de este trabajo nunca fue construir una caja negra que recibiera una consulta financiera y devolviera una respuesta sin m\'as. Lo que se ha 
+buscado desde el principio ha sido levantar un sistema capaz de analizar datos financieros hist\'oricos de una forma m\'as explicable, m\'as trazable y 
+m\'as controlada. Por eso la arquitectura separa la resoluci\'on de datos, la planificaci\'on del an\'alisis, la generaci\'on y validaci\'on de c\'odigo, la 
+ejecuci\'on y la interpretaci\'on final.
 
-\section{Guia para las conclusiones}
+La aportaci\'on principal del proyecto no est\'a en afirmar que un modelo de lenguaje pueda resolver de forma fiable cualquier consulta financiera. Est\'a, 
+m\'as bien, en haber construido un flujo mucho m\'as inspeccionable que una respuesta generativa directa. En ese sentido, s\'i puede defenderse una idea clara: 
+el uso de contratos intermedios, validaciones expl\'icitas, reparaciones acotadas y evidencia persistida mejora de forma apreciable la interpretabilidad del 
+proceso y hace visibles tanto los aciertos como los fallos.
 
-\textit{Completar aqui, al final del proyecto, una sintesis que responda a estas preguntas:}
+Los resultados del estudio apoyan tambi\'en una segunda conclusi\'on relevante. Cuando el sistema consigue completar una consulta, la calidad de la respuesta 
+final suele ser buena. La evaluaci\'on cualitativa muestra que, en los casos completados, las salidas acostumbran a conservar el foco de la consulta, incluir 
+las m\'etricas principales, mantener una estructura comprensible y evitar derivas innecesarias hacia recomendaciones o afirmaciones que no se sostienen con los 
+datos disponibles. Dicho de otro modo: el sistema no completa todos los casos, pero cuando cierra bien un caso, pocas veces lo hace con una respuesta de poca calidad.
 
-\begin{enumerate}
-    \item ?Que problema has abordado realmente?
-    \item ?Que has conseguido demostrar?
-    \item ?Que evidencia es la mas importante para sostener esa afirmacion?
-    \item ?Que limite obliga a interpretar el resultado con prudencia?
-\end{enumerate}
+Al mismo tiempo, el proyecto deja bastante claro d\'onde siguen estando sus puntos m\'as fr\'agiles. La debilidad principal no aparece tanto en la presentaci\'on 
+final como en las fases previas: interpretaci\'on temporal de la consulta, resoluci\'on del dato, construcci\'on del \texttt{FinancialDataRequest}, validaci\'on 
+del an\'alisis y estabilidad del flujo cuando la tarea acumula m\'as restricciones. Esto encaja bien con lo observado en la bater\'ia de evaluaci\'on, donde la 
+dificultad creciente tensiona sobre todo la resoluci\'on previa del caso y no solo la redacci\'on de la salida final.
 
-\section{Guia para el trabajo futuro}
+Esta lectura obliga tambi\'en a reconocer el coste de la decisi\'on de dise\~no adoptada. A lo largo del trabajo se ha priorizado la trazabilidad y el control 
+frente a la simple capacidad de devolver una respuesta aparente en cualquier escenario. Esa elecci\'on introduce fricci\'on y hace que el sistema pueda bloquearse 
+o detenerse en fases intermedias, pero tambi\'en evita aceptar con demasiada facilidad resultados mal resueltos, poco verificables o apoyados en una interpretaci\'on 
+dudosa del problema.
 
-\textit{Completar aqui las siguientes lineas de trabajo priorizadas: mejoras del flujo, robustez, validacion, ampliacion de casos, comparativas con otras soluciones y posible evolucion del sistema.}
+Por \'ultimo, el sistema se ha evaluado sobre una arquitectura concreta, una configuraci\'on experimental definida para este proyecto y una bater\'ia de consultas 
+construida para estudiar casos representativos del problema. Adem\'as, el flujo depende de un proveedor de datos hist\'oricos y de un componente generativo cuyo 
+comportamiento no es completamente determinista. Por eso, el trabajo no demuestra una soluci\'on universal al an\'alisis financiero asistido por LLM, pero s\'i deja 
+una base s\'olida y ya evaluada para seguir avanzando hacia sistemas m\'as robustos, m\'as transparentes y mejor acotados.
+
+\section{Trabajo futuro}
+
+La primera l\'inea prioritaria de trabajo futuro deber\'ia centrarse en reforzar la robustez de la fase de resoluci\'on de consultas y de datos. Una mejora especialmente 
+natural ser\'ia permitir que el sistema identifique con mayor inteligencia los activos a partir de referencias m\'as cercanas al lenguaje del usuario, de modo que 
+consultas que mencionen nombres como ``Nvidia'' puedan resolverse con fiabilidad hacia el ticker adecuado sin depender de que este venga ya expresado de forma exacta. 
+En esta misma direcci\'on, tambi\'en ser\'ia conveniente reducir ambig\"uedades temporales y afinar mejor la interpretaci\'on de periodos relativos.
+
+La segunda l\'inea de mejora tiene que ver con la fiabilidad global del workflow. Aunque la arquitectura ya incorpora contratos expl\'icitos, validaciones y mecanismos 
+de reparaci\'on limitados, los resultados muestran que todav\'ia existen puntos de fallo en la construcci\'on del \texttt{FinancialDataRequest}, en la validaci\'on del 
+c\'odigo generado y en la consolidaci\'on de una salida final utilizable. Reforzar estas etapas permitir\'ia hacer el sistema m\'as estable sin renunciar precisamente 
+a lo que constituye una de sus aportaciones principales: la trazabilidad completa del proceso.
+
+Una tercera l\'inea natural consiste en ampliar la evaluaci\'on del sistema y estudiar con m\'as detalle hasta qu\'e punto los resultados observados dependen del 
+dise\~no del flujo o del modelo concreto utilizado. Para ello ser\'ia \'util extender la bater\'ia de casos, incorporar escenarios adicionales y comparar distintas 
+configuraciones de modelo o de proveedor. Este tipo de estudio ayudar\'ia a separar mejor qu\'e parte del comportamiento procede de la arquitectura construida y qu\'e 
+parte depende de las capacidades del componente generativo.
+
+En una fase posterior podr\'ian explorarse extensiones m\'as ambiciosas. Entre ellas podr\'ia considerarse la incorporaci\'on de tareas con una carga predictiva mayor, 
+pero ese salto exigir\'ia un marco metodol\'ogico m\'as s\'olido que el planteado en este trabajo y una comprensi\'on m\'as profunda de las implicaciones anal\'iticas 
+y de validaci\'on de ese tipo de problemas. Antes de avanzar en esa direcci\'on, parece m\'as razonable consolidar la robustez del an\'alisis hist\'orico y asegurar 
+que la base actual del sistema queda bien asentada.

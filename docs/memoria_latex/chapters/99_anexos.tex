@@ -1,21 +1,21 @@
 \chapter{Anexos}
 
-\section{Ejecucion del sistema}
+\section{Ejecuci\'on del sistema}
 
-Este anexo recoge la informacion operativa necesaria para ejecutar y defender el proyecto. El punto de entrada principal es \texttt{run\_mvp.py}, que recibe una consulta en lenguaje natural, construye el workflow multiagente y devuelve un JSON final con el estado completo de la ejecucion.
+Este anexo recoge la informaci\'on operativa necesaria para ejecutar y defender el proyecto. El punto de entrada principal es \texttt{run\_mvp.py}, que recibe una consulta en lenguaje natural, construye el workflow multiagente y devuelve un JSON final con el estado completo de la ejecuci\'on.
 
-\subsection{Preparacion minima}
+\subsection{Preparaci\'on m\'inima}
 
-Antes de lanzar una ejecucion conviene comprobar cuatro condiciones:
+Antes de lanzar una ejecuci\'on conviene comprobar cuatro condiciones:
 
 \begin{enumerate}
     \item que el entorno Python tenga instaladas las dependencias del proyecto;
-    \item que el fichero \texttt{.env} contenga una configuracion LLM valida;
+    \item que el fichero \texttt{.env} contenga una configuraci\'on LLM v\'alida;
     \item que el entorno tenga conectividad suficiente para acceder tanto al endpoint LLM como a \texttt{yfinance};
     \item que el proceso pueda escribir los artefactos generados en la carpeta \path{results}.
 \end{enumerate}
 
-Una instalacion minima puede hacerse con:
+Una instalaci\'on m\'inima puede hacerse con:
 
 \begin{verbatim}
 python -m venv venv
@@ -23,9 +23,9 @@ venv\Scripts\activate
 pip install -r requirements.txt
 \end{verbatim}
 
-\subsection{Ejecucion con ejemplos integrados}
+\subsection{Ejecuci\'on con ejemplos integrados}
 
-El proyecto incluye varios casos ya preparados en \path{src/examples/sample_inputs.py}. Estos ejemplos sirven para lanzar consultas representativas sin tener que redactarlas manualmente y permiten comprobar el flujo de extremo a extremo con peticiones ya definidas dentro del repositorio. La forma mas simple de probar el sistema es ejecutar uno de esos ejemplos:
+El proyecto incluye varios casos ya preparados en \path{src/examples/sample_inputs.py}. Estos ejemplos sirven para lanzar consultas representativas sin tener que redactarlas manualmente y permiten comprobar el flujo de extremo a extremo con peticiones ya definidas dentro del repositorio. La forma m\'as simple de probar el sistema es ejecutar uno de esos ejemplos:
 
 \begin{verbatim}
 python run_mvp.py --example growth_nvda
@@ -33,17 +33,17 @@ python run_mvp.py --example returns_qqq_spy
 python run_mvp.py --example complex_nvda_growth_report
 \end{verbatim}
 
-Esta via es la mas util para una primera validacion, porque evita errores de formato en la entrada y permite observar como el sistema resuelve la peticion, descarga los datos necesarios y genera la respuesta final.
+Esta v\'ia es la m\'as \'util para una primera validaci\'on, porque evita errores de formato en la entrada y permite observar c\'omo el sistema resuelve la petici\'on, descarga los datos necesarios y genera la respuesta final.
 
-\subsection{Ejecucion con una entrada JSON propia}
+\subsection{Ejecuci\'on con una entrada JSON propia}
 
-Tambien es posible lanzar el sistema con un fichero JSON preparado manualmente:
+Tambi\'en es posible lanzar el sistema con un fichero JSON preparado manualmente:
 
 \begin{verbatim}
 python run_mvp.py --input-json ruta\al\caso.json
 \end{verbatim}
 
-La estructura minima esperada es la siguiente:
+La estructura m\'inima esperada es la siguiente:
 
 \begin{footnotesize}
 \begin{verbatim}
@@ -53,38 +53,38 @@ La estructura minima esperada es la siguiente:
 \end{verbatim}
 \end{footnotesize}
 
-La entrada minima solo necesita el campo \texttt{query}. A partir de esa peticion, el workflow resuelve los instrumentos, el rango temporal y los parametros de descarga antes de pasar a la fase analitica. La ejecucion normal del sistema no depende de proporcionar rutas de CSV locales en la entrada.
+La entrada m\'inima solo necesita el campo \texttt{query}. A partir de esa petici\'on, el workflow resuelve los instrumentos, el rango temporal y los par\'ametros de descarga antes de pasar a la fase anal\'itica. La ejecuci\'on normal del sistema no depende de proporcionar rutas de CSV locales en la entrada.
 
 \subsection{Salida y artefactos generados}
 
-La ejecucion imprime por consola un JSON con el estado final del workflow. Ese estado incluye, entre otros elementos:
+La ejecuci\'on imprime por consola un JSON con el estado final del workflow. Ese estado incluye, entre otros elementos:
 
 \begin{itemize}
     \item la consulta original y su forma normalizada;
-    \item el plan analitico generado por el agente planificador;
-    \item el codigo Python producido para el calculo;
-    \item la salida estructurada de la ejecucion;
+    \item el plan anal\'itico generado por el agente planificador;
+    \item el c\'odigo Python producido para el c\'alculo;
+    \item la salida estructurada de la ejecuci\'on;
     \item la respuesta final redactada para el usuario;
-    \item el estado de la ejecucion, los avisos y los posibles errores.
+    \item el estado de la ejecuci\'on, los avisos y los posibles errores.
 \end{itemize}
 
-Ademas, el sistema conserva artefactos intermedios en dos carpetas:
+Adem\'as, el sistema conserva artefactos intermedios en dos carpetas:
 
 \begin{itemize}
-    \item \path{results/data_raw} y \path{results/data_normalized}, con los artefactos generados durante la fase de descarga y normalizacion de datos;
-    \item \path{results/code}, con el codigo generado en cada ejecucion;
+    \item \path{results/data_raw} y \path{results/data_normalized}, con los artefactos generados durante la fase de descarga y normalizaci\'on de datos;
+    \item \path{results/code}, con el c\'odigo generado en cada ejecuci\'on;
     \item \path{results/logs}, con el payload enviado al ejecutor y los ficheros de \texttt{stdout} y \texttt{stderr}.
 \end{itemize}
 
-Esta conservacion resulta util tanto para depurar fallos como para defender metodologicamente la trazabilidad del flujo en la memoria.
+Esta conservaci\'on resulta \'util tanto para depurar fallos como para defender metodol\'ogicamente la trazabilidad del flujo en la memoria.
 
-\section{Configuracion LLM y API}
+\section{Configuraci\'on LLM y API}
 
-La aplicacion utiliza un endpoint compatible con OpenAI Chat Completions. El modelo \texttt{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} se sirve a traves de vLLM, aunque el codigo acepta varias familias de variables de entorno equivalentes.
+La aplicaci\'on utiliza un endpoint compatible con OpenAI Chat Completions. El modelo \texttt{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} se sirve a trav\'es de vLLM, aunque el c\'odigo acepta varias familias de variables de entorno equivalentes.
 
-\subsection{Configuracion recomendada}
+\subsection{Configuraci\'on recomendada}
 
-La forma mas directa de configurar el sistema es declarar en \texttt{.env}:
+La forma m\'as directa de configurar el sistema es declarar en \texttt{.env}:
 
 \begin{verbatim}
 LLM_PROVIDER=openai-compatible
@@ -95,7 +95,7 @@ VLLM_MODEL=openai/gpt-oss-20b
 
 \subsection{Variables equivalentes admitidas}
 
-El codigo reconoce tres familias de nombres para base URL, clave y modelo:
+El c\'odigo reconoce tres familias de nombres para base URL, clave y modelo:
 
 \begin{itemize}
     \item familia \texttt{VLLM\_*}: \texttt{VLLM\_BASE\_URL}, \texttt{VLLM\_API\_KEY}, \texttt{VLLM\_MODEL};
@@ -103,11 +103,11 @@ El codigo reconoce tres familias de nombres para base URL, clave y modelo:
     \item familia \texttt{OPENAI\_*}: \texttt{OPENAI\_BASE\_URL}, \texttt{OPENAI\_API\_KEY}, \texttt{OPENAI\_MODEL}.
 \end{itemize}
 
-La resolucion de configuracion prioriza primero los valores \texttt{VLLM\_*}, despues los valores genericos \texttt{LLM\_*} y finalmente los alias \texttt{OPENAI\_*}.
+La resoluci\'on de configuraci\'on prioriza primero los valores \texttt{VLLM\_*}, despu\'es los valores gen\'ericos \texttt{LLM\_*} y finalmente los alias \texttt{OPENAI\_*}.
 
-\subsection{Parametros de generacion}
+\subsection{Par\'ametros de generaci\'on}
 
-Tambien pueden ajustarse los parametros principales del cliente:
+Tambi\'en pueden ajustarse los par\'ametros principales del cliente:
 
 \begin{verbatim}
 LLM_TEMPERATURE=0.1
@@ -116,12 +116,12 @@ LLM_TIMEOUT_SECONDS=120
 OPENAI_VERIFY_SSL=true
 \end{verbatim}
 
-Estos valores controlan la temperatura de generacion, el maximo de tokens de salida, el tiempo de espera del cliente y la verificacion SSL del endpoint remoto.
+Estos valores controlan la temperatura de generaci\'on, el m\'aximo de tokens de salida, el tiempo de espera del cliente y la verificaci\'on SSL del endpoint remoto.
 
-\subsection{Comprobaciones practicas}
+\subsection{Comprobaciones pr\'acticas}
 
-Si la configuracion es correcta, una ejecucion con \texttt{run\_mvp.py} debe completar el flujo resolviendo la consulta, descargando los datos historicos necesarios y generando despues una respuesta trazable. Si la clave no esta definida o contiene un valor de ejemplo, el sistema no intenta llamar al modelo y devuelve un error de configuracion explicito.
+Si la configuraci\'on es correcta, una ejecuci\'on con \texttt{run\_mvp.py} debe completar el flujo resolviendo la consulta, descargando los datos hist\'oricos necesarios y generando despu\'es una respuesta trazable. Si la clave no est\'a definida o contiene un valor de ejemplo, el sistema no intenta llamar al modelo y devuelve un error de configuraci\'on expl\'icito.
 
 \section{Notas para reproducibilidad}
 
-Este anexo sirve como referencia corta de reproduccion operativa. Para repetir un caso hacen falta el mismo codigo, una configuracion equivalente del modelo, acceso a un endpoint compatible con OpenAI y disponibilidad de los datos historicos correspondientes en \texttt{yfinance}. Si alguno de estos elementos cambia, el comportamiento del sistema puede variar aunque la arquitectura general siga siendo la misma.
+Este anexo sirve como referencia corta de reproducci\'on operativa. Para repetir un caso hacen falta el mismo c\'odigo, una configuraci\'on equivalente del modelo, acceso a un endpoint compatible con OpenAI y disponibilidad de los datos hist\'oricos correspondientes en \texttt{yfinance}. Si alguno de estos elementos cambia, el comportamiento del sistema puede variar aunque la arquitectura general siga siendo la misma.

@@ -24,6 +24,15 @@ y cobertura efectiva del proveedor condicionan el resultado. Adem\'as, las desca
 genera el CSV. Esto significa que, si no se fija un rango temporal cerrado o no se conserva el fichero ya descargado, una misma consulta puede apoyarse en ventanas de datos
 ligeramente distintas en ejecuciones realizadas en fechas diferentes.
 
+Existe adem\'as una limitaci\'on en la resoluci\'on sem\'antica de instrumentos financieros. Aunque el sistema acepta consultas libres, todav\'ia resulta m\'as robusto cuando la
+petici\'on menciona de forma expl\'icita el ticker o una referencia muy pr\'oxima al identificador finalmente utilizable. Este problema no se reduce a alias sencillos, como
+escribir ``Nvidia'' en lugar de \texttt{NVDA}, sino que se vuelve m\'as delicado cuando un mismo t\'ermino puede remitir a instrumentos distintos. Un ejemplo especialmente
+claro es el del oro: una consulta formulada simplemente como ``oro'' no determina por s\'i sola si debe analizarse un futuro como \texttt{GC=F}, un ETF como \texttt{GLD},
+un precio spot procedente de otra fuente o alg\'un otro proxy disponible. Incluso para un analista humano, esa equivalencia no siempre es inmediata ni un\'ivoca, porque depende
+del contexto, del horizonte temporal y del tipo de activo que realmente se quiera representar. En consecuencia, parte de la robustez del flujo sigue dependiendo de que la
+consulta especifique suficientemente bien el instrumento o de que futuras versiones del Agente 1 incorporen mecanismos adicionales de desambiguaci\'on antes de fijar el activo
+que se descargar\'a y analizar\'a.
+
 Por \'ultimo, conviene recordar que el sistema reduce errores, pero no los elimina por completo. El flujo valida el contrato de datos, comprueba la salida del an\'alisis,
 somete el script a validaci\'on antes de ejecutarlo y conserva la evidencia de cada intento. Aun as\'i, pueden aparecer fallos de interpretaci\'on, tratamientos insuficientes
 de las limitaciones del caso o dependencias no previstas del comportamiento del modelo. En consecuencia, el trabajo permite defender la utilidad de una arquitectura m\'as
