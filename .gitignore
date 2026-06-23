@@ -54,6 +54,8 @@ results/
 # =========================
 # TEMPORARY FILES
 # =========================
+tmp/
+.uv_cache/
 tmp_*.png
 tmp_*.pdf
 tmp_*.txt

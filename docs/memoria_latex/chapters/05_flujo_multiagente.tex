@@ -12,7 +12,7 @@ principales en este orden:
 
 \begin{enumerate}
     \item validaci\'on inicial de la consulta (\texttt{ingest\_node});
-    \item planificaci\'on de la petici\'on de datos (Agente 1);
+    \item planificaci\'on y construcci\'on del \texttt{FinancialDataRequest} (Agente 1);
     \item validaci\'on estructural del \texttt{FinancialDataRequest};
     \item descarga real y validaci\'on operativa de datos;
     \item planificaci\'on anal\'itica (Agente 2);
@@ -30,7 +30,7 @@ principales en este orden:
 \end{figure}
 
 La l\'ogica representada en la figura puede entenderse en cuatro bloques principales. El primero corresponde a la resoluci\'on del problema de datos. A
-partir de la consulta original, el sistema comprueba que la entrada sea utilizable, transforma esa petici\'on en un \texttt{FinancialDataRequest},
+partir de la consulta original, el sistema comprueba que la entrada sea utilizable, el Agente 1 transforma esa petici\'on en un \texttt{FinancialDataRequest},
 verifica su coherencia estructural y, finalmente, intenta la descarga real de los datos hist\'oricos necesarios. En esta parte, el objetivo no es todav\'ia
 producir una interpretaci\'on financiera, sino asegurar que el resto del flujo trabajar\'a sobre una base de datos efectivamente descargada y validada.
 
@@ -66,7 +66,7 @@ visi\'on de conjunto, el siguiente apartado describe el recorrido completo de un
 \section{Recorrido completo de una ejecuci\'on}
 
 Para que este cap\'itulo no se quede en una descripci\'on te\'orica del flujo, en este apartado se sigue una ejecuci\'on real de principio a fin. La consulta
-elegida fue: \emph{``Analiza AAPL en 3 meses y explica qu\'e se puede concluir solo con estos datos hist\'oricos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender''}. 
+elegida fue: \emph{``Analiza AAPL en 3 meses y explica qu\'e se puede concluir solo con estos datos hist\'oricos.''}. 
 
 \subsection{Fase 1. Resoluci\'on y validaci\'on de datos}
 
@@ -75,9 +75,9 @@ terminar\'a usando m\'as adelante. Lo primero que hace es construir el estado in
 
 \begin{lstlisting}[style=traceblock]
 {
-  "user_query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+  "user_query": "Analiza AAPL en 3 meses y explica qué se puede concluir solo con estos datos históricos.",
   "normalized_query": {
-    "query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+    "query": "Analiza AAPL en 3 meses y explica qué se puede concluir solo con estos datos históricos.",
     "tickers": [],
     "start": null,
     "end": null,
@@ -95,15 +95,15 @@ terminar\'a usando m\'as adelante. Lo primero que hace es construir el estado in
 Aqu\'i se ve bien el papel de \texttt{WorkflowState}: al principio conserva la
 consulta original y poco m\'as. A partir de ese punto, la fase de datos hace
 dos comprobaciones sucesivas. Primero se valida que la consulta exista y no
-llegue vac\'ia. Despu\'es, cuando el Agente 1 propone una petici\'on de datos,
-se comprueba localmente que esa petici\'on tenga sentido antes de intentar
-ninguna descarga.
+llegue vac\'ia. Despu\'es, el Agente 1 construye a partir de ella el
+\texttt{FinancialDataRequest}; una vez generado ese artefacto, se comprueba
+localmente que tenga sentido antes de intentar ninguna descarga.
 
-La salida del Agente 1, en este ejemplo, queda as\'i:
+La salida del Agente 1, es decir, el \texttt{FinancialDataRequest} que construye en este ejemplo, queda as\'i:
 
 \begin{lstlisting}[style=traceblock]
 {
-  "user_query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+  "user_query": "Analiza AAPL en 3 meses y explica qué se puede concluir solo con estos datos históricos.",
   "provider": "yfinance",
   "instruments": [
     {
@@ -143,7 +143,7 @@ Cuando esa fase termina bien, lo que le llega al Agente 2 no es el estado intern
 
 \begin{lstlisting}[style=traceblock]
 {
-  "query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+  "query": "Analiza AAPL en 3 meses y explica qué se puede concluir solo con estos datos históricos.",
   "tickers": [
     "AAPL"
   ],
@@ -207,7 +207,7 @@ siguiente:
 
 \begin{lstlisting}[style=traceblock]
 {
-  "analytical_goal": "Analizar el comportamiento historico de AAPL durante los ultimos 3 meses y extraer conclusiones basadas unicamente en los datos descargados.",
+  "analytical_goal": "Analizar el comportamiento histórico de AAPL durante los últimos 3 meses y extraer conclusiones basadas únicamente en los datos descargados.",
   "analysis_type": "historical_overview",
   "metrics": [
     "average_close",
@@ -229,7 +229,7 @@ siguiente:
     "summary: plain text explanation of the main observations and conclusions that can be drawn from the data.",
     "limitations: list of limitations of the analysis."
   ],
-  "reasoning": "La peticion solicita un analisis historico de AAPL en los ultimos 3 meses sin usar noticias ni hacer predicciones."
+  "reasoning": "La petición solicita un análisis histórico de AAPL en los últimos 3 meses y una conclusión basada solo en los datos descargados."
 }
 \end{lstlisting}
 
@@ -274,7 +274,7 @@ La tercera fase empieza con la validaci\'on del c\'odigo. En este ejemplo, el re
   "errors": [],
   "warnings": [],
   "required_fixes": [],
-  "reasoning": "El script implementa correctamente el plan de analisis y produce la salida esperada."
+  "reasoning": "El script implementa correctamente el plan de análisis y produce la salida esperada."
 }
 \end{lstlisting}
 
@@ -297,7 +297,7 @@ La salida obtenida en este ejemplo fue la siguiente:
     "volatility_3mo": 0.014529417415722213,
     "drawdown_3mo": -0.07820438914790316
   },
-  "summary": "El analisis de los ultimos 3 meses de AAPL muestra que el precio de cierre promedio fue 278.00, con un maximo de 315.20 y un minimo de 246.63. El retorno total durante el periodo fue 16.40%. La volatilidad diaria se estima en 1.45%. El mayor drawdown observado fue -7.82%.",
+  "summary": "El análisis de los últimos 3 meses de AAPL muestra que el precio de cierre promedio fue 278.00, con un máximo de 315.20 y un mínimo de 246.63. El retorno total durante el periodo fue 16.40%. La volatilidad diaria se estima en 1.45%. El mayor drawdown observado fue -7.82%.",
   "limitations": [
     "Los datos son de precios de cierre diarios sin considerar eventos corporativos, dividendos o splits.",
     "No se incluyen factores externos ni noticias que puedan haber influido en el precio."
@@ -316,7 +316,7 @@ limpio, centrado en la consulta, el contexto resuelto y los resultados ya obteni
 
 \begin{lstlisting}[style=traceblock]
 {
-  "user_query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos. No uses noticias, no predigas el futuro y no recomiendes comprar ni vender",
+  "user_query": "Analiza AAPL en 3 meses y explica qué se puede concluir solo con estos datos históricos.",
   "resolved_context": {
     "tickers": [
       "AAPL"
@@ -337,7 +337,7 @@ limpio, centrado en la consulta, el contexto resuelto y los resultados ya obteni
       "volatility_3mo": 0.014529417415722213,
       "drawdown_3mo": -0.07820438914790316
     },
-    "summary": "El analisis de los ultimos 3 meses de AAPL muestra que el precio de cierre promedio fue 278.00, con un maximo de 315.20 y un minimo de 246.63. El retorno total durante el periodo fue 16.40%. La volatilidad diaria se estima en 1.45%. El mayor drawdown observado fue -7.82%.",
+    "summary": "El análisis de los últimos 3 meses de AAPL muestra que el precio de cierre promedio fue 278.00, con un máximo de 315.20 y un mínimo de 246.63. El retorno total durante el periodo fue 16.40%. La volatilidad diaria se estima en 1.45%. El mayor drawdown observado fue -7.82%.",
     "limitations": [
       "Los datos son de precios de cierre diarios sin considerar eventos corporativos, dividendos o splits.",
       "No se incluyen factores externos ni noticias que puedan haber influido en el precio."
@@ -353,22 +353,22 @@ salida ya ejecutada y convertirla en una respuesta final legible.
 La respuesta final generada en esta traza queda as\'i:
 
 \begin{lstlisting}[style=traceblock]
-**Analisis de AAPL (ultimos 3 meses)**
+**Análisis de AAPL (últimos 3 meses)**
 
 - **Precio de cierre promedio**: 278.00
-- **Maximo**: 315.20
-- **Minimo**: 246.63
+- **Máximo**: 315.20
+- **Mínimo**: 246.63
 - **Retorno total**: 16.40 %
 - **Volatilidad diaria**: 1.45 %
-- **Drawdown maximo**: -7.82 %
+- **Drawdown máximo**: -7.82 %
 
-**Conclusiones basadas unicamente en los datos historicos**
-- El precio de AAPL ha mostrado una tendencia alcista, con un retorno positivo de mas del 16 % en los ultimos tres meses.
-- La volatilidad diaria de alrededor del 1.45 % indica que los precios se movian moderadamente dentro de ese rango.
-- El drawdown maximo de -7.82 % sugiere que la mayor caida desde un pico a un fondo fue relativamente contenida durante el periodo analizado.
+**Conclusiones basadas únicamente en los datos históricos**
+- El precio de AAPL ha mostrado una tendencia alcista, con un retorno positivo de más del 16 % en los últimos tres meses.
+- La volatilidad diaria de alrededor del 1.45 % indica que los precios se movían moderadamente dentro de ese rango.
+- El drawdown máximo de -7.82 % sugiere que la mayor caída desde un pico a un fondo fue relativamente contenida durante el periodo analizado.
 
 **Limitaciones**
-- Los datos corresponden unicamente a precios de cierre diarios y no incluyen eventos corporativos, dividendos ni splits.
+- Los datos corresponden únicamente a precios de cierre diarios y no incluyen eventos corporativos, dividendos ni splits.
 - No se han considerado factores externos ni noticias que pudieran haber influido en el comportamiento del precio.
 \end{lstlisting}
 
@@ -376,6 +376,14 @@ Con este \'ultimo bloque se ve con bastante claridad el sentido del flujo comple
 usuario, sino despu\'es de pasar por cuatro fases distintas: primero se resuelven y validan los datos, despu\'es se fija el plan anal\'itico, luego se
 genera y ejecuta el c\'odigo y, solo al final, se redacta la interpretaci\'on. Eso es precisamente lo que hace que el sistema sea m\'as trazable y m\'as
 defendible que una respuesta generada de una sola vez.
+
+\subsection{Referencia a un caso no completado}
+
+El ejemplo anterior muestra la ruta ideal de una ejecuci\'on que s\'i alcanza la interpretaci\'on final. Como complemento, en el
+Anexo~\ref{anx:caso_no_completado} se documenta un caso no completado con el mismo nivel de detalle, pero escogido deliberadamente para que el fallo
+aparezca lo m\'as tarde posible en la cadena. En ese recorrido alternativo, la fase de datos se resuelve correctamente, el plan anal\'itico queda fijado, el
+c\'odigo supera la validaci\'on est\'atica y el problema solo se manifiesta ya en runtime, incluso despu\'es de una reparaci\'on previa. De este modo, el lector
+puede comparar de forma directa la ruta completada y una ruta fallida tard\'ia sin interrumpir aqu\'i la continuidad expositiva del cap\'itulo.
 
 \section{Mecanismos de correcci\'on y criterios de parada}
 
@@ -429,17 +437,25 @@ workflow, qu\'e tipo de salida se le exige y qu\'e l\'imites se le imponen para 
 El primer nivel de contrato no depende del agente concreto, sino del bloque al que pertenece. La fase de datos comparte un prompt de sistema propio y el resto
 de la arquitectura comparte otro distinto, centrado ya en an\'alisis hist\'orico. Sus textos base son los siguientes:
 
-\begin{lstlisting}[style=traceblock]
-Eres un componente de planificacion y correccion de peticiones de datos financieros historicos.
-Tu objetivo es producir JSON valido, trazable y utilizable por codigo.
-No calculas metricas financieras, no interpretas resultados y no redactas respuestas finales.
+\begin{lstlisting}[style=promptblock]
+Componente compartido de datos.
+Eres un componente de planificación y corrección de peticiones
+de datos financieros históricos.
+Tu objetivo es producir JSON válido, trazable y utilizable por
+el código.
+No calculas métricas financieras, no interpretas resultados
+y no redactas respuestas finales.
 \end{lstlisting}
 
-\begin{lstlisting}[style=traceblock]
-Eres un componente profesional de analisis financiero historico asistido por LLM.
-Trabajas exclusivamente con datos historicos ya descargados y con el contrato JSON indicado.
-No realizas predicciones, asesoramiento de inversion, recomendaciones de compra/venta,
-analisis fundamental externo ni incorporas informacion que no este en la entrada.
+\begin{lstlisting}[style=promptblock]
+Componente compartido de análisis.
+Eres un componente profesional de análisis financiero histórico
+asistido por LLM.
+Trabajas exclusivamente con datos históricos ya descargados
+y con el contrato JSON indicado.
+No realizas predicciones, asesoramiento de inversión,
+recomendaciones de compra o venta, análisis fundamental
+externo ni incorporas información que no esté en la entrada.
 \end{lstlisting}
 
 Esta separaci\'on ya anticipa una idea importante del dise\~no: el sistema no trata igual la resoluci\'on de datos que la parte anal\'itica. La primera se
@@ -452,18 +468,24 @@ contrato insiste en devolver solo JSON y en no convertir esta fase en un an\'ali
 
 El texto base del Agente 1 es este:
 
-\begin{lstlisting}[style=traceblock]
+\begin{lstlisting}[style=promptblock]
 Agente 1 - PLANIFICADOR DE DATOS.
-Convierte la consulta del usuario en un FinancialDataRequest JSON valido.
-Devuelve exclusivamente JSON, sin markdown ni texto adicional.
-Tu trabajo es decidir que datos hay que pedir, no hacer el analisis financiero.
+Convierte la consulta del usuario en un FinancialDataRequest
+JSON válido.
+Devuelve exclusivamente JSON, sin Markdown ni texto adicional.
+Tu trabajo es decidir qué datos hay que pedir, no hacer
+el análisis financiero.
 Debes:
 1. Identificar instrumentos o tickers.
-2. Inferir intervalo temporal y usar period o start/end segun corresponda.
+2. Inferir el intervalo temporal y usar period o start/end,
+   según corresponda.
 3. Mantener provider='yfinance'.
-4. Incluir required_fields con Open, High, Low, Close, Adj Close y Volume.
-5. Marcar needs_clarification=true si la consulta no permite una descarga fiable.
-No debes calcular metricas, razonar sobre rentabilidad ni proponer respuesta final.
+4. Incluir required_fields con Open, High, Low, Close,
+   Adj Close y Volume.
+5. Marcar needs_clarification=true si la consulta no permite
+   una descarga fiable.
+No debes calcular métricas, razonar sobre rentabilidad
+ni proponer la respuesta final.
 \end{lstlisting}
 
 Aqu\'i el contrato es muy estricto: el agente puede decidir qu\'e datos hacen falta, pero no puede empezar a analizar ni a contestar la consulta. Su \'unica
@@ -471,24 +493,28 @@ salida aceptable es un \texttt{FinancialDataRequest}.
 
 El Subagente 1 reutiliza el mismo prompt de sistema, pero cambia el texto base para centrarse solo en la correcci\'on estructural:
 
-\begin{lstlisting}[style=traceblock]
-Subagente 1 - CORRECCION ESTRUCTURAL.
-Devuelve exclusivamente un FinancialDataRequest JSON valido.
-Corrige problemas de estructura, contrato, fechas, intervalos o instrumentos vacios.
-Si no puedes corregir el problema de forma fiable, marca needs_clarification=true
-y explica brevemente el motivo en clarification_reason.
+\begin{lstlisting}[style=promptblock]
+Subagente 1 - CORRECCIÓN ESTRUCTURAL.
+Devuelve exclusivamente un FinancialDataRequest JSON válido.
+Corrige problemas de estructura, contrato, fechas,
+intervalos o instrumentos vacíos.
+Si no puedes corregir el problema de forma fiable, marca
+needs_clarification=true y explica brevemente el motivo
+en clarification_reason.
 \end{lstlisting}
 
 Su alcance es deliberadamente estrecho. No intenta adivinar si la descarga real funcionar\'a; solo corrige forma y coherencia del request.
 
 El Subagente 2 comparte constructor con el anterior, pero cambia la directriz central para situarse en la validaci\'on operativa:
 
-\begin{lstlisting}[style=traceblock]
-Subagente 2 - CORRECCION OPERATIVA.
-Devuelve exclusivamente un FinancialDataRequest JSON valido.
-Corrige el request para que la descarga real en yfinance sea util sin cambiar libremente la intencion del usuario.
-Si no puedes corregir el problema de forma fiable, marca needs_clarification=true
-y explica brevemente el motivo en clarification_reason.
+\begin{lstlisting}[style=promptblock]
+Subagente 2 - CORRECCIÓN OPERATIVA.
+Devuelve exclusivamente un FinancialDataRequest JSON válido.
+Corrige el request para que la descarga real en yfinance
+sea útil, sin cambiar libremente la intención del usuario.
+Si no puedes corregir el problema de forma fiable, marca
+needs_clarification=true y explica brevemente el motivo
+en clarification_reason.
 \end{lstlisting}
 
 La diferencia entre ambos subagentes queda muy clara si se leen en paralelo: uno corrige estructura y contrato; el otro corrige viabilidad real de descarga,
@@ -501,33 +527,50 @@ con cuidado razonamiento anal\'itico, implementaci\'on, validaci\'on y reparaci\
 
 El texto base del Agente 2 es el siguiente:
 
-\begin{lstlisting}[style=traceblock]
+\begin{lstlisting}[style=promptblock]
 Agente 2 - ANALISTA.
-Devuelve exclusivamente un objeto JSON valido con el esquema indicado. No incluyas markdown.
-Tu tarea es convertir la peticion del usuario y los datos ya descargados en un plan verificable para un script Python posterior.
+Devuelve exclusivamente un objeto JSON válido con el esquema
+indicado. No incluyas Markdown.
+Tu tarea es convertir la petición del usuario y los datos ya
+descargados en un plan verificable para un script Python
+posterior.
 No calcules cifras y no redactes la respuesta final.
-Debes apoyarte solo en el contexto de entrada ya resuelto por la fase de datos.
-required_columns debe referirse a columnas de los datos disponibles.
-output_requirements y presentation_preferences no pueden quedar vacios: deben reflejar de forma explicita
-que salida estructurada devolvera el script y como debe presentarse el resultado.
-En output_requirements debes describir siempre el contrato minimo del workflow:
-metrics debe ser un objeto JSON, summary debe ser un texto plano y limitations debe ser una lista.
-Si la consulta pide tabla, serie, ranking, drawdown u otros bloques estructurados, describelos como claves
-opcionales adicionales, pero sin sustituir metrics, summary ni limitations.
-No dejes output_requirements ni presentation_preferences en blanco ni con frases genericas vacias.
+Debes apoyarte solo en el contexto de entrada ya resuelto
+por la fase de datos.
+required_columns debe referirse a columnas de los datos
+disponibles.
+output_requirements y presentation_preferences no pueden
+quedar vacíos: deben reflejar de forma explícita qué salida
+estructurada devolverá el script y cómo debe presentarse
+el resultado.
+En output_requirements debes describir siempre el contrato
+mínimo del workflow: metrics debe ser un objeto JSON,
+summary debe ser un texto plano y limitations debe ser
+una lista.
+Si la consulta pide tabla, serie, ranking, drawdown u otros
+bloques estructurados, descríbelos como claves opcionales
+adicionales, pero sin sustituir metrics, summary
+ni limitations.
+No dejes output_requirements ni presentation_preferences
+en blanco ni con frases genéricas vacías.
 \end{lstlisting}
 
 Este prompt deja muy bien delimitado que el Agente 2 no calcula nada ni redacta la respuesta final. Su trabajo es dejar un \texttt{AnalysisPlan} lo bastante
 espec\'ifico como para que el Agente 3 no tenga que reinterpretar la consulta. 
 El Agente 3 recibe ese plan y lo convierte en un script. Su texto base es este:
 
-\begin{lstlisting}[style=traceblock]
-Agente 3 - GENERADOR DE CODIGO.
-Devuelve exclusivamente un objeto JSON valido con un unico campo code. No incluyas markdown.
-El valor code debe ser un script Python completo, autocontenido y ejecutable.
-Debes implementar el AnalysisPlan recibido, no reinterpretar la consulta desde cero.
-La prioridad es cumplir el contrato minimo del workflow con un script robusto y simple.
-No conviertas summary en un objeto, no uses metrics como lista y no sustituyas la salida minima por tablas o series.
+\begin{lstlisting}[style=promptblock]
+Agente 3 - GENERADOR DE CÓDIGO.
+Devuelve exclusivamente un objeto JSON válido con un único
+campo code. No incluyas Markdown.
+El valor de code debe ser un script Python completo,
+autocontenido y ejecutable.
+Debes implementar el AnalysisPlan recibido, no reinterpretar
+la consulta desde cero.
+La prioridad es cumplir el contrato mínimo del workflow
+con un script robusto y simple.
+No conviertas summary en un objeto, no uses metrics como
+lista y no sustituyas la salida mínima por tablas o series.
 \end{lstlisting}
 
 Aqu\'i se aprecia bien la filosof\'ia de esta parte del sistema: el c\'odigo no se genera como una soluci\'on abierta, sino bajo un contrato muy expl\'icito de
@@ -535,16 +578,30 @@ entrada, carga de datos, imports permitidos y forma de salida.
 
 Antes de ejecutar, el Agente 4 revisa el script generado con el siguiente texto base:
 
-\begin{lstlisting}[style=traceblock]
-Agente 4 - VALIDADOR DE CODIGO.
-Tu tarea es revisar el script generado y decidir si puede pasar a ejecucion, si necesita correccion o si debe bloquearse.
-Devuelve exclusivamente JSON valido con los campos decision, errors, warnings, required_fixes y reasoning. No incluyas markdown.
-No ejecutes el codigo. No reescribas el script. No cambies el AnalysisPlan.
-Debes evaluar si el codigo implementa el plan recibido, si respeta el contexto de entrada y si mantiene una salida estructurada coherente con el workflow.
-No confundas el esquema JSON de tu propia respuesta como validador con el JSON que debe imprimir el script.
-El script debe imprimir metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.
-Considera validos, por contrato del workflow, los helpers importados desde src.execution.market_data cuando el script use solo load_close_prices, load_market_data, ticker_summary y make_json_safe.
-No bloquees un script solo por mejoras opcionales si el contrato minimo y la logica principal estan bien.
+\begin{lstlisting}[style=promptblock]
+Agente 4 - VALIDADOR DE CÓDIGO.
+Tu tarea es revisar el script generado y decidir si puede
+pasar a ejecución, si necesita corrección o si debe
+bloquearse.
+Devuelve exclusivamente JSON válido con los campos decision,
+errors, warnings, required_fixes y reasoning. No incluyas
+Markdown.
+No ejecutes el código. No reescribas el script. No cambies
+el AnalysisPlan.
+Debes evaluar si el código implementa el plan recibido, si
+respeta el contexto de entrada y si mantiene una salida
+estructurada coherente con el workflow.
+No confundas el esquema JSON de tu propia respuesta como
+validador con el JSON que debe imprimir el script.
+El script debe imprimir metrics, summary y limitations,
+y opcionalmente analysis_type, tables, series
+o diagnostics.
+Considera válidos, por contrato del workflow, los helpers
+importados desde src.execution.market_data cuando el script
+use solo load_close_prices, load_market_data, ticker_summary
+y make_json_safe.
+No bloquees un script solo por mejoras opcionales si el
+contrato mínimo y la lógica principal están bien.
 \end{lstlisting}
 
 Esta redacci\'on tambi\'en es reveladora: el Agente 4 no propone c\'odigo ni ejecuta nada, sino que separa expl\'icitamente tres salidas posibles:
@@ -553,32 +610,47 @@ imprimir el script, una distinci\'on importante en la implementaci\'on actual.
 
 Cuando el Agente 4 marca el caso como \texttt{repairable}, entra el Subagente 3 con este texto base:
 
-\begin{lstlisting}[style=traceblock]
-Subagente 3 - REPARACION DE CODIGO.
-El codigo anterior fallo o fue rechazado. Devuelve exclusivamente JSON valido con un unico campo code.
+\begin{lstlisting}[style=promptblock]
+Subagente 3 - REPARACIÓN DE CÓDIGO.
+El código anterior falló o fue rechazado. Devuelve
+exclusivamente JSON válido con un único campo code.
 El script corregido debe ser completo, no un parche parcial.
-No cambies el contrato de entrada ni el contrato de salida del workflow.
-El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.
-Asegura especificamente que metrics sea un objeto, summary sea un texto y limitations sea una lista.
-Si la consulta pedia tablas o series, mantenlas como claves opcionales, pero no sustituyas el contrato minimo.
-Prefiere corregir con cambios pequenos y codigo simple antes que rehacer el script con mas complejidad.
+No cambies el contrato de entrada ni el contrato de salida
+del workflow.
+El script corregido debe imprimir un JSON con metrics,
+summary y limitations, y opcionalmente analysis_type,
+tables, series o diagnostics.
+Asegura específicamente que metrics sea un objeto, summary
+sea un texto y limitations sea una lista.
+Si la consulta pedía tablas o series, mantenlas como claves
+opcionales, pero no sustituyas el contrato mínimo.
+Prefiere corregir con cambios pequeños y código simple antes
+que rehacer el script con más complejidad.
 \end{lstlisting}
 
 El Subagente 3 sigue trabajando con \texttt{analysis\_plan} y con el feedback
 del validador, de modo que corrige el script antes de que llegue a runtime. El
 Subagente 4, en cambio, recibe un contrato distinto:
 
-\begin{lstlisting}[style=traceblock]
-Subagente 4 - REPARADOR DE ERRORES DE EJECUCION.
-Tu tarea es corregir un script Python que ya fue aceptado por la validacion estatica,
-pero que fallo durante la ejecucion real.
-Devuelve exclusivamente JSON valido con un unico campo code.
+\begin{lstlisting}[style=promptblock]
+Subagente 4 - REPARADOR DE ERRORES DE EJECUCIÓN.
+Tu tarea es corregir un script Python que ya fue aceptado
+por la validación estática, pero que falló durante la
+ejecución real.
+Devuelve exclusivamente JSON válido con un único campo code.
 El script corregido debe ser completo, no un parche parcial.
-No uses analysis_plan y no cambies el contrato de entrada ni el contrato de salida del workflow.
-El script corregido debe imprimir un JSON con metrics, summary y limitations, y opcionalmente analysis_type, tables, series o diagnostics.
-Asegura especificamente que metrics sea un objeto, summary sea un texto y limitations sea una lista.
-Si el problema observado es de forma de salida, repara solo el contrato sin complicar innecesariamente la logica analitica.
-Si stdout ya estaba cerca de ser util, prioriza conservar el contenido analitico y corregir la estructura.
+No uses analysis_plan y no cambies el contrato de entrada
+ni el contrato de salida del workflow.
+El script corregido debe imprimir un JSON con metrics,
+summary y limitations, y opcionalmente analysis_type,
+tables, series o diagnostics.
+Asegura específicamente que metrics sea un objeto, summary
+sea un texto y limitations sea una lista.
+Si el problema observado es de forma de salida, repara solo
+el contrato sin complicar innecesariamente la lógica
+analítica.
+Si stdout ya estaba cerca de ser útil, prioriza conservar
+el contenido analítico y corregir la estructura.
 \end{lstlisting}
 
 La diferencia clave es que el Subagente 4 ya no recibe
@@ -590,18 +662,23 @@ ejecuci\'on de la reparaci\'on posterior a un fallo observado.
 
 El Agente 5 cierra el flujo con un contrato tambi\'en deliberadamente acotado. Su texto base es este:
 
-\begin{lstlisting}[style=traceblock]
-Agente 5 - INTERPRETE.
-Redacta la respuesta final para el usuario usando solo la consulta original,
-el contexto resuelto minimo, execution_output y los warnings relevantes.
-No recalcules, no completes cifras ausentes y no incorpores datos externos.
-Debes inferir por ti mismo cuanta elaboracion necesita la respuesta segun la query
-y segun la riqueza real de los resultados obtenidos.
-Si la consulta es simple, responde de forma simple y evita convertir la salida
-en un informe recargado. Si la consulta pide comparacion, desglose o estructura,
-adapta el formato en consecuencia.
-Si execution_output incluye limitations vacias, no fuerces una seccion artificial
-de limitaciones. Si existen limitaciones relevantes, integralas con naturalidad.
+\begin{lstlisting}[style=promptblock]
+Agente 5 - INTÉRPRETE.
+Redacta la respuesta final para el usuario usando solo la
+consulta original, el contexto resuelto mínimo,
+execution_output y los warnings relevantes.
+No recalcules, no completes cifras ausentes y no incorpores
+datos externos.
+Debes inferir por ti mismo cuánta elaboración necesita la
+respuesta, según la query y según la riqueza real de los
+resultados obtenidos.
+Si la consulta es simple, responde de forma simple y evita
+convertir la salida en un informe recargado. Si la consulta
+pide comparación, desglose o estructura, adapta el formato
+en consecuencia.
+Si execution_output incluye limitations vacías, no fuerces
+una sección artificial de limitaciones. Si existen
+limitaciones relevantes, intégralas con naturalidad.
 \end{lstlisting}
 
 Este \'ultimo prompt resulta especialmente interesante porque muestra una decisi\'on de dise\~no importante del proyecto. A diferencia de los agentes

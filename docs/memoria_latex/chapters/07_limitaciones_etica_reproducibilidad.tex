@@ -1,4 +1,4 @@
-\chapter{Limitaciones, aspectos \'eticos y reproducibilidad}
+﻿\chapter{Limitaciones, aspectos \'eticos y reproducibilidad}
 
 Este cap\'itulo recoge tres cuestiones que ayudan a situar correctamente el trabajo una vez vistos el flujo y la evaluaci\'on: qu\'e l\'imites tiene realmente el sistema,
 qu\'e uso puede considerarse razonable dentro del alcance planteado y qu\'e hace falta para repetir una ejecuci\'on con un grado suficiente de control. No se trata
@@ -32,6 +32,7 @@ un precio spot procedente de otra fuente o alg\'un otro proxy disponible. Inclus
 del contexto, del horizonte temporal y del tipo de activo que realmente se quiera representar. En consecuencia, parte de la robustez del flujo sigue dependiendo de que la
 consulta especifique suficientemente bien el instrumento o de que futuras versiones del Agente 1 incorporen mecanismos adicionales de desambiguaci\'on antes de fijar el activo
 que se descargar\'a y analizar\'a.
+
 
 Por \'ultimo, conviene recordar que el sistema reduce errores, pero no los elimina por completo. El flujo valida el contrato de datos, comprueba la salida del an\'alisis,
 somete el script a validaci\'on antes de ejecutarlo y conserva la evidencia de cada intento. Aun as\'i, pueden aparecer fallos de interpretaci\'on, tratamientos insuficientes
@@ -72,3 +73,4 @@ comparar dos ejecuciones o depurar un caso concreto.
 Aun as\'i, la reproducibilidad no debe entenderse como identidad garantizada de todas las salidas textuales. La arquitectura y los artefactos pueden repetirse con bastante
 fidelidad, pero la respuesta final sigue dependiendo de un componente generativo y del contexto de datos disponible en ese momento. Por eso, en este trabajo la reproducibilidad
 se entiende sobre todo como la capacidad de rehacer el flujo, inspeccionar sus pasos y justificar de qu\'e entradas y de qu\'e evidencias ha salido cada resultado.
+

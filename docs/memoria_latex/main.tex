@@ -12,6 +12,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{listings}
+\usepackage{listingsutf8}
 \usepackage{csquotes}
 \usepackage[numbers,sort&compress]{natbib}
 
@@ -23,6 +24,7 @@
 
 \lstdefinestyle{traceblock}{
     basicstyle=\ttfamily\scriptsize,
+    inputencoding=utf8,
     breaklines=true,
     breakatwhitespace=false,
     columns=fullflexible,
@@ -31,7 +33,29 @@
     frame=single,
     framesep=4pt,
     xleftmargin=0pt,
-    xrightmargin=0pt
+    xrightmargin=0pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ñ}{{\~n}}1 {Ñ}{{\~N}}1
+}
+
+\lstdefinestyle{promptblock}{
+    basicstyle=\ttfamily\footnotesize,
+    inputencoding=utf8,
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    frame=single,
+    framesep=4pt,
+    xleftmargin=0pt,
+    xrightmargin=0pt,
+    literate=
+        {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+        {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+        {ñ}{{\~n}}1 {Ñ}{{\~N}}1
 }
 
 \newcommand{\University}{Universidad Polit\'ecnica de Madrid}
@@ -102,7 +126,7 @@ historical financial analysis, language models, code generation, LLM agents, tra
 \include{chapters/07_limitaciones_etica_reproducibilidad}
 \include{chapters/08_conclusiones_trabajo_futuro}
 
-\bibliographystyle{plainnat}
+\bibliographystyle{unsrtnat}
 \bibliography{references}
 
 \appendix

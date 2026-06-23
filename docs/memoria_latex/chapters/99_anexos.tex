@@ -78,6 +78,217 @@ Adem\'as, el sistema conserva artefactos intermedios en dos carpetas:
 
 Esta conservaci\'on resulta \'util tanto para depurar fallos como para defender metodol\'ogicamente la trazabilidad del flujo en la memoria.
 
+\subsection{Recorrido de un caso no completado}
+\label{anx:caso_no_completado}
+
+Como complemento al caso completado presentado en el Cap\'itulo~5, este apartado resume una traza real que no lleg\'o a completarse, pero que fall\'o
+deliberadamente tarde en el flujo. La consulta elegida fue: \emph{``Compara MSFT, AAPL y GOOGL en el \'ultimo a\~no como informe para un cliente no
+t\'ecnico. Muestra exactamente cuatro bloques: resumen ejecutivo, tabla de m\'etricas, ranking mensual y limitaciones.''}
+
+La ventaja de este ejemplo es que no se bloquea en la fase de datos, sino que atraviesa la resoluci\'on de instrumentos, la descarga real, la planificaci\'on
+anal\'itica, la generaci\'on de c\'odigo y la validaci\'on est\'atica. El fallo solo aparece en la ejecuci\'on real del script y, por tanto, deja una evidencia
+m\'as rica de c\'omo act\'uan las rutas de reparaci\'on tard\'ias del workflow.
+
+\subsubsection{Fase 1. Resoluci\'on y validaci\'on de datos}
+
+En este caso, el Agente 1 construye sin ambig\"uedad un \texttt{FinancialDataRequest} con tres tickers, periodo anual e intervalo diario:
+
+\begin{lstlisting}[style=traceblock]
+{
+  "user_query": "Compara MSFT, AAPL y GOOGL en el último año como informe para un cliente no técnico. Muestra exactamente cuatro bloques: resumen ejecutivo, tabla de métricas, ranking mensual y limitaciones",
+  "provider": "yfinance",
+  "instruments": [
+    {"ticker": "MSFT"},
+    {"ticker": "AAPL"},
+    {"ticker": "GOOGL"}
+  ],
+  "interval": "1d",
+  "start": null,
+  "end": null,
+  "period": "1y",
+  "required_fields": [
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Adj Close",
+    "Volume"
+  ],
+  "needs_clarification": false,
+  "clarification_reason": null
+}
+\end{lstlisting}
+
+La validaci\'on estructural no detecta problemas y la descarga se completa correctamente. El handoff que recibe el Agente 2 ya contiene una base consolidada
+de 756 filas, con los tres tickers resueltos y el CSV normalizado listo para reutilizarse:
+
+\begin{lstlisting}[style=traceblock]
+{
+  "query": "Compara MSFT, AAPL y GOOGL en el último año como informe para un cliente no técnico. Muestra exactamente cuatro bloques: resumen ejecutivo, tabla de métricas, ranking mensual y limitaciones",
+  "tickers": [
+    "MSFT",
+    "AAPL",
+    "GOOGL"
+  ],
+  "temporal_context": {
+    "start": null,
+    "end": null,
+    "period": "1y",
+    "interval": "1d"
+  },
+  "csv_paths": [
+    "C:\\Users\\usuario\\Desktop\\tfm\\results\\data_normalized\\normalized_20260617_183459_729914.csv"
+  ],
+  "data_context": {
+    "row_count": 756,
+    "available_columns": [
+      "Date",
+      "Ticker",
+      "Open",
+      "High",
+      "Low",
+      "Close",
+      "Adj Close",
+      "Volume"
+    ]
+  },
+  "warnings": [],
+  "download_summary": {
+    "provider": "yfinance",
+    "tickers_requested": [
+      "MSFT",
+      "AAPL",
+      "GOOGL"
+    ],
+    "tickers_found": [
+      "AAPL",
+      "GOOGL",
+      "MSFT"
+    ],
+    "interval": "1d",
+    "period": "1y",
+    "start": null,
+    "end": null,
+    "row_count": 756
+  }
+}
+\end{lstlisting}
+
+\subsubsection{Fase 2. Planificaci\'on anal\'itica y generaci\'on de c\'odigo}
+
+Con ese contexto operativo resuelto, el Agente 2 formula un plan comparativo orientado a rentabilidad, volatilidad, drawdown, ratio Sharpe y ranking
+mensual:
+
+\begin{lstlisting}[style=traceblock]
+{
+  "analytical_goal": "Comparar el desempeño de MSFT, AAPL y GOOGL durante el último año y presentar los resultados en un informe accesible para un cliente no técnico, con cuatro bloques: resumen ejecutivo, tabla de métricas, ranking mensual y limitaciones.",
+  "analysis_type": "comparative_return_analysis",
+  "metrics": [
+    "Annual Return",
+    "Annual Volatility",
+    "Maximum Drawdown",
+    "Sharpe Ratio"
+  ],
+  "required_columns": [
+    "Date",
+    "Ticker",
+    "Adj Close"
+  ],
+  "output_requirements": [
+    "metrics: un objeto JSON con los valores calculados para cada ticker.",
+    "summary: un texto plano de máximo 200 palabras que sintetice los hallazgos clave.",
+    "limitations: una lista de al menos tres limitaciones metodológicas o de datos.",
+    "table_metrics: una tabla (JSON array de objetos) con las métricas por ticker.",
+    "ranking_monthly: una lista ordenada de los tickers por rendimiento mensual promedio."
+  ],
+  "reasoning": "El usuario solicita una comparación de tres tickers con cuatro bloques estructurados. Se selecciona el análisis de retorno comparativo porque cubre rendimiento, volatilidad y drawdown, y permite generar un ranking mensual."
+}
+\end{lstlisting}
+
+El Agente 3 transforma ese plan en un script ejecutable. Durante la validaci\'on previa hubo una reparaci\'on de c\'odigo, pero el Agente 4 termin\'o aceptando
+la versi\'on final como v\'alida para ejecutarse. Uno de los fragmentos relevantes del script generado es este:
+
+\begin{lstlisting}[style=traceblock]
+monthly_ret = close.resample('ME').last().pct_change().dropna()
+avg_monthly = monthly_ret.mean()
+ranking = sorted(avg_monthly.items(), key=lambda x: x[1], reverse=True)
+output['ranking_monthly'] = [ticker for ticker, _ in ranking]
+
+summary_text = (
+    f"En el último año, Microsoft (MSFT) mostró el mayor rendimiento anual con un retorno del {metrics.get('MSFT', {{}}).get('Annual Return', 0):.2%}, "
+    f"seguido de Apple (AAPL) con {metrics.get('AAPL', {{}}).get('Annual Return', 0):.2%} y Google (GOOGL) con {metrics.get('GOOGL', {{}}).get('Annual Return', 0):.2%}. "
+)
+\end{lstlisting}
+
+La validaci\'on est\'atica, de hecho, no bloquea la ejecuci\'on:
+
+\begin{lstlisting}[style=traceblock]
+{
+  "decision": "valid",
+  "errors": [],
+  "warnings": [],
+  "required_fixes": [],
+  "reasoning": "El script implementa correctamente el plan analítico solicitado y contiene los bloques de salida esperados."
+}
+\end{lstlisting}
+
+\subsubsection{Fase 3. Ejecuci\'on real, reparaci\'on y cierre con error}
+
+La parte interesante de esta traza empieza precisamente aqu\'i. Aunque el script hab\'ia superado la validaci\'on est\'atica, la ejecuci\'on real falla en runtime
+al construir el resumen final:
+
+\begin{lstlisting}[style=traceblock]
+Traceback (most recent call last):
+  File "C:\Users\usuario\Desktop\tfm\results\code\generated_20260617_183939_690053.py", line 53, in <module>
+    f"En el último año, Microsoft (MSFT) mostró el mayor rendimiento anual con un retorno del {metrics.get('MSFT', {{}}).get('Annual Return', 0):.2%}, "
+                                                                                                                   ^^^^
+TypeError: unhashable type: 'dict'
+\end{lstlisting}
+
+Ese fallo no se trata como bloqueo inmediato, sino como una salida \texttt{repairable}. El validador de ejecuci\'on deja constancia expl\'icita de ello:
+
+\begin{lstlisting}[style=traceblock]
+{
+  "execution_validation_decision": {
+    "decision": "repairable",
+    "errors": [
+      "La ejecución terminó con returncode=1 y un TypeError al construir el resumen final."
+    ],
+    "warnings": [],
+    "reasoning": "El script falló durante la ejecución real y necesita una corrección antes de reintentarse."
+  }
+}
+\end{lstlisting}
+
+El workflow intenta entonces una reparaci\'on tard\'ia de runtime. Sin embargo, esa reparaci\'on tampoco consigue cerrar el caso y el flujo termina con error
+controlado. El snapshot terminal deja una evidencia muy clara del cierre:
+
+\begin{lstlisting}[style=traceblock]
+{
+  "final_answer": "No se pudo reparar el código tras un error de ejecución: Expecting value: line 1 column 1 (char 0)",
+  "warnings": [
+    "Se reparó código generado tras un error previo.",
+    "Se reparó código tras un error de ejecución."
+  ],
+  "error_message": "No se pudo reparar el código tras un error de ejecución: Expecting value: line 1 column 1 (char 0)",
+  "status": "completed_with_error",
+  "code_repair_attempts": 1,
+  "execution_attempts": 2,
+  "execution_repair_attempts": 1
+}
+\end{lstlisting}
+
+\subsubsection{Lectura del caso}
+
+Este ejemplo resulta \'util porque muestra una situaci\'on menos trivial que un bloqueo temprano. El sistema s\'i resuelve los datos, s\'i construye el plan y s\'i
+llega a ejecutar c\'odigo real sobre un CSV descargado. El problema aparece solo cuando el c\'odigo ya est\'a siendo usado de verdad, lo que permite observar
+mejor la diferencia entre validaci\'on est\'atica y validaci\'on en runtime.
+
+Tambi\'en deja ver que una ejecuci\'on no completada no equivale necesariamente a una arquitectura opaca. Aunque el caso termina mal, la traza conserva el
+\texttt{FinancialDataRequest}, los artefactos de descarga, el plan anal\'itico, el script ejecutado, el \texttt{stderr} real, el intento de reparaci\'on y el
+estado terminal. Precisamente por eso este tipo de ejemplo complementa bien el recorrido del Cap\'itulo~5: ense\~na c\'omo falla el sistema cuando el error aparece
+lo m\'as tarde posible, pero sin perder trazabilidad ni evidencia observable.
+
 \section{Configuraci\'on LLM y API}
 
 La aplicaci\'on utiliza un endpoint compatible con OpenAI Chat Completions. El modelo \texttt{openai/gpt-oss-20b} \cite{openai2025gptossmodelcard} se sirve a trav\'es de vLLM, aunque el c\'odigo acepta varias familias de variables de entorno equivalentes.
