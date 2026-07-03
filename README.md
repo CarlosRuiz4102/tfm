@@ -1,62 +1,55 @@
-# Sistema LLM para análisis financiero histórico mediante generación automática de código
+# Sistema LLM para analisis financiero historico con generacion automatica de codigo
 
-## Descripción
+## Resumen
 
-Este repositorio contiene el desarrollo del prototipo implementado para el Trabajo Fin de Máster centrado en el uso de modelos de lenguaje para análisis financiero histórico a partir de consultas en lenguaje natural.
+Este repositorio contiene la implementacion del prototipo desarrollado para el Trabajo Fin de Master. El sistema estudia si una arquitectura multiagente basada en LLM puede transformar una consulta financiera en lenguaje natural en una respuesta historica trazable, apoyada en datos descargados, calculos observables, codigo ejecutado y una interpretacion final prudente.
 
-El objetivo del proyecto no es predecir el mercado ni recomendar inversiones, sino estudiar si un sistema multiagente basado en LLM puede integrarse en un flujo más controlado que transforme una consulta abierta en una respuesta sustentada por datos descargados, cálculos observables, código ejecutado y una interpretación final legible para el usuario.
-
-La aportación principal del proyecto reside en la arquitectura del flujo: resolución y validación de datos, planificación analítica, generación de código Python, validación previa a la ejecución, ejecución controlada e interpretación final, todo ello acompañado de trazabilidad estructurada y mecanismos de reparación acotados.
-
-## Objetivo del proyecto
-
-El sistema se ha diseñado para ayudar a interpretar mejor datos históricos de mercado mediante una arquitectura más explicativa y revisable que una respuesta generativa directa de una sola etapa.
-
-En términos funcionales, el flujo persigue:
-
-- recibir una consulta financiera en lenguaje natural;
-- resolver los activos, el contexto temporal y la descarga de datos históricos;
-- planificar qué métricas y qué estructura de salida hacen falta;
-- generar el código Python necesario para ejecutar el análisis;
-- validar y ejecutar ese código dentro de un entorno controlado;
-- redactar una respuesta final apoyada exclusivamente en los resultados obtenidos.
+El objetivo del proyecto no es predecir el mercado ni recomendar inversiones. El foco esta en el analisis historico descriptivo y en el control del flujo: validacion de entradas, planificacion estructurada, generacion de codigo Python, validacion previa a la ejecucion, ejecucion controlada y trazabilidad completa por corrida.
 
 ## Alcance
 
-El proyecto se limita al análisis histórico y descriptivo de activos financieros. No pretende:
+El sistema esta pensado para:
 
-- predecir precios futuros;
-- emitir recomendaciones de inversión;
-- incorporar noticias, macroeconomía o análisis fundamental como parte del flujo principal;
-- sustituir el juicio experto de un analista financiero.
+- recibir una consulta financiera en lenguaje natural;
+- resolver tickers y contexto temporal;
+- descargar datos historicos mediante `yfinance`;
+- planificar el analisis con un LLM;
+- generar y validar codigo Python antes de ejecutarlo;
+- redactar una respuesta final basada solo en los resultados obtenidos.
 
-La finalidad del sistema es servir como herramienta de apoyo para interpretar datos históricos de una forma trazable y metodológicamente defendible.
+Queda fuera del alcance:
 
-## Arquitectura general
+- prediccion de precios futuros;
+- recomendaciones de compra o venta;
+- uso de noticias, macroeconomia o analisis fundamental como parte del flujo principal;
+- sustitucion del criterio profesional de un analista financiero.
 
-La implementación actual sigue un flujo multiagente lineal con validaciones y salidas terminales controladas. El núcleo del workflow se construye en [src/graph/build_graph.py](src/graph/build_graph.py) y recorre estas fases:
+## Arquitectura del workflow
 
-1. `ingest_node`: validación inicial de la consulta.
-2. `data_request_planning_node`: construcción del `FinancialDataRequest`.
-3. `data_request_structural_validation_node`: validación estructural de la petición de datos.
-4. `data_download_node`: descarga, normalización y validación operativa de datos históricos.
-5. `llm_analysis_node`: planificación analítica.
-6. `code_generation_node`: generación del script Python.
-7. `code_validation_node`: validación previa del código.
-8. `code_execution_node`: ejecución controlada y validación de runtime.
-9. `interpretation_node`: elaboración de la respuesta final.
+El workflow principal se construye en [src/graph/build_graph.py](/C:/Users/usuario/Desktop/tfm/src/graph/build_graph.py) y recorre estas etapas:
 
-Además, el sistema incorpora rutas terminales para estados bloqueados o erróneos, de forma que incluso una ejecución fallida deje una salida trazable y coherente para el usuario.
+1. `ingest_node`: valida la consulta de entrada.
+2. `data_request_planning_node`: convierte la consulta en un `FinancialDataRequest`.
+3. `data_request_structural_validation_node`: comprueba que la peticion de datos tiene una forma valida antes de tocar el proveedor.
+4. `data_download_node`: descarga, normaliza y valida operativamente los datos historicos.
+5. `llm_analysis_node`: elabora el plan analitico.
+6. `code_generation_node`: genera el script Python.
+7. `code_validation_node`: revisa el codigo antes de ejecutarlo.
+8. `code_execution_node`: ejecuta el script en un entorno controlado y valida el resultado.
+9. `interpretation_node`: redacta la respuesta final para el usuario.
+
+El flujo incorpora rutas terminales para estados `invalid`, `blocked`, `error`, `code_rejected` y `execution_failed`, de forma que incluso una ejecucion no completada deje una salida coherente y trazable.
 
 ## Estructura del repositorio
 
 ```text
-tfm-trabajo/
+tfm/
   README.md
   requirements.txt
-  run_mvp.py
   .env.example
+  run_mvp.py
   data/
+    catalog/
   docs/
   results/
   scripts/
@@ -64,40 +57,25 @@ tfm-trabajo/
   tests/
 ```
 
-### Directorios más relevantes
+Directorios y ficheros clave:
 
-- [src](src): implementación principal del sistema.
-- [tests](tests): pruebas unitarias y de integración del flujo.
-- [docs](docs): memoria, materiales de apoyo, evaluación y presentación.
-- [results](results): artefactos generados por las ejecuciones, incluidas trazas y salidas intermedias.
-
-Dentro de `src`, los módulos más relevantes son:
-
-- [src/config.py](src/config.py): configuración global de rutas, ejecución y proveedor LLM.
-- [src/graph](src/graph): orquestación del workflow.
-- [src/data](src/data): descarga, validación y normalización de datos históricos.
-- [src/execution](src/execution): ejecución y validación del código generado.
-- [src/llm](src/llm): cliente, prompts y utilidades de interacción con el modelo.
-- [src/schemas](src/schemas): contratos tipados del flujo.
-- [src/tracing](src/tracing): trazabilidad estructurada por ejecución.
+- [run_mvp.py](/C:/Users/usuario/Desktop/tfm/run_mvp.py): punto de entrada principal del MVP.
+- [src](/C:/Users/usuario/Desktop/tfm/src): implementacion del workflow, esquemas, cliente LLM, descarga de datos y ejecucion.
+- [tests](/C:/Users/usuario/Desktop/tfm/tests): pruebas unitarias e integracion del flujo.
+- [scripts/evaluate_bateria_50.py](/C:/Users/usuario/Desktop/tfm/scripts/evaluate_bateria_50.py): ejecuta la bateria de 50 ejemplos y actualiza el informe de evaluacion.
+- [data/catalog/bateria_50_ejemplos_v2.json](/C:/Users/usuario/Desktop/tfm/data/catalog/bateria_50_ejemplos_v2.json): catalogo base de la bateria.
+- [results](/C:/Users/usuario/Desktop/tfm/results): artefactos generados durante ejecuciones y evaluaciones.
+- [docs](/C:/Users/usuario/Desktop/tfm/docs): memoria, presentacion, guias y material complementario del TFM.
 
 ## Requisitos
 
 - Python `3.10` o superior.
-- Dependencias declaradas en [requirements.txt](requirements.txt):
-  - `numpy`
-  - `pandas`
-  - `matplotlib`
-  - `yfinance`
-  - `langchain`
-  - `langchain-openai`
-  - `openai`
-  - `pydantic`
-  - `python-dotenv`
+- Acceso a un endpoint compatible con OpenAI Chat Completions para ejecutar las fases LLM reales.
+- Conectividad a `yfinance` para descargar datos historicos en ejecuciones completas.
 
-## Instalación
+Las dependencias del proyecto se recogen en [requirements.txt](/C:/Users/usuario/Desktop/tfm/requirements.txt). El fichero se mantiene porque sigue siendo la via directa de reproduccion del MVP.
 
-Se recomienda crear y activar un entorno virtual antes de instalar dependencias.
+## Instalacion
 
 ### Windows PowerShell
 
@@ -107,11 +85,11 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-## Configuración del LLM
+## Configuracion del LLM
 
-La configuración del proveedor LLM se centraliza en [src/config.py](src/config.py) y puede cargarse automáticamente desde un fichero `.env`.
+La configuracion se centraliza en [src/config.py](/C:/Users/usuario/Desktop/tfm/src/config.py) y puede cargarse automaticamente desde un fichero `.env`.
 
-Existe una plantilla de ejemplo en [.env.example](.env.example):
+Hay una plantilla lista para copiar en [.env.example](/C:/Users/usuario/Desktop/tfm/.env.example):
 
 ```env
 LLM_PROVIDER=openai-compatible
@@ -131,42 +109,46 @@ LLM_BASE_URL=
 LLM_TEMPERATURE=0.1
 LLM_MAX_TOKENS=4096
 LLM_TIMEOUT_SECONDS=120
+
+# OPENAI_VERIFY_SSL=false
 ```
 
-### Variables más importantes
+Orden de prioridad de variables soportadas por el codigo:
 
-- `VLLM_BASE_URL`, `VLLM_API_KEY`, `VLLM_MODEL`: configuración recomendada cuando el modelo se sirve sobre vLLM.
-- `OPENAI_API_KEY`, `OPENAI_MODEL`: alias compatibles con el SDK de OpenAI.
-- `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`: alias genéricos soportados por el proyecto.
-- `LLM_TEMPERATURE`, `LLM_MAX_TOKENS`, `LLM_TIMEOUT_SECONDS`: parámetros globales de generación.
+1. familia `VLLM_*`
+2. familia `UNIVERSITY_*` cuando exista en el entorno
+3. familia generica `LLM_*`
+4. familia `OPENAI_*`
 
-Si no hay credenciales válidas, el flujo no fuerza una caída abrupta: el sistema está preparado para devolver una salida controlada cuando el LLM no está configurado.
+Si no hay credenciales validas, el sistema no completa las fases LLM reales y devuelve un error controlado. Esto esta cubierto por la logica de [src/llm/client.py](/C:/Users/usuario/Desktop/tfm/src/llm/client.py) y por las pruebas de configuracion.
 
-## Ejecución básica
+## Ejecucion del MVP
 
-El punto de entrada principal del MVP es [run_mvp.py](run_mvp.py).
-
-### Ejecución con ejemplo interno
+### Ejecutar un ejemplo interno
 
 ```powershell
 python run_mvp.py --example overview_aapl
 ```
 
-### Ejecución con JSON de entrada
+### Ejecutar una consulta desde JSON
 
 ```powershell
-python run_mvp.py --input-json ruta\al\input.json
+python run_mvp.py --input-json .\mi_consulta.json
 ```
 
-La entrada mínima esperada tiene esta forma:
+Ejemplo minimo de entrada:
 
 ```json
 {
-  "query": "Analiza AAPL en 3 meses y explica qué se puede concluir solo con estos datos históricos."
+  "query": "Analiza AAPL en 3 meses y explica que se puede concluir solo con estos datos historicos."
 }
 ```
 
-El programa imprime por salida estándar el estado final del workflow serializado como JSON.
+La salida del programa es el `WorkflowState` final serializado como JSON.
+
+### Ver ejemplos disponibles
+
+Los ejemplos embebidos viven en [src/examples/sample_inputs.py](/C:/Users/usuario/Desktop/tfm/src/examples/sample_inputs.py). Se usan para pruebas manuales y demostraciones. Algunos campos auxiliares como `csv_paths` se conservan por compatibilidad con material de evaluacion previo, pero la ejecucion normal del flujo parte de la `query`.
 
 ### Ayuda del ejecutable
 
@@ -174,90 +156,84 @@ El programa imprime por salida estándar el estado final del workflow serializad
 python run_mvp.py --help
 ```
 
-## Ejemplos disponibles
+## Evaluacion de la bateria de 50 ejemplos
 
-Los ejemplos de prueba y demostración se definen en [src/examples/sample_inputs.py](src/examples/sample_inputs.py). Entre ellos se incluyen casos como:
+El repositorio incluye una bateria de 50 consultas en [data/catalog/bateria_50_ejemplos_v2.json](/C:/Users/usuario/Desktop/tfm/data/catalog/bateria_50_ejemplos_v2.json) y un script de ejecucion en [scripts/evaluate_bateria_50.py](/C:/Users/usuario/Desktop/tfm/scripts/evaluate_bateria_50.py).
 
-- `growth_nvda`
-- `compare_nvda_amd`
-- `overview_aapl`
-- `returns_qqq_spy`
-- `technical_aapl`
-- `complex_btc_2024_profile`
-- `complex_eurusd_intraday`
+Ejemplo de uso:
 
-Estos ejemplos resultan útiles tanto para pruebas manuales como para reproducir parte del comportamiento descrito en la memoria.
+```powershell
+python scripts/evaluate_bateria_50.py --start 1 --count 5
+```
+
+Este proceso actualiza:
+
+- `results/evaluations/bateria_50_ejemplos_v2_results.json`
+- `docs/evaluacion_bateria_50_ejemplos_v2.md`
 
 ## Artefactos generados
 
-Las rutas de salida se centralizan en [src/config.py](src/config.py). Durante una ejecución pueden generarse artefactos en:
+Durante las ejecuciones el sistema puede crear o actualizar estas carpetas:
 
-- `results/data_requests/`: peticiones de datos construidas por el flujo.
-- `results/data_raw/`: descargas brutas de datos.
-- `results/data_normalized/`: datos normalizados y listos para análisis.
-- `results/code/`: scripts generados.
-- `results/logs/`: logs de ejecución.
-- `results/traces/`: trazas completas por ejecución.
+- `results/data_requests/`: peticiones de datos construidas por el workflow.
+- `results/data_raw/`: descargas brutas del proveedor.
+- `results/data_normalized/`: datos normalizados para analisis.
+- `results/code/`: scripts Python generados.
+- `results/logs/`: logs de ejecucion del codigo generado.
+- `results/traces/`: trazas estructuradas por corrida.
+- `results/evaluations/`: resultados agregados de la bateria de evaluacion.
 
-Algunos de estos directorios pueden no existir en un clon recién descargado y crearse durante la primera ejecución.
-
-## Trazabilidad
-
-Uno de los elementos clave del proyecto es la persistencia de trazas estructuradas. La lógica de trazabilidad está implementada en [src/tracing/workflow_trace.py](src/tracing/workflow_trace.py).
-
-Cada ejecución puede dejar, entre otros, estos artefactos:
-
-- `manifest.json`: resumen global del recorrido.
-- `events.jsonl`: eventos cronológicos por nodo.
-- `snapshots/`: instantáneas completas del estado tras cada fase.
-
-Esto permite reconstruir de forma detallada qué ocurrió en cada ejecución, qué artefactos se generaron y en qué punto apareció un fallo si el caso no se completó.
+La logica de trazabilidad esta en [src/tracing/workflow_trace.py](/C:/Users/usuario/Desktop/tfm/src/tracing/workflow_trace.py). Cada corrida puede guardar `manifest.json`, `events.jsonl` y snapshots completos del estado por nodo.
 
 ## Pruebas
 
-El proyecto incluye pruebas unitarias y de integración en [tests](tests). Cubren, entre otros aspectos:
+El proyecto incluye pruebas en [tests](/C:/Users/usuario/Desktop/tfm/tests) para configuracion del LLM, prompts, trazabilidad y distintas fases del flujo.
 
-- configuración del LLM;
-- conexión entre la fase de datos y la planificación analítica;
-- validación y reparación del código generado;
-- payload de interpretación final;
-- recorridos de extremo a extremo del MVP.
-
-### Ejecución de pruebas
-
-Con `unittest`:
+Suite completa:
 
 ```powershell
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
-### Comprobación rápida de compilación
+Estado actual de la suite:
+
+- varias pruebas de integracion usan rutas `csv_paths` heredadas en [src/examples/sample_inputs.py](/C:/Users/usuario/Desktop/tfm/src/examples/sample_inputs.py);
+- esas rutas apuntan a ficheros historicos bajo `data/raw/`;
+- en el estado actual del repositorio esos CSV no estan presentes, por lo que la suite completa falla si no se restauran esos fixtures.
+
+Comprobacion minima sin depender de esos CSV:
 
 ```powershell
-python -m compileall -q src run_mvp.py
+python -m unittest tests.test_llm_config tests.test_prompts tests.test_phase5
 ```
 
-## Documentación adicional
+Comprobacion rapida de compilacion:
 
-El repositorio incluye material complementario relevante para el TFM:
+```powershell
+python -m compileall -q src run_mvp.py scripts
+```
 
-- memoria principal en [docs/memoria_latex/main.tex](docs/memoria_latex/main.tex);
-- capítulo del flujo multiagente en [docs/memoria_latex/chapters/05_flujo_multiagente.tex](docs/memoria_latex/chapters/05_flujo_multiagente.tex);
-- capítulo de metodología en [docs/memoria_latex/chapters/04_metodologia_compacta.tex](docs/memoria_latex/chapters/04_metodologia_compacta.tex);
-- capítulo de resultados en [docs/memoria_latex/chapters/06_resultados_evaluacion_compacta.tex](docs/memoria_latex/chapters/06_resultados_evaluacion_compacta.tex);
-- presentación de defensa en [docs/presentacion_tfm_15min_v4.pptx](docs/presentacion_tfm_15min_v4.pptx).
+## Documentacion adicional
+
+Material relevante del TFM:
+
+- memoria en [docs/memoria_latex/main.tex](/C:/Users/usuario/Desktop/tfm/docs/memoria_latex/main.tex);
+- PDF compilado en [docs/memoria_latex/main.pdf](/C:/Users/usuario/Desktop/tfm/docs/memoria_latex/main.pdf);
+- capitulo metodologico en [docs/memoria_latex/chapters/04_metodologia_compacta.tex](/C:/Users/usuario/Desktop/tfm/docs/memoria_latex/chapters/04_metodologia_compacta.tex);
+- capitulo del flujo multiagente en [docs/memoria_latex/chapters/05_flujo_multiagente.tex](/C:/Users/usuario/Desktop/tfm/docs/memoria_latex/chapters/05_flujo_multiagente.tex);
+- capitulo de resultados en [docs/memoria_latex/chapters/06_resultados_evaluacion_compacta.tex](/C:/Users/usuario/Desktop/tfm/docs/memoria_latex/chapters/06_resultados_evaluacion_compacta.tex);
+- presentacion en [docs/presentacion_tfm_15min_v4.pptx](/C:/Users/usuario/Desktop/tfm/docs/presentacion_tfm_15min_v4.pptx).
 
 ## Limitaciones
 
-Las conclusiones del proyecto deben leerse dentro de su alcance experimental. Entre las limitaciones principales:
+Las conclusiones del proyecto deben leerse dentro de su alcance experimental:
 
-- la evaluación se realiza con una configuración concreta del sistema y un modelo específico;
-- el sistema depende de un proveedor de datos históricos;
-- el alcance se restringe al análisis histórico;
-- la revisión cualitativa de resultados completados se apoya en evaluación humana.
+- la evaluacion se apoya en una arquitectura concreta y una configuracion LLM determinada;
+- la disponibilidad de datos depende de `yfinance` y de las limitaciones del proveedor;
+- el sistema trabaja sobre analisis historico, no sobre prediccion;
+- la calidad final puede variar segun la consulta, el endpoint LLM y los datos accesibles en cada momento;
+- una parte de la evaluacion sigue requiriendo revision humana.
 
-Por tanto, el repositorio no debe interpretarse como una solución universal de análisis financiero, sino como la implementación evaluable de una arquitectura LLM más controlada y trazable.
-
-## Autoría
+## Autoria
 
 Autor: **Carlos Ruiz Oyarzun**.
